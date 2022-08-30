@@ -1,3 +1,9 @@
+/* Contact Information */
+
+
+
+
+/* Main Page  */
 *{
     margin: 0;
     padding: 0;
@@ -6,12 +12,8 @@
 
 .banner{
     width: 100%;
-    height: 100vh;
-    background-color: lightblue;
-    background-image: linear-gradient
-    (rgba(0,0,0,0.75),rgba(0,0,0,0.75),url(background.png));
-    background-size: cover;
-    background-position: center;
+    height: 300vh;
+    background-image: url("back.jpg")
 }
 
 .navbar{
