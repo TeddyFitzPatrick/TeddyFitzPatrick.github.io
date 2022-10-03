@@ -1,22 +1,24 @@
-/* Contact Information */
-
-
-
-
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Display:ital@1&display=swap');
 /* Main Page  */
-*{
+* {
     margin: 0;
     padding: 0;
     font-family: sans-serif;
+    cursor: default;
 }
 
-.banner{
+.banner {
     width: 100%;
     height: 300vh;
-    background-image: url("back.jpg")
+    background-image: url("back.jpg");
 }
 
-.navbar{
+.logo {
+    width: 120px;
+    cursor: pointer;
+}
+
+.navbar {
     width: 85%;
     margin: auto;
     padding: 35px 0;
@@ -25,25 +27,22 @@
     justify-content: space-between;
 }
 
-.logo{
-    width: 120px;
-    cursor: pointer;
-}
-
-.navbar ul li{
-    list-style: none; 
+.navbar ul li {
+    list-style: none;
     display: inline-block;
     margin: 0 20px;
     position: relative;
 }
 
-.navbar ul li a{
+.navbar ul li a {
     text-decoration: none;
     color: #fff;
     text-transform: uppercase;
+    cursor: pointer;
 }
 
-.navbar ul li::after{
+/*  Nav-Bar Animation  */
+.navbar ul li::after {
     content: '';
     height: 3px;
     width: 0;
@@ -54,38 +53,45 @@
     transition: 0.4s;
 }
 
-.navbar ul li:hover::after{
-    width: 100%; 
-}
-
-.content{
+.navbar ul li:hover::after {
     width: 100%;
-    position: abolsute;
+    
+}
+/* */
+
+.content {
+    width: 100%;
     top: 50%;
     transform: translateY(100%);
     text-align: center;
     color: #fff;
 }
 
-.content h1{
+.content h1 {
     font-size: 70px;
     margin-top: 80px;
+    font-family: 'Noto Serif Display', serif;
 }
 
-.content p{
+.content p {
     margin: 20px auto;
     font-weight: 100;
     line-height: 25px;
+    font-family: 'Noto Serif Display', serif;
 }
 
-button{
+
+/*
+Aqua: #009688
+*/
+
+button {
     width: 200px;
     padding: 15px 0;
     text-align: center;
     margin: 20px 10px;
-    border-radius: 25px;
+    border: none;
     font-weight: bold;
-    border: 2px solid #009688;
     background: transparent;
     color: #fff;
     cursor: pointer;
@@ -93,7 +99,7 @@ button{
     overflow: hidden;
 }
 
-span{
+span {
     background: #009688;
     height: 100%;
     width: 0;
@@ -106,9 +112,63 @@ span{
     transition: 0.5s;
 }
 
-button:hover span{
+button:hover span {
     width: 100%;
 }
-button:hover{
-    border: none;
+
+
+/*  Scroll Bar Settings   */
+body::-webkit-scrollbar {
+    width: 1em;
+}
+
+body::-webkit-scrollbar-track {
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+}
+
+body::-webkit-scrollbar-thumb {
+    background-color: #009688;
+    outline: 1px solid #009688;
+    border-radius: 10px;
+
+}
+
+
+@keyframes rainbow{
+    100%,0%{
+        color: rgb(255,0,0);
+    }
+    8%{
+        color: rgb(255,127,0);
+    }
+    16%{
+        color: rgb(255,255,0);
+    }
+    25%{
+        color: rgb(127,255,0);
+    }
+    33%{
+        color: rgb(0,255,0);
+    }
+    41%{
+        color: rgb(0,255,127);
+    }
+    50%{
+        color: rgb(0,255,255);
+    }
+    58%{
+        color: rgb(0,127,255);
+    }
+    66%{
+        color: rgb(0,0,255);
+    }
+    75%{
+        color: rgb(127,0,255);
+    }
+    83%{
+        color: rgb(255,0,255);
+    }
+    91%{
+        color: rgb(255,0,127);
+    }
 }
