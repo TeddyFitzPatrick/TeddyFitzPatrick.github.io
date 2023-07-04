@@ -5,8 +5,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teddy's Website</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ubuntu&display=swap');
+        *{
+            font-family: 'Ubuntu', sans-serif;
+        }
+    </style>       
 </head>
-<body>
-    <div class="w-screen h-screen text-6xl text-white bg-gray-800">WORDS</div>
+<!-- Screen -->
+<body class="flex flex-col items-start z-[-20] b-[#001220] w-full h-[200vh]">
+    <!-- Curvaceous Border -->
+    <img src="images/waves.svg"             class="z-[-10] absolute bottom-0 w-screen">
+    <img src="images/upside_down_waves.svg" class="z-[-10] absolute top-[100vh] w-screen">
+
+    <!-- Navigation Bar -->
+    <nav class="absolute  flex flex-row list-none text-white text-2xl font-bold gap-8 justify-end h-1/6 w-full bg-none">
+        <li>Github</li>
+        <li>Resume</li>
+        <li>Contact</li>
+    </nav>
+
+    <!-- First Section -->
+    <section class="flex flex-col gap-8 items-center justify-center w-full h-screen">
+        <h1 class="text-white text-6xl font-bold">Teddy's Website</h1>
+        <p class="text-white text-3xl font-bold">Where creativity meets innovation</p>
+    </section>
+
+        <!-- Second Section -->
+    <section class="w-full h-screen">
+    </section>
+
 </body>
 </html>
