@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Display:ital@1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway&display=swap');@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Display:ital@1&display=swap');
 /* Main Page  */
 * {
     margin: 0;
     padding: 0;
-    font-family: sans-serif;
+    font-family: 'Noto Serif Display', serif;
     cursor: default;
 }
 
@@ -11,6 +11,8 @@
     width: 100%;
     height: 300vh;
     background-image: url("back.jpg");
+    height: auto;
+    width: auto;
 }
 
 .logo {
@@ -25,6 +27,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    font-family: 'Raleway', serif;
 }
 
 .navbar ul li {
@@ -35,6 +38,7 @@
 }
 
 .navbar ul li a {
+    font-family: Raleway, "sans-serif";
     text-decoration: none;
     color: #fff;
     text-transform: uppercase;
@@ -70,14 +74,12 @@
 .content h1 {
     font-size: 70px;
     margin-top: 80px;
-    font-family: 'Noto Serif Display', serif;
 }
 
 .content p {
     margin: 20px auto;
     font-weight: 100;
     line-height: 25px;
-    font-family: 'Noto Serif Display', serif;
 }
 
 
