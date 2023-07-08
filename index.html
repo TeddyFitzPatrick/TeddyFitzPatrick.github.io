@@ -15,25 +15,30 @@
 </head>
 <!-- Screen -->
 <body class="flex flex-col items-start z-[-20] bg-[#001220] w-full h-[200vh]">
-    <!-- Curvaceous Border -->
-    <img src="images/waves.svg" class="z-[-10] absolute bottom-0 w-screen">
-    <img src="images/upside_down_waves.svg" class="z-[-10] absolute top-[100vh] w-screen">
 
     <!-- Navigation Bar -->
-    <nav class="absolute  flex flex-row list-none text-white text-2xl font-bold gap-8 justify-end h-1/6 w-full bg-none">
-        <li>Github</li>
-        <li>Resume</li>
-        <li>Contact</li>
+    <nav class="absolute flex flex-row items-center list-none bg-white text-black
+     text-lg lg:text-2xl font-bold gap-8 justify-end h-[5vh] w-full bg-none p-8">
+        <a><li class="nav_icon">Github</li></a>
+        <a><li class="nav_icon">Projects</li></a>
+        <a><li class="nav_icon">Contact</li></a>
     </nav>
 
     <!-- First Section -->
-    <section class="flex flex-col gap-8 items-center justify-center w-full h-screen">
-        <h1 class="text-white text-6xl font-bold">Teddy's Website</h1>
-        <p class="text-white text-3xl font-bold">Where creativity meets innovation</p>
+    <section class="flex flex-col gap-8 items-center justify-center text-center
+     w-full h-[65vh]">
+        <h1 class="text-white text-4xl md:text-6xl font-bold w-fit h-fit">Teddy's Website</h1>
+        <p class="text-white text-xl md:text-3xl font-bold w-fit h-fit">Where creativity meets innovation</p>
     </section>
 
-        <!-- Second Section -->
-    <section class="w-full h-screen">
+    
+    <!-- Put the thing here -->
+    <svg>
+        <img src="images/waves.svg" alt="waves" class="bg-cover bg-no-repeat w-full"/>
+    </svg>
+
+    <!-- Second Section -->
+    <section class="w-full h-screen bg-[#FA7268]">
     </section>
 
 </body>
