@@ -4,14 +4,9 @@
     <!-- npx tailwindcss -i ./style.css -o ./tailwind_style.css --watch -->
     <link href="./twstyle.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/kute.js@2.2.0/dist/kute.min.js"></script>
-
-
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Teddy's Website</title>
-
-
-
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Ubuntu&display=swap");
       * {
@@ -20,23 +15,24 @@
     </style>
   </head>
   <!-- Screen -->
-  <body class="flex flex-col items-start z-[-20] bg-mod-gray w-full h-[200vh]">
+  <body class="flex flex-col items-start z-[-40] bg-mod-gray w-full h-[200vh]">
     <!-- Navigation Bar -->
     <nav>
-        <!-- Nav Buttons  -->
-        <a href="https://github.com/TeddyFitzPatrick" class="nav_icon z-30 hover:bg-mod-pink">Github</a>
-        <a class="nav_icon hover:bg-mod-pink">Projects</a>
-        <a class="nav_icon hover:bg-mod-pink">Contacts</a>
+      <!-- Nav Buttons  -->
+      <a href="https://github.com/TeddyFitzPatrick"
+         class="nav_icon z-50 hover:bg-mod-pink">Github</a>
+      <a class="nav_icon hover:bg-mod-pink">Projects</a>
+      <a class="nav_icon hover:bg-mod-pink mr-4">Contacts</a>
       <!-- Pop Up Navbar Button  -->
       <div class="absolute flex justify-center w-full h-full">
-        <div class="z-40 border-4 border-mod-pink absolute flex flex-shrink-0 w-20 h-20 bg-mod-orange rounded-full mt-[12.5vh]">
-        
-        </div>
+        <button class="z-40 border-4 border-mod-pink absolute flex justify-center items-center w-20 h-20 bg-mod-orange rounded-full mt-[12.5vh]">
+          <img src="images/arrow.svg" alt="arrow" class="fill-white w-1/2 h-auto"/>
+        </button>
       </div>
     </nav>
 
     <!-- First Section -->
-    <section class="flex flex-col items-center justify-center text-center w-full h-[82vh] text-mod-orange">
+    <section class="flex flex-col z-[-40] items-center justify-center text-center w-full h-[82vh] text-mod-orange">
       <div class="mt-[22vh] w-fit h-fit flex justify-center items-center text-center flex-col gap-8">
         <!-- SVG Morphing Anim Background  -->
         <div class="absolute h-fit z-[-10]">
@@ -70,7 +66,10 @@
     <img src="images/waves.svg" alt="waves" class="z-[-30] bg-cover bg-no-repeat w-full"/>
 
     <!-- Second Section -->
-    <section class="w-full h-screen bg-mod-orange"></section>
+    <section class="w-full h-screen bg-mod-orange">
+
+
+    </section>
 
   </body>
 </html>

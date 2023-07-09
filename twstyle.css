@@ -522,6 +522,10 @@ video {
   --tw-backdrop-sepia:  ;
 }
 
+.pointer-events-none {
+  pointer-events: none;
+}
+
 .visible {
   visibility: visible;
 }
@@ -570,10 +574,6 @@ video {
   z-index: -10;
 }
 
-.z-\[-20\] {
-  z-index: -20;
-}
-
 .z-\[-30\] {
   z-index: -30;
 }
@@ -607,12 +607,20 @@ video {
   margin-left: 2rem;
 }
 
+.mr-4 {
+  margin-right: 1rem;
+}
+
 .mr-6 {
   margin-right: 1.5rem;
 }
 
 .mr-8 {
   margin-right: 2rem;
+}
+
+.mt-1 {
+  margin-top: 0.25rem;
 }
 
 .mt-10 {
@@ -629,6 +637,10 @@ video {
 
 .mt-32 {
   margin-top: 8rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
 }
 
 .mt-48 {
@@ -711,6 +723,10 @@ video {
   height: 82vh;
 }
 
+.h-auto {
+  height: auto;
+}
+
 .h-fit {
   height: -moz-fit-content;
   height: fit-content;
@@ -736,8 +752,8 @@ video {
   width: 0.25rem;
 }
 
-.w-1\/6 {
-  width: 16.666667%;
+.w-1\/2 {
+  width: 50%;
 }
 
 .w-16 {
@@ -776,6 +792,10 @@ video {
 
 .max-w-\[100vw\] {
   max-width: 100vw;
+}
+
+.max-w-\[200px\] {
+  max-width: 200px;
 }
 
 .flex-shrink {
@@ -910,6 +930,10 @@ video {
   background-repeat: no-repeat;
 }
 
+.fill-white {
+  fill: #fff;
+}
+
 .p-8 {
   padding: 2rem;
 }
@@ -966,8 +990,8 @@ video {
   line-height: 1;
 }
 
-.text-\[1\.5vw\] {
-  font-size: 1.5vw;
+.text-\[3vw\] {
+  font-size: 3vw;
 }
 
 .text-lg {
@@ -1026,8 +1050,6 @@ nav {
   align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
-  --tw-bg-opacity: 1;
-  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
   background-image: none;
   font-size: 1.125rem;
   line-height: 1.75rem;
@@ -1044,9 +1066,12 @@ nav {
 }
 
 .nav_icon {
+  z-index: 50;
   display: flex;
   height: 60%;
-  width: 16.666667%;
+  width: -moz-fit-content;
+  width: fit-content;
+  max-width: 200px;
   align-items: center;
   justify-content: center;
   border-radius: 0.5rem;
@@ -1060,15 +1085,24 @@ nav {
   padding-top: 1rem;
   padding-bottom: 1rem;
   text-align: center;
-  font-size: 1.5vw;
+  font-size: 3vw;
   --tw-text-opacity: 1;
   color: rgb(198 35 104 / var(--tw-text-opacity));
+}
+
+.nav_icon:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(198 35 104 / var(--tw-bg-opacity));
 }
 
 @media (min-width: 768px) {
   .nav_icon {
     font-size: 2vw;
   }
+}
+
+.hover\:h-\[100vh\]:hover {
+  height: 100vh;
 }
 
 .hover\:bg-mod-pink:hover {
