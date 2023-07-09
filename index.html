@@ -3,37 +3,46 @@
   <head>
     <!-- npx tailwindcss -i ./style.css -o ./tailwind_style.css --watch -->
     <link href="./twstyle.css" rel="stylesheet" />
+    <script src="pagescript.js"></script>
+    <style>
+    @import url("https://fonts.googleapis.com/css2?family=Ubuntu&display=swap");
+      * {font-family: "Ubuntu", sans-serif;}
+    </style>
+
     <script src="https://cdn.jsdelivr.net/npm/kute.js@2.2.0/dist/kute.min.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Teddy's Website</title>
-    <style>
-      @import url("https://fonts.googleapis.com/css2?family=Ubuntu&display=swap");
-      * {
-        font-family: "Ubuntu", sans-serif;
-      }
-    </style>
   </head>
+
   <!-- Screen -->
-  <body class="flex flex-col items-start z-[-40] bg-mod-gray w-full h-[200vh]">
+  <body class="absolute z-[-40] m-0 flex flex-col items-start bg-mod-gray w-full h-[200vh]">
     <!-- Navigation Bar -->
-    <nav>
+    <nav id="navigation" style="visibility: visible;" class="relative flex flex-row items-center text-black text-lg 
+      lg:text-2xl font-bold gap-2 justify-end h-[12.5vh] w-full bg-none">
       <!-- Nav Buttons  -->
-      <a href="https://github.com/TeddyFitzPatrick"
-         class="nav_icon z-50 hover:bg-mod-pink">Github</a>
-      <a class="nav_icon hover:bg-mod-pink">Projects</a>
-      <a class="nav_icon hover:bg-mod-pink mr-4">Contacts</a>
+      <a href="https://github.com/TeddyFitzPatrick"class="nav_icon">
+        Github
+      </a>
+      <a href="projects.html" class="nav_icon">
+        Projects
+      </a>
+      <a href="contact.html" class="nav_icon mr-4">
+        Contact
+      </a>
       <!-- Pop Up Navbar Button  -->
-      <div class="absolute flex justify-center w-full h-full">
-        <button class="z-40 border-4 border-mod-pink absolute flex justify-center items-center w-20 h-20 bg-mod-orange rounded-full mt-[12.5vh]">
-          <img src="images/arrow.svg" alt="arrow" class="fill-white w-1/2 h-auto"/>
+      <div class="absolute flex justify-center w-full h-[12.5vh]">
+        <button onclick="nav_menu()" id="popup_button" class="z-10 border-4 border-mod-pink
+        hover:border-mod-light-pink hover:bg-mod-light-orange
+         absolute flex justify-center items-center w-20 h-20 bg-mod-orange rounded-full mt-[12.5vh]">
+          <img src="images/arrow.svg" alt="arrow" id="arrow" class="select-none rotate-180 w-1/2 h-auto"/>
         </button>
       </div>
     </nav>
 
     <!-- First Section -->
-    <section class="flex flex-col z-[-40] items-center justify-center text-center w-full h-[82vh] text-mod-orange">
-      <div class="mt-[22vh] w-fit h-fit flex justify-center items-center text-center flex-col gap-8">
+    <section class="relative flex flex-col items-center justify-center text-center w-full h-[82vh] text-mod-orange">
+      <div class="relative mt-[22vh] w-fit h-fit flex justify-center items-center text-center flex-col gap-8">
         <!-- SVG Morphing Anim Background  -->
         <div class="absolute h-fit z-[-10]">
           <svg class="max-w-[100vw] h-fit" id="visual" viewBox="0 0 900 600" width="900" height="600" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1">
@@ -63,7 +72,7 @@
     </section>
 
     <!-- Waves Intersection  -->
-    <img src="images/waves.svg" alt="waves" class="z-[-30] bg-cover bg-no-repeat w-full"/>
+    <img src="images/waves.svg" alt="waves" class="z-[-100] bg-cover bg-no-repeat w-full"/>
 
     <!-- Second Section -->
     <section class="w-full h-screen bg-mod-orange">
