@@ -12,33 +12,102 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Projects</title>
 </head>
-<body class="absolute z-[-40] m-0 flex flex-col items-start bg-mod-gray w-full h-[200vh]">
-    <!-- Navigation Bar -->
-    <nav id="navigation" style="visibility: visible;" class="relative flex flex-row items-center text-black text-lg 
-      lg:text-2xl font-bold gap-2 justify-end h-[12.5vh] w-full bg-none">
-      <!-- Nav Buttons  -->
-      <a href="https://github.com/TeddyFitzPatrick"class="nav_icon">
-        Github
-      </a>
-      <a href="projects.html" class="nav_icon">
-        Projects
-      </a>
-      <a href="contact.html" class="nav_icon mr-4">
-        Contact
-      </a>
+<body class="absolute z-[-40] m-0 flex flex-col items-center bg-mod-gray w-full h-[200vh]">
 
+
+
+
+    <!-- Navigation Bar -->
+    <nav id="navigation" style="visibility: visible;" 
+      class="relative flex flex-row items-center text-black text-lg 
+      lg:text-2xl font-bold gap-2 justify-end h-[12.5vh] w-full bg-none
+      flex-none left-0">
+      <!-- Nav Buttons  -->
+      <a href="index.html" class="nav_icon relative left-0 ml-4">Home</a>
+      <a href="https://github.com/TeddyFitzPatrick" target="_blank" class="nav_icon">Github</a>
+      <a href="projects.html" class="nav_icon">Projects</a>
+      <a href="#" class="nav_icon mr-4">Contact</a>
       <!-- Pop Up Navbar Button  -->
       <div class="absolute flex justify-center w-full h-[12.5vh]">
         <!-- Button  -->
-        <button onclick="nav_menu()" id="popup_button" class="z-10 border-4 border-mod-pink
-        hover:border-mod-light-pink hover:bg-mod-light-orange
-         absolute flex justify-center items-center w-20 h-20 bg-mod-orange rounded-full mt-[12.5vh]">
-         <!-- Arrow  -->
+        <button onclick="nav_menu()" id="popup_button" class="z-10 border-4 
+        hover:border-mod-orange hover:bg-mod-pink
+         absolute flex justify-center items-center w-20 h-20  rounded-full mt-[12.5vh]">
+         <!-- Arrow   -->
          <img src="images/arrow.svg" alt="arrow" id="arrow" class="select-none rotate-180 w-1/2 h-auto"/>
         </button>
       </div>
     </nav>
 
+
+
+    <script>
+      function handleButtonClick(event){
+      document.getElementById('DEBUG').innerHTML = event;
+
+        var regex = /^[0-9]$/;
+        // Number Input
+        if (regex.test(event)) {
+          document.getElementById("previous").innerHTML = document.getElementById("current").innerHTML;
+          document.getElementById("current").innerHTML = event;
+        }
+        // AC
+        else if(event == 'AC'){
+          document.getElementById("previous").innerHTML = '';
+          document.getElementById("current").innerHTML = '';
+        }
+        // C
+        else if(event == 'C'){
+          document.getElementById("current").innerHTML = '';
+        }
+        // divide
+        else if(event == '/'){
+          prev = document.getElementById("previous").innerHTML;
+          curr = document.getElementById("current").innerHTML;
+
+          document.getElementById("current").innerHTML = prev/curr;
+
+        }
+
+      }
+
+ 
+
+    </script>
+
+    <div id="DEBUG" class="text-center text-3xl w-16 h-16 bg-white text-black"></div>
+    <!-- Calculator  -->
+    <section class="shadow-xl border-4 border-black px-4 py-4 flex flex-col items-center min-w-[340px] w-[30vw] min-h-[80vh] h-fit gap-2 bg-mod-dark-orange rounded-2xl">
+      <!-- Numbers and calculations  -->
+      <div class="shadow-xl w-full h-1/6 bg-mod-orange rounded-2xl text-mod-gray flex flex-col justify-end items-end"> 
+        <p id="previous" class="mb-[5%] text-lg"></p>
+        <p id="current" class="text-3xl mb-1 mr-2 "></p>
+      </div>
+
+      <div class="grid grid-cols-[repeat(4,5fr);] grid-rows-[repeat(5,2fr);] gap-2 w-full h-5/6">
+        <button onclick="handleButtonClick('AC')" class="calc_button">AC</button>
+        <button onclick="handleButtonClick('C')" class="calc_button">C</button>
+        <button onclick="handleButtonClick('%')" class="calc_button">%</button>
+        <button onclick="handleButtonClick('/')" class="calc_button">/</button>
+        <button onclick="handleButtonClick('7')" class="calc_button">7</button>
+        <button onclick="handleButtonClick('8')" class="calc_button">8</button>
+        <button onclick="handleButtonClick('9')" class="calc_button">9</button>
+        <button onclick="handleButtonClick('X')" class="calc_button">X</button>
+        <button onclick="handleButtonClick('4')" class="calc_button">4</button>
+        <button onclick="handleButtonClick('5')" class="calc_button">5</button>
+        <button onclick="handleButtonClick('6')" class="calc_button">6</button>
+        <button onclick="handleButtonClick('-')" class="calc_button">-</button>
+        <button onclick="handleButtonClick('1')" class="calc_button">1</button>
+        <button onclick="handleButtonClick('2')" class="calc_button">2</button>
+        <button onclick="handleButtonClick('3')" class="calc_button">3</button>
+        <button onclick="handleButtonClick('+')" class="calc_button">+</button>
+        <button onclick="handleButtonClick('0')" class="calc_button">0</button>
+        <button onclick="handleButtonClick(',')" class="calc_button">,</button>
+        <button onclick="handleButtonClick('.')" class="calc_button">.</button>
+        <button onclick="handleButtonClick('=')" class="calc_button">=</button>
+      </div>
+
+    </section>
 
 
 </body>
