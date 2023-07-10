@@ -5,6 +5,6 @@
 
 .nav_icon{
     @apply z-10 rounded-lg border-mod-pink bg-mod-orange text-mod-pink px-4 h-3/5 w-fit
-    py-4 text-[3vw] md:text-[2vw] border-4 flex text-center justify-center 
+    py-4 text-base md:text-3xl border-4 flex text-center justify-center 
     max-w-[200px] items-center hover:border-mod-light-pink hover:bg-mod-light-orange min-w-[80px]
 } 
