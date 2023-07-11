@@ -77,15 +77,15 @@
 
     <div id="DEBUG" class="text-center text-3xl w-16 h-16 bg-white text-black"></div>
     <!-- Calculator  -->
-    <section class="shadow-xl border-4 border-black px-4 py-4 flex flex-col items-center min-w-[340px] w-[30vw] min-h-[80vh] h-fit gap-2 bg-mod-dark-orange rounded-2xl">
+    <section class="shadow-xl border-4 border-black px-4 py-4 flex flex-col items-center max-w-[90%] max-h-[40%] w-[700px] min-h-[1000px] h-fit gap-2 bg-mod-dark-orange rounded-2xl">
       <!-- Numbers and calculations  -->
-      <div class="shadow-xl w-full h-1/6 bg-mod-orange rounded-2xl text-mod-gray flex flex-col justify-end items-end"> 
+      <div class="border-2 border-black shadow-xl w-full h-1/6 bg-mod-orange rounded-2xl text-mod-gray flex flex-col justify-end items-end"> 
         <p id="previous" class="mb-[5%] text-lg"></p>
         <p id="current" class="text-3xl mb-1 mr-2 "></p>
       </div>
 
       <div class="grid grid-cols-[repeat(4,5fr);] grid-rows-[repeat(5,2fr);] gap-2 w-full h-5/6">
-        <button onclick="handleButtonClick('AC')" class="calc_button">AC</button>
+        <button onclick="handleButtonClick('AC')"class="calc_button">AC</button>
         <button onclick="handleButtonClick('C')" class="calc_button">C</button>
         <button onclick="handleButtonClick('%')" class="calc_button">%</button>
         <button onclick="handleButtonClick('/')" class="calc_button">/</button>

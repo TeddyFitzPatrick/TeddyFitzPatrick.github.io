@@ -12,5 +12,5 @@
 
 /* Projects */
 .calc_button{
-    @apply shadow-xl bg-mod-orange text-3xl text-mod-pink flex items-center justify-center rounded-2xl min-w-[25%] min-h-[1/6] 
+    @apply shadow-xl bg-mod-orange border-2 border-black text-3xl text-mod-pink flex items-center justify-center rounded-2xl min-w-[25%] min-h-[1/6] 
 }
