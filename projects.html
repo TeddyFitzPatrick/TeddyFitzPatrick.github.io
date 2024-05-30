@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Stylesheet  -->
+    <link href="./twstyle.css" rel="stylesheet" />
+    <!-- JS -->
+    <script type='text/javascript' src='js/config.js'></script>
+    <script src="js/navigation.js"></script>
+    <script type="module" src="js/weather.mjs" defer></script>
+    <!-- Metadata -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects</title>
+</head>
+<h1 style="font-size: 15px; color: white; position: fixed; bottom: 0; left: 0; margin-left: 8px;">
+  Disclaimer: Temperature can vary by a few degrees.
+</h1>   
+<body class="absolute z-[-40] m-0 flex flex-col items-center bg-mod-gray w-full h-[200vh]">
+    <!-- Navigation Bar -->
+    <nav id="navigation" style="visibility: visible;" 
+      class="relative flex flex-row items-center text-black text-lg 
+      lg:text-2xl font-bold gap-2 justify-end h-[12.5vh] w-full bg-none
+      flex-none left-0">
+      <!-- Nav Buttons  -->
+      <a href="index.html" class="nav_icon relative left-0 ml-4">Home</a>
+      <a href="https://github.com/TeddyFitzPatrick" target="_blank" class="nav_icon">Github</a>
+      <a href="projects.html" class="nav_icon">Projects</a>
+      <a href="#" class="nav_icon mr-4">Contact</a>
+      <!-- Pop Up Navbar Button  -->
+      <div class="absolute flex justify-center w-full h-[12.5vh]">
+        <!-- Nav Button  -->
+        <button id="nav_button" class="z-10 absolute flex justify-center items-center w-20 h-20  rounded-full mt-[12.5vh]">
+         <!-- Arrow   -->
+         <img src="images/arrow.svg" alt="arrow" id="arrow" class="select-none rotate-180 w-1/2 h-auto"/>
+        </button>
+      </div>
+    </nav>
+
+  <!-- Weather App -->
+    <div class="mt-20 flex flex-col bg-gradient-to-br from-[#FF7F50] to-[#8A2BE2] w-[500px] max-w-[95%] h-[500px] rounded-2xl ">
+      <div class="flex flex-row items-center justify-center w-full h-[125px]">
+          <!-- Search Input -->
+          <input class="text-center rounded-3xl w-3/4 h-3/4 bg-white font-[Verdana, Geneva]" type="text" id="location_input" placeholder="Enter a City">
+          <!-- Search Bar -->
+          <button class="m-1 w-[80px] h-[80px] flex-shrink-0 rounded-3xl border-white bg-white flex justify-center items-center" id="weather_update_button">
+            <img class="w-10 h-10 flex-shrink-0" src="images/weather/magnifying_glass.svg">
+          </button> 
+      </div>
+      <!-- Display -->
+      <div class="w-full h-full flex flex-col justify-center items-center text-white font-[Verdana, Geneva] text-center font-[30px]">
+          <!-- Coordinates -->
+          <div class="font-[25px] flex justify-center items-center w-full h-1/4" id="cords_id" class="cords"> 
+              Coordinates: (latitude, longitude) 
+          </div>
+          <!-- Temperature -->
+          <div class="font-[35px] flex items-center flex-row justify-evenly w-full h-1/2">
+              <div style="display: flex; flex-direction: column; height: 100%; gap: 15%; justify-content: center;">
+                  <div id="temp_id">Temperature: ??</div>
+                  <div id="feels_like_id" class="font-[25px]">Feels Like: ??</div>
+              </div>
+              <img id="weather_image_id" src="" alt="?" style="width: 110px; height: 110px;">
+          </div>
+          <!-- Humidity -->
+          <div id="humidity_id" class="flex justify-center items-center w-full h-1/4">
+              Humidity: ??%
+          </div>
+      </div>
+  </div>
+
+</body>
+</html>

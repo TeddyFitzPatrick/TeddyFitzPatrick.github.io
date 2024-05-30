@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import url("https://fonts.googleapis.com/css2?family=Ubuntu&display=swap");
+
+* {
+    font-family: "Ubuntu", sans-serif;
+}
+
+.nav_icon{
+    @apply z-10 rounded-lg text-white hover:text-mod-pink px-4 h-fit w-fit
+    py-4 text-base md:text-3xl border-4 flex text-center justify-center 
+    max-w-[200px] items-center hover:border-mod-light-pink hover:bg-mod-light-orange min-w-[80px]
+} 
+
+
+/* Projects */
+.calc_button{
+    @apply shadow-xl bg-mod-orange border-2 border-black text-3xl text-mod-pink flex items-center justify-center rounded-2xl min-w-[25%] min-h-[1/6] 
+}
