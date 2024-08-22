@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 
+npx tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch
+ */
+
+/* I know its bad to use * */
+*{
+    font-family: "Montserrat", Geneva, Verdana, sans-serif;
+}
+
+
+.nav_tab{
+    @apply w-auto h-fit text-pink-800 hover:underline
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
