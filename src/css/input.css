@@ -6,14 +6,22 @@
 npx tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch
  */
 
-/* I know its bad to use * */
+/* I know its bad to use *, don't judge */
 *{
     font-family: "Montserrat", Geneva, Verdana, sans-serif;
 }
 
+/* Basic page and navigation */
+.nav_bar{
+    @apply fixed flex flex-row justify-around text-lg sm:text-2xl text-center items-center bg-white w-full h-[10vh]
+}
 
 .nav_tab{
     @apply w-auto h-fit text-pink-800 hover:underline
+}
+
+.default_body{
+    @apply min-h-screen bg-gradient-to-br from-orange-500 to-fuchsia-400 text-white flex flex-col items-center
 }
 
 .scrollbar-hide::-webkit-scrollbar {
@@ -23,4 +31,22 @@ npx tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch
 .scrollbar-hide {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
+}
+
+
+/* Classes */
+.semester{
+    @apply flex flex-col my-6 p-12 w-[95%] h-fit border-4 border-white rounded-2xl
+}
+
+.semester h1{
+    @apply text-3xl font-bold underline
+}
+
+.semester b{
+    @apply text-xl font-extrabold
+}
+
+.semester a{
+    @apply text-xl
 }
