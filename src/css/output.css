@@ -823,6 +823,8 @@ npx tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch
   --tw-border-opacity: 1;
   border-color: rgb(255 255 255 / var(--tw-border-opacity));
   padding: 3rem;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
 }
 
 .semester h1 {
@@ -833,14 +835,12 @@ npx tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch
 }
 
 .semester b {
-  font-size: 1.25rem;
-  line-height: 1.75rem;
   font-weight: 800;
+  text-decoration-line: underline;
 }
 
-.semester a {
-  font-size: 1.25rem;
-  line-height: 1.75rem;
+.semester h1 {
+  text-decoration-line: none;
 }
 
 .hover\:text-cyan-400:hover {

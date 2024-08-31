@@ -36,7 +36,7 @@ npx tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch
 
 /* Classes */
 .semester{
-    @apply flex flex-col my-6 p-12 w-[95%] h-fit border-4 border-white rounded-2xl
+    @apply flex flex-col my-6 p-12 w-[95%] h-fit border-4 border-white rounded-2xl text-xl
 }
 
 .semester h1{
@@ -44,9 +44,9 @@ npx tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch
 }
 
 .semester b{
-    @apply text-xl font-extrabold
+    @apply underline font-extrabold
 }
 
-.semester a{
-    @apply text-xl
+.semester h1{
+    @apply no-underline
 }
