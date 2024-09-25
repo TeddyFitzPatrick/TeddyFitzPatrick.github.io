@@ -11,7 +11,7 @@ npx tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch
     font-family: "Montserrat", Geneva, Verdana, sans-serif;
 }
 
-/* Basic page and navigation */
+/* Universal page styling and navigation bar */
 .nav_bar{
     @apply fixed flex flex-row justify-around text-lg sm:text-2xl text-center items-center bg-white w-full h-[10vh]
 }
@@ -33,20 +33,33 @@ npx tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch
     scrollbar-width: none;  /* Firefox */
 }
 
+/* Projects */
+.project_panel{
+    @apply flex flex-col xl:flex-row p-6 w-[98%] sm:w-[95%] border-4 border-white rounded-2xl
+}
+
+.project_text{
+    @apply flex flex-col w-full xl:w-[calc(100%-500px)] 2xl:w-[calc(100%-1000px)]
+}
+
+.project_vids{
+    @apply flex flex-col lg:flex-row xl:flex-col 2xl:flex-row items-center justify-center w-fit
+}
+
 
 /* Classes */
 .semester{
-    @apply flex flex-col my-6 p-12 w-[95%] h-fit border-4 border-white rounded-2xl text-xl
+    @apply flex flex-col my-6 p-6 sm:p-12 w-[95%] h-fit border-4 border-white rounded-2xl text-xl
 }
 
 .semester h1{
-    @apply text-3xl font-bold underline
+    @apply text-4xl sm:text-5xl font-bold no-underline text-center
+}
+
+.semester header{
+    @apply text-cyan-300    
 }
 
 .semester b{
     @apply underline font-extrabold
-}
-
-.semester h1{
-    @apply no-underline
 }
