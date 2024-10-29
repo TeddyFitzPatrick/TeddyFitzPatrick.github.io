@@ -562,12 +562,24 @@ video {
   display: flex;
 }
 
+.grid {
+  display: grid;
+}
+
 .h-\[90vh\] {
   height: 90vh;
 }
 
 .h-full {
   height: 100%;
+}
+
+.h-\[80vh\] {
+  height: 80vh;
+}
+
+.h-auto {
+  height: auto;
 }
 
 .w-fit {
@@ -581,6 +593,18 @@ video {
 
 .w-screen {
   width: 100vw;
+}
+
+.w-\[\] {
+  width: ;
+}
+
+.w-\[60vh\] {
+  width: 60vh;
+}
+
+.w-\[80\%\] {
+  width: 80%;
 }
 
 .flex-row {
@@ -633,8 +657,22 @@ video {
   padding-bottom: 1.25rem;
 }
 
+.px-12 {
+  padding-left: 3rem;
+  padding-right: 3rem;
+}
+
+.px-64 {
+  padding-left: 16rem;
+  padding-right: 16rem;
+}
+
 .pb-12 {
   padding-bottom: 3rem;
+}
+
+.pl-\[5vw\] {
+  padding-left: 5vw;
 }
 
 .pt-2 {
@@ -653,6 +691,10 @@ video {
   padding-top: 15vh;
 }
 
+.pt-\[30vh\] {
+  padding-top: 30vh;
+}
+
 .pt-\[calc\(10vh\+3rem\)\] {
   padding-top: calc(10vh + 3rem);
 }
@@ -661,12 +703,12 @@ video {
   padding-top: calc(10vh + 4rem);
 }
 
-.pt-\[30vh\] {
-  padding-top: 30vh;
+.pb-20 {
+  padding-bottom: 5rem;
 }
 
-.pl-\[5vw\] {
-  padding-left: 5vw;
+.pb-32 {
+  padding-bottom: 8rem;
 }
 
 .text-center {
@@ -690,6 +732,11 @@ video {
 
 .text-xl {
   font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
   line-height: 1.75rem;
 }
 
@@ -940,6 +987,16 @@ npx tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch
   .md\:text-4xl {
     font-size: 2.25rem;
     line-height: 2.5rem;
+  }
+
+  .md\:text-2xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
+  .md\:text-3xl {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
   }
 }
 
