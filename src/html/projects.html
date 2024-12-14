@@ -10,10 +10,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital@0;1&display=swap" rel="stylesheet">
+    <script src="../js/mandelbrot.js"></script>
 </head>
 
 <body class="default_body pb-12">
-
     <nav class="nav_bar">
         <a class="nav_tab" href="../../index.html">home</a>
         <a class="nav_tab" href="projects.html">projects</a>
@@ -21,15 +21,49 @@
         <a class="nav_tab" href="music.html">music</a>
         <a class="nav_tab" href="thoughts.html">thoughts</a>
     </nav>
-
     <!-- projects -->
-    <div class="flex flex-col text-white text-3xl items-center w-full h-full pt-[calc(10vh+3rem)] space-y-12">
+    <div class="flex flex-col text-white text-3xl items-center w-full h-full pt-[calc(10vh+3rem)] space-y-12">        
+        <!-- Mandelbrot Generator -->
+        <div class="project_panel">
+            <!-- Title and Desc -->
+            <div class="flex flex-col w-full xl:w-[calc(100%-500px)] 2xl:w-[calc(100%-1000px)]">
+                <h1 class="font-bold text-5xl">
+                    <a>Mandelbrot Generator</a>
+                </h1>
+                <p class="text-xl sm:text-3xl p-4 sm:p-10">
+                    Uses JavaScript and the HTML canvas element for rendering; made without any libraries.
+                    Spent an afternoon reading the 
+                    <a class="text-cyan-400" target="_blank" href="https://en.wikipedia.org/wiki/Mandelbrot_set">
+                        Mandelbrot Wikipedia page
+                    </a>
+                    and canvas documentation. The Mandelbrot set you are looking at was generated in 
+                    <a class="text-green-500 underline" id="timeToGenerate"></a> 
+                    seconds after you opened this tab. <br>
+                    <b class="text-black underline">Re-rendering Options:</b><br>
+                    <!-- Generator Options -->
+                    <button class="text-black" id="invert">Invert Colors</button><br>
+                    <button class="text-black" id="z_0">Set z<sub>0</sub> = 1</button><br>
+                    <button class="text-black" id="addAxes">Add/Remove Coordinate Axes</button><br>
+                    <button class="text-black" id="gradient">Add/Remove Gradient</button>
+                </p>
+            </div>
+            <!-- Mandelbrot Set Rendering-->
+            <div class="project_vids">
+                <canvas id="canvas" width="500" height="500"></canvas>
+            </div>
+        </div>
+        
         <!-- Particle Life -->
         <div class="project_panel">
             <!-- Title and Desc -->
             <div class="flex flex-col w-full xl:w-[calc(100%-500px)] 2xl:w-[calc(100%-1000px)]">
-                <h1 class="font-bold text-5xl underline">
-                    <a class="hover:text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/particle_life/">Particle Life</a>
+                <h1 class="font-bold text-5xl ">
+                    <a class="hover:text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/particle_life/">
+                        Particle Life
+                        <b class="text-lg">
+                            (click me)
+                        </b>
+                    </a>
                 </h1>
                 <p class="text-xl sm:text-3xl p-4 sm:p-10">
                     Particle life simulation inspired by <a class="font-bold underline hover:text-cyan-400"
@@ -50,7 +84,7 @@
         <div class="project_panel">
             <!-- Title and Desc -->
             <div class="project_text">
-                <h1 class="font-bold text-5xl underline">
+                <h1 class="font-bold text-5xl ">
                     <a class="hover:text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/pyTetris">PyTetris</a>
                 </h1>
                 <p class="text-xl sm:text-3xl p-4 sm:p-10">
@@ -76,7 +110,7 @@
         <div class="project_panel">
             <!-- Title and Desc -->
             <div class="project_text">
-                <h1 class="font-bold text-5xl underline">
+                <h1 class="font-bold text-5xl ">
                     <a class="hover:text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/pyLife">PyLife</a>
                 </h1>
                 <p class="text-xl sm:text-3xl p-4 sm:p-10">
@@ -101,7 +135,7 @@
         <div class="project_panel">
             <!-- Title and Desc -->
             <div class="project_text">
-                <h1 class="font-bold text-5xl underline">
+                <h1 class="font-bold text-5xl ">
                     <a class="hover:text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/fitzpatrickdesign">FitzPatrick Design Inc.</a>
                 </h1>
                 <p class="text-xl sm:text-3xl p-4 sm:p-10">
@@ -117,9 +151,6 @@
                 <img class="m-2 rounded-xl" width="500" src="../images/designbyfitz_projects.png"/>
             </div>
         </div>
-
     </div>
-
 </body>
-
 </html>

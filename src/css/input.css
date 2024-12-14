@@ -4,6 +4,7 @@
 
 /* 
 npx tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch
+npx serve
  */
 
 /* I know its bad to use *, don't judge */

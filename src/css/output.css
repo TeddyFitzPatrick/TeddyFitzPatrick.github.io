@@ -554,6 +554,10 @@ video {
   --tw-contain-style:  ;
 }
 
+.relative {
+  position: relative;
+}
+
 .m-2 {
   margin: 0.5rem;
 }
@@ -566,20 +570,16 @@ video {
   display: grid;
 }
 
-.h-\[90vh\] {
-  height: 90vh;
+.h-auto {
+  height: auto;
 }
 
 .h-full {
   height: 100%;
 }
 
-.h-\[80vh\] {
-  height: 80vh;
-}
-
-.h-auto {
-  height: auto;
+.w-\[80\%\] {
+  width: 80%;
 }
 
 .w-fit {
@@ -589,22 +589,6 @@ video {
 
 .w-full {
   width: 100%;
-}
-
-.w-screen {
-  width: 100vw;
-}
-
-.w-\[\] {
-  width: ;
-}
-
-.w-\[60vh\] {
-  width: 60vh;
-}
-
-.w-\[80\%\] {
-  width: 80%;
 }
 
 .flex-row {
@@ -657,18 +641,12 @@ video {
   padding-bottom: 1.25rem;
 }
 
-.px-12 {
-  padding-left: 3rem;
-  padding-right: 3rem;
-}
-
-.px-64 {
-  padding-left: 16rem;
-  padding-right: 16rem;
-}
-
 .pb-12 {
   padding-bottom: 3rem;
+}
+
+.pb-32 {
+  padding-bottom: 8rem;
 }
 
 .pl-\[5vw\] {
@@ -703,21 +681,8 @@ video {
   padding-top: calc(10vh + 4rem);
 }
 
-.pb-20 {
-  padding-bottom: 5rem;
-}
-
-.pb-32 {
-  padding-bottom: 8rem;
-}
-
 .text-center {
   text-align: center;
-}
-
-.text-2xl {
-  font-size: 1.5rem;
-  line-height: 2rem;
 }
 
 .text-3xl {
@@ -730,13 +695,13 @@ video {
   line-height: 1;
 }
 
-.text-xl {
-  font-size: 1.25rem;
+.text-lg {
+  font-size: 1.125rem;
   line-height: 1.75rem;
 }
 
-.text-lg {
-  font-size: 1.125rem;
+.text-xl {
+  font-size: 1.25rem;
   line-height: 1.75rem;
 }
 
@@ -748,9 +713,19 @@ video {
   letter-spacing: 0.05em;
 }
 
+.text-black {
+  --tw-text-opacity: 1;
+  color: rgb(0 0 0 / var(--tw-text-opacity));
+}
+
 .text-cyan-400 {
   --tw-text-opacity: 1;
   color: rgb(34 211 238 / var(--tw-text-opacity));
+}
+
+.text-green-500 {
+  --tw-text-opacity: 1;
+  color: rgb(34 197 94 / var(--tw-text-opacity));
 }
 
 .text-white {
@@ -762,8 +737,14 @@ video {
   text-decoration-line: underline;
 }
 
+.invert {
+  --tw-invert: invert(100%);
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
 /* 
 npx tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch
+npx serve
  */
 
 /* I know its bad to use *, don't judge */
@@ -984,19 +965,14 @@ npx tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch
 }
 
 @media (min-width: 768px) {
-  .md\:text-4xl {
-    font-size: 2.25rem;
-    line-height: 2.5rem;
-  }
-
-  .md\:text-2xl {
-    font-size: 1.5rem;
-    line-height: 2rem;
-  }
-
   .md\:text-3xl {
     font-size: 1.875rem;
     line-height: 2.25rem;
+  }
+
+  .md\:text-4xl {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
   }
 }
 
