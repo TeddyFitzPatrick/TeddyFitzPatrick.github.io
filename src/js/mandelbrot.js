@@ -7,18 +7,24 @@ const blue = "rgb(0, 0, 255)";
 // Mandelbrot variables
 const divergence_iterations = 10_000;
 const divergence_threshold = 1_000_000;
-const brightness = 7;
-let z_0, ctx, inverted, renderAxes, gradient;
+let z_0, ctx, inverted, renderAxes, gradient, brightness, scale;
 
 // Canvas
 let canvas
 
-window.onload = function () {
-  // Default program args
+function applyDefaults(){
   z_0 = 0;
   inverted = false;
   renderAxes = false;
   gradient = true;
+  scale = 4
+  brightness = 5
+}
+
+
+window.onload = function () {
+  // Default program args
+  applyDefaults();
   // Add event listeners for option selection
   document.getElementById('invert').addEventListener('click', function(){
       inverted = !inverted;
@@ -28,13 +34,17 @@ window.onload = function () {
       z_0 = 1;
       draw();
   });
-  document.getElementById('addAxes').addEventListener('click', function(){
-      renderAxes = !renderAxes;
-      draw();
-  });
   document.getElementById('gradient').addEventListener('click', function(){
       gradient = !gradient;
       draw();
+  });
+  document.getElementById('zoom').addEventListener('click', function(){
+    scale *= 0.1;
+    draw();
+  });
+  document.getElementById('revert').addEventListener('click', function(){
+    applyDefaults();
+    draw();
   });
   // Initalize the canvas
   canvas = document.getElementById("canvas");
@@ -46,7 +56,7 @@ window.onload = function () {
   }
   // Mandelbrot generation and rendering
   draw();
-};
+}
 
 // Draw a circle with a radius of 1px at an (x, y) point
 function drawPoint(x, y, color) {
@@ -58,6 +68,10 @@ function drawPoint(x, y, color) {
 
 // Rendering the Mandelbrot set and outputting the generation time to an HTML page
 function draw() {
+  if (scale <= 0.1){
+    // Smaller scales require low brightness for clarity
+    brightness = 0.2;
+  }
   // Start time in milliseconds
   const startTime = performance.now();
   // Clear screen
@@ -69,8 +83,8 @@ function draw() {
     for (let y = 0; y <= canvas.height; y++) {
       // Check if the screen coordinates mapped onto the complex plane fit in the Mandelbrot set
       let inMandelbrot = isInMandelbrot(
-        4 * (x / canvas.width) - 2,
-        4 * (y / canvas.height) - 2
+        scale * (x / canvas.width) - (scale/2)-0.761574,
+        scale * (y / canvas.height) - (scale/2)-0.0847596       
       );
       // (-0.761574, -0.0847596)
       if (inMandelbrot == 0) {
@@ -97,21 +111,8 @@ function draw() {
   // Find the Mandelbrot generation execution time
   const endTime = performance.now();
   const timeToGenerate = (endTime - startTime) / 1000;
-  document.getElementById("timeToGenerate").innerHTML =
-    timeToGenerate.toFixed(3);
-  // Rendering coordinate axes
-  if (renderAxes) {
-    // Draw the axes
-    ctx.beginPath();
-    ctx.strokeStyle = "red";
-    // x-axis
-    ctx.moveTo(0, canvas.height / 2);
-    ctx.lineTo(canvas.width, canvas.height / 2);
-    // y-axis
-    ctx.moveTo(canvas.width / 2, 0);
-    ctx.lineTo(canvas.width / 2, canvas.height);
-    ctx.stroke();
-  }
+  document.getElementById("timeToGenerate").innerHTML = timeToGenerate.toFixed(3);
+
 }
 
 /*

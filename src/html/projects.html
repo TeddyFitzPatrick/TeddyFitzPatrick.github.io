@@ -31,20 +31,24 @@
                     <a>Mandelbrot Generator</a>
                 </h1>
                 <p class="text-xl sm:text-3xl p-4 sm:p-10">
+                    The Mandelbrot set you are looking at was rendered by
+                    your browser in
+                    <a class="text-green-500 underline" id="timeToGenerate"></a> 
+                    seconds. Try the re-rendering options below 
+                    (ZOOM is slower at larger scales).
                     Uses JavaScript and the HTML canvas element for rendering; made without any libraries.
                     Spent an afternoon reading the 
                     <a class="text-cyan-400" target="_blank" href="https://en.wikipedia.org/wiki/Mandelbrot_set">
                         Mandelbrot Wikipedia page
                     </a>
-                    and canvas documentation. The Mandelbrot set you are looking at was generated in 
-                    <a class="text-green-500 underline" id="timeToGenerate"></a> 
-                    seconds after you opened this tab. <br>
+                    and canvas documentation. <br>
                     <b class="text-black underline">Re-rendering Options:</b><br>
                     <!-- Generator Options -->
-                    <button class="text-black" id="invert">Invert Colors</button><br>
-                    <button class="text-black" id="z_0">Set z<sub>0</sub> = 1</button><br>
-                    <button class="text-black" id="addAxes">Add/Remove Coordinate Axes</button><br>
-                    <button class="text-black" id="gradient">Add/Remove Gradient</button>
+                    <button class="rendering_button" id="invert">Invert Colors</button><br>
+                    <button class="rendering_button" id="z_0">Set z<sub>0</sub> = 1</button><br>
+                    <button class="rendering_button" id="gradient">Add/Remove Gradient</button><br>
+                    <button class="rendering_button" id="zoom">ZOOM 10x</button><br>
+                    <button class="rendering_button" id="revert">Revert</button>
                 </p>
             </div>
             <!-- Mandelbrot Set Rendering-->
