@@ -38,15 +38,19 @@ npx serve
 
 /* Mandelbrot Buttons */
 .rendering_button{
-    @apply text-black text-3xl bg-white rounded-xl border-black border-4
+    @apply text-black text-2xl m-1 p-1 bg-white rounded-xl border-black border-4
 }
 
 .project_panel{
-    @apply flex flex-col xl:flex-row p-6 w-[98%] sm:w-[95%] border-4 border-white rounded-2xl
+    @apply flex flex-col xl:flex-row p-4 sm:p-6 w-[98%] sm:w-[95%] border-4 border-white rounded-2xl
 }
 
 .project_text{
     @apply flex flex-col w-full xl:w-[calc(100%-500px)] 2xl:w-[calc(100%-1000px)]
+}
+
+.project_description{
+    @apply text-xl sm:text-3xl p-2 px-0 sm:p-6
 }
 
 .project_vids{

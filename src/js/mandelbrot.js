@@ -5,26 +5,57 @@ const green = "rgb(0, 255, 0)";
 const blue = "rgb(0, 0, 255)";
 
 // Mandelbrot variables
-const divergence_iterations = 10_000;
 const divergence_threshold = 1_000_000;
-let z_0, ctx, inverted, renderAxes, gradient, brightness, scale;
+let divergence_iterations, z_0, ctx, inverted, renderAxes, gradient, brightness, scale;
 
 // Canvas
 let canvas
 
+// HTML Status Updates
+let timeToGenerateDisplay, scaleDisplay, brightnessDisplay, sharpnessDisplay
+
+/*
+Creates the canvas according to the size of the parent container (div).
+*/
+function generateCanvas(){
+  // Initialize canvas with default dimensions
+  container = document.getElementById("mandelbrotContainer");
+  canvas = document.getElementById("canvas");
+  // Canvas will be a square to avoid a distorted mandelbrot set rendering
+  canvas.width = Math.min(container.offsetWidth, container.offsetHeight);
+  canvas.height = canvas.width;
+  ctx = canvas.getContext("2d");
+}
+
+
 function applyDefaults(){
+  // Get the canvas
+  generateCanvas();
+  // Default mandelbrot args
+  divergence_iterations = 1_000;
   z_0 = 0;
   inverted = false;
   renderAxes = false;
   gradient = true;
   scale = 4
   brightness = 5
-}
 
+}
 
 window.onload = function () {
   // Default program args
   applyDefaults();
+  // HTML Status update
+  timeToGenerateDisplay = document.getElementById("timeToGenerate");
+  scaleDisplay = document.getElementById("scaleDisplay");
+  brightnessDisplay = document.getElementById("brightnessDisplay");
+  sharpnessDisplay = document.getElementById("sharpnessDisplay");
+  // Window resize event listener
+  window.addEventListener('resize', function() {
+    // Code to execute when the window is resized
+    applyDefaults();
+    draw();
+  });
   // Add event listeners for option selection
   document.getElementById('invert').addEventListener('click', function(){
       inverted = !inverted;
@@ -34,22 +65,19 @@ window.onload = function () {
       z_0 = 1;
       draw();
   });
-  document.getElementById('gradient').addEventListener('click', function(){
-      gradient = !gradient;
+  document.getElementById('sharpen').addEventListener('click', function(){
+      divergence_iterations += 1_000;
       draw();
   });
   document.getElementById('zoom').addEventListener('click', function(){
-    scale *= 0.1;
+    scale *= 0.5;
     draw();
   });
   document.getElementById('revert').addEventListener('click', function(){
     applyDefaults();
     draw();
   });
-  // Initalize the canvas
-  canvas = document.getElementById("canvas");
-  ctx = canvas.getContext("2d");
-  // This is necessary for some reason
+  // Handle canvas retrieval failure
   if (!canvas.getContext) {
     console.log("Couldn't get context");
     return;
@@ -62,7 +90,7 @@ window.onload = function () {
 function drawPoint(x, y, color) {
   ctx.beginPath();
   ctx.fillStyle = color;
-  ctx.arc(x, y, 1, 0, 2 * Math.PI, false);
+  ctx.fillRect(x, y, 1, 1)
   ctx.fill();
 }
 
@@ -70,14 +98,18 @@ function drawPoint(x, y, color) {
 function draw() {
   if (scale <= 0.1){
     // Smaller scales require low brightness for clarity
-    brightness = 0.2;
+    brightness = 1;
   }
+  // Display the scale, brightness, sharpness
+  // Up to 3 sig-figs in scientific notation (i.e. 123456 > 1.23 * 10^5)
+  scaleDisplay.innerHTML = Number(scale.toPrecision(3)).toExponential();
+  brightnessDisplay.innerHTML = brightness;
+  sharpnessDisplay.innerHTML = divergence_iterations;
   // Start time in milliseconds
   const startTime = performance.now();
   // Clear screen
   ctx.fillStyle = inverted ? "black" : "white";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
   // Check every pixel in the canvas for if its in the Mandelbrot set
   for (let x = 0; x <= canvas.width; x++) {
     for (let y = 0; y <= canvas.height; y++) {
@@ -111,8 +143,7 @@ function draw() {
   // Find the Mandelbrot generation execution time
   const endTime = performance.now();
   const timeToGenerate = (endTime - startTime) / 1000;
-  document.getElementById("timeToGenerate").innerHTML = timeToGenerate.toFixed(3);
-
+  timeToGenerateDisplay.innerHTML = timeToGenerate.toFixed(3);
 }
 
 /*
