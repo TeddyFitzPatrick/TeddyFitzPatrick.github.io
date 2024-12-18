@@ -22,7 +22,7 @@ function generateCanvas(){
   container = document.getElementById("mandelbrotContainer");
   canvas = document.getElementById("canvas");
   // Canvas will be a square to avoid a distorted mandelbrot set rendering
-  canvas.width = Math.min(container.offsetWidth, container.offsetHeight);
+  canvas.width = Math.min((container.offsetWidth > 900) ? container.offsetWidth/2 : container.offsetWidth-20, 700);
   canvas.height = canvas.width;
   ctx = canvas.getContext("2d");
 }
@@ -86,7 +86,7 @@ window.onload = function () {
   draw();
 }
 
-// Draw a circle with a radius of 1px at an (x, y) point
+// Drawing a pixel at an (x, y) coordinate of a specified rgb color
 function drawPoint(x, y, color) {
   ctx.beginPath();
   ctx.fillStyle = color;
@@ -94,15 +94,21 @@ function drawPoint(x, y, color) {
   ctx.fill();
 }
 
-// Rendering the Mandelbrot set and outputting the generation time to an HTML page
-function draw() {
-  if (scale <= 0.1){
+// Modulates brightness in proportion to scale for visibility at lower scales
+function adjustBrightness(){
+  if (scale <= 1){
     // Smaller scales require low brightness for clarity
     brightness = 1;
   }
+}
+
+// Rendering the Mandelbrot set and outputting the generation time to an HTML page
+function draw() {
+  // Adjust brightness according to scale
+  adjustBrightness();
   // Display the scale, brightness, sharpness
   // Up to 3 sig-figs in scientific notation (i.e. 123456 > 1.23 * 10^5)
-  scaleDisplay.innerHTML = Number(scale.toPrecision(3)).toExponential();
+  scaleDisplay.innerHTML = (scale >= 0.01) ? scale : Number(scale.toPrecision(3)).toExponential();
   brightnessDisplay.innerHTML = brightness;
   sharpnessDisplay.innerHTML = divergence_iterations;
   // Start time in milliseconds

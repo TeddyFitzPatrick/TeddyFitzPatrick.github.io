@@ -25,29 +25,30 @@
     <div class="flex flex-col text-white text-3xl items-center w-full h-full pt-[calc(10vh+3rem)] space-y-12"> 
 
         <!-- Mandelbrot Generator -->
-        <div class="project_panel">
+        <div id="mandelbrotContainer" class="project_panel">
 
             <!-- Title and Desc -->
-            <div class="project_text" id="mandelbrotContainer">
+            <div class="flex flex-col w-full xl:w-1/2">
                 <h1 class="font-bold text-5xl">
                     <a>Mandelbrot Generator</a>
                 </h1>
                 <div class="project_description">
-                    The Mandelbrot set you are looking at was rendered by
-                    your browser in
-                    <a class="text-green-500 underline" id="timeToGenerate"></a> 
-                    seconds. Try the re-rendering options below.
-                    Uses JavaScript and the HTML canvas element for rendering; made without any libraries.
-                    Spent an afternoon reading the 
-                    <a class="text-cyan-400" target="_blank" href="https://en.wikipedia.org/wiki/Mandelbrot_set">
-                        Mandelbrot Wikipedia page
-                    </a>
-                    and canvas documentation. <br>
+                    Made with vanilla JavaScript and the canvas HTML element (no libraries).
+                    The Mandelbrot set you are looking at was rendered by your browser in
+                    <a class="text-green-500 underline\" id="timeToGenerate"></a> seconds.
+                    The canvas' pixels are colored according to their proximity to the Mandelbrot set, with a gradient surrounding
+                    the edge of the set. Proximity to the Mandelbrot set is determined by converting each pixel's cartesian (x, y) coordinates
+                    into equivalent complex coordinates and then testing these complex coordinates for divergence according to the function f(z) = z<sup>2</sup> + c.
+                    The sharpness of the image is the number of divergence testing steps used at each coordinate,
+                    where smaller scales require higher sharpness for clarity. The default value, 1000, was arbitrarily selected for performance.
+                    Try adjusting the re-rendering options below, but keep in mind that larger screens and higher sharpness values
+                    will increase the time to render.<br>
+
                     <b class="text-black underline">Re-rendering Options:</b><br>
                     <!-- Generator Options -->
                     <div class="w-full flex flex-wrap">
                         <button class="rendering_button" id="invert">Invert Colors</button><br>
-                        <button class="rendering_button" id="z_0">Set z<sub>0</sub> = 1</button><br>
+                        <button class="rendering_button" id="z_0">View the z<sub>0</sub> = 1 set</button><br>
                         <button class="rendering_button" id="sharpen">Sharpen</button><br>
                         <button class="rendering_button" id="zoom">ZOOM 2x</button><br>
                         <button class="rendering_button" id="revert">Revert</button>
@@ -57,18 +58,18 @@
             <!-- Project Rendering -->
             <div class="flex flex-col items-center justify-center w-full xl:w-1/2 h-full">
                 <!-- Scale/Sharpness Tags -->
-                <div class="w-full flex flex-row justify-between text-black text-base md:text-3xl">
+                <div class="w-full flex flex-row justify-evenly text-black text-base md:text-xl">
                     <div class="flex flex-row">
                         <p>Scale:&nbsp;</p>
-                        <p id="scaleDisplay"> </p>
+                        <b id="scaleDisplay"> </b>
                     </div>
                     <div class="flex flex-row">
                         <p>Brightness:&nbsp;</p>
-                        <p id="brightnessDisplay"> </p>
+                        <b id="brightnessDisplay"> </b>
                     </div>
                     <div class="flex flex-row">
                         <p>Sharpness:&nbsp;</p>
-                        <p id="sharpnessDisplay"> </p>
+                        <b id="sharpnessDisplay"> </b>
                     </div>
                 </div>
                 <!-- Mandelbrot Set Rendering-->
