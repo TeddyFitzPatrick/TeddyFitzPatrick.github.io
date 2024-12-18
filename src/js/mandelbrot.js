@@ -1,5 +1,5 @@
-// Rendering constants
-const framerate = 60;
+// Rendering 
+let canvas, canvasX, canvasY
 const red = "rgb(255, 0, 0)";
 const green = "rgb(0, 255, 0)";
 const blue = "rgb(0, 0, 255)";
@@ -7,40 +7,14 @@ const blue = "rgb(0, 0, 255)";
 // Mandelbrot variables
 const divergence_threshold = 1_000_000;
 let divergence_iterations, z_0, ctx, inverted, renderAxes, gradient, brightness, scale;
-
-// Canvas
-let canvas
+// Zooming
+const magicX = -0.761574;
+const magicY = -0.0847596
+let xOffset = magicX;
+let yOffset = magicY;
 
 // HTML Status Updates
 let timeToGenerateDisplay, scaleDisplay, brightnessDisplay, sharpnessDisplay
-
-/*
-Creates the canvas according to the size of the parent container (div).
-*/
-function generateCanvas(){
-  // Initialize canvas with default dimensions
-  container = document.getElementById("mandelbrotContainer");
-  canvas = document.getElementById("canvas");
-  // Canvas will be a square to avoid a distorted mandelbrot set rendering
-  canvas.width = Math.min((container.offsetWidth > 900) ? container.offsetWidth/2 : container.offsetWidth-20, 700);
-  canvas.height = canvas.width;
-  ctx = canvas.getContext("2d");
-}
-
-
-function applyDefaults(){
-  // Get the canvas
-  generateCanvas();
-  // Default mandelbrot args
-  divergence_iterations = 1_000;
-  z_0 = 0;
-  inverted = false;
-  renderAxes = false;
-  gradient = true;
-  scale = 4
-  brightness = 5
-
-}
 
 window.onload = function () {
   // Default program args
@@ -50,9 +24,37 @@ window.onload = function () {
   scaleDisplay = document.getElementById("scaleDisplay");
   brightnessDisplay = document.getElementById("brightnessDisplay");
   sharpnessDisplay = document.getElementById("sharpnessDisplay");
-  // Window resize event listener
+  // Add event listeners
+  addEventListeners();
+  // Handle canvas retrieval failure
+  if (!canvas.getContext) {
+    console.log("Couldn't get context");
+    return;
+  }
+  // Mandelbrot rendering
+  draw();
+}
+
+// Adds event listeners to the buttons, canvas, and window resizing
+function addEventListeners(){
+  // Canvas click event - Apply zoom on canvas and re-render
+  canvas.addEventListener('click', function(){
+    let clickX = Number(event.clientX - canvasX);
+    let clickY = Number(event.clientY - canvasY);
+    xOffset = scale * (clickX / canvas.width) - (scale/2) + xOffset
+    yOffset = scale * (clickY / canvas.width) - (scale/2) + yOffset;
+    scale *= 0.2;
+    draw();
+  });
+  // Canvas right click event - Apply unzoom on canvas and re-render
+  canvas.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+    scale *= 5;
+    draw();
+  });
+
+  // Update the canvas and rendering on window resize
   window.addEventListener('resize', function() {
-    // Code to execute when the window is resized
     applyDefaults();
     draw();
   });
@@ -69,21 +71,42 @@ window.onload = function () {
       divergence_iterations += 1_000;
       draw();
   });
-  document.getElementById('zoom').addEventListener('click', function(){
-    scale *= 0.5;
-    draw();
-  });
-  document.getElementById('revert').addEventListener('click', function(){
+  document.getElementById('reset').addEventListener('click', function(){
     applyDefaults();
     draw();
   });
-  // Handle canvas retrieval failure
-  if (!canvas.getContext) {
-    console.log("Couldn't get context");
-    return;
-  }
-  // Mandelbrot generation and rendering
-  draw();
+}
+
+// Creates the canvas according to the size of the parent container (div).
+function generateCanvas(){
+  // Initialize canvas with default dimensions
+  container = document.getElementById("mandelbrotContainer");
+  canvas = document.getElementById("canvas");
+  // Canvas will be a square to avoid a distorted mandelbrot set rendering
+  canvas.width = Math.min((container.offsetWidth > 900) ? container.offsetWidth/2 : container.offsetWidth-20, 700);
+  canvas.height = canvas.width;
+  ctx = canvas.getContext("2d");
+  // Store the canvas' x and y positions
+  let rect = canvas.getBoundingClientRect(); 
+  canvasX = rect.left + window.scrollX; 
+  canvasY = rect.top + window.scrollY; 
+}
+
+
+function applyDefaults(){
+  // Get the canvas
+  generateCanvas();
+  // Default offset position
+  xOffset = magicX;
+  yOffset = magicY;
+  // Default mandelbrot args
+  divergence_iterations = 1_000;
+  z_0 = 0;
+  inverted = false;
+  renderAxes = false;
+  gradient = true;
+  scale = 4
+  brightness = 5
 }
 
 // Drawing a pixel at an (x, y) coordinate of a specified rgb color
@@ -96,10 +119,19 @@ function drawPoint(x, y, color) {
 
 // Modulates brightness in proportion to scale for visibility at lower scales
 function adjustBrightness(){
-  if (scale <= 1){
-    // Smaller scales require low brightness for clarity
+  // Smaller scales require low brightness for clarity
+  if (scale >= 1){
+    brightness = 6;
+  } else if (scale >= 0.1){
+    brightness = 3;
+  } else if (scale >= 0.001 ){
     brightness = 1;
+  } else if (scale > 0.0001){
+    brightness = 0.8;
+  } else if (scale <= 0.0001){
+    brightness = 0.2;
   }
+
 }
 
 // Rendering the Mandelbrot set and outputting the generation time to an HTML page
@@ -108,7 +140,7 @@ function draw() {
   adjustBrightness();
   // Display the scale, brightness, sharpness
   // Up to 3 sig-figs in scientific notation (i.e. 123456 > 1.23 * 10^5)
-  scaleDisplay.innerHTML = (scale >= 0.01) ? scale : Number(scale.toPrecision(3)).toExponential();
+  scaleDisplay.innerHTML = (scale >= 1) ? scale : Number(scale.toPrecision(3)).toExponential();
   brightnessDisplay.innerHTML = brightness;
   sharpnessDisplay.innerHTML = divergence_iterations;
   // Start time in milliseconds
@@ -121,8 +153,8 @@ function draw() {
     for (let y = 0; y <= canvas.height; y++) {
       // Check if the screen coordinates mapped onto the complex plane fit in the Mandelbrot set
       let inMandelbrot = isInMandelbrot(
-        scale * (x / canvas.width) - (scale/2)-0.761574,
-        scale * (y / canvas.height) - (scale/2)-0.0847596       
+        scale * (x / canvas.width) - (scale/2) + xOffset,
+        scale * (y / canvas.height) - (scale/2) + yOffset       
       );
       // (-0.761574, -0.0847596)
       if (inMandelbrot == 0) {

@@ -607,10 +607,6 @@ video {
   justify-content: center;
 }
 
-.justify-between {
-  justify-content: space-between;
-}
-
 .justify-evenly {
   justify-content: space-evenly;
 }
@@ -716,11 +712,6 @@ video {
 .text-xl {
   font-size: 1.25rem;
   line-height: 1.75rem;
-}
-
-.text-4xl {
-  font-size: 2.25rem;
-  line-height: 2.5rem;
 }
 
 .font-bold {
@@ -1032,15 +1023,5 @@ npx serve
 @media (min-width: 1280px) {
   .xl\:w-1\/2 {
     width: 50%;
-  }
-
-  .xl\:w-\[calc\(100\%-500px\)\] {
-    width: calc(100% - 500px);
-  }
-}
-
-@media (min-width: 1536px) {
-  .\32xl\:w-\[calc\(100\%-1000px\)\] {
-    width: calc(100% - 1000px);
   }
 }
