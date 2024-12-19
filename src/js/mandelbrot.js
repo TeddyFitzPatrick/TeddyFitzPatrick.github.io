@@ -38,7 +38,6 @@ window.onload = function () {
 function addEventListeners(){
   // Canvas click event - Apply zoom on canvas and re-render
   canvas.addEventListener('click', function(){
-    console.log("absolute");
     let clickX = Number(event.clientX - canvasX);
     let clickY = Number(event.clientY - canvasY);
     xOffset = scale * (clickX / canvas.width) - (scale/2) + xOffset
@@ -48,7 +47,6 @@ function addEventListeners(){
   });
   // Canvas right click event - Apply unzoom on canvas and re-render
   canvas.addEventListener('contextmenu', (event) => {
-    console.log("absolute");
     event.preventDefault();
     scale *= 5;
     draw();
@@ -56,28 +54,23 @@ function addEventListeners(){
 
   // Update the canvas and rendering on window resize
   window.addEventListener('resize', function() {
-    console.log("absolute");
     applyDefaults();
     draw();
   });
   // Add event listeners for option selection
   document.getElementById('invert').addEventListener('click', function(){
-      console.log("absolute");
       inverted = !inverted;
       draw();
   });
   document.getElementById('z_0').addEventListener('click', function(){
-      console.log("absolute");
       z_0 = 1;
       draw();
   });
   document.getElementById('sharpen').addEventListener('click', function(){
-      console.log("absolute");
       divergence_iterations += 1_000;
       draw();
   });
   document.getElementById('reset').addEventListener('click', function(){
-    console.log("absolute");
     applyDefaults();
     draw();
   });
