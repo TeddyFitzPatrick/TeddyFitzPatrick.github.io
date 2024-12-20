@@ -50,7 +50,8 @@
                     <!-- Generator Options -->
                     <div class="w-full flex flex-wrap">
                         <button class="rendering_button" id="invert">Invert Colors</button><br>
-                        <button class="rendering_button" id="z_0">View the z<sub>0</sub> = 1 set</button><br>
+                        <!-- Sub tag made the subscript overlap with the nav bar for some reason, so I used this span instead -->
+                        <button class="rendering_button" id="z_0">View the z<span style="vertical-align: sub;">0</span> = 1 set</button><br>
                         <button class="rendering_button" id="sharpen">Sharpen</button><br>
                         <button class="rendering_button" id="reset">Reset</button>
                     </div>
@@ -59,7 +60,7 @@
             <!-- Project Rendering -->
             <div class="flex flex-col items-center justify-center w-full xl:w-1/2 h-full">
                 <!-- Scale/Sharpness Tags -->
-                <div class="w-full flex flex-row justify-evenly text-black text-base md:text-xl">
+                <div class="w-full flex flex-row justify-evenly text-black text-sm md:text-xl">
                     <div class="flex flex-row">
                         <p>Scale:&nbsp;</p>
                         <b id="scaleDisplay"> </b>

@@ -554,6 +554,18 @@ video {
   display: none;
 }
 
+.z-\[-10\] {
+  z-index: -10;
+}
+
+.z-\[-1\] {
+  z-index: -1;
+}
+
+.z-\[0\] {
+  z-index: 0;
+}
+
 .m-2 {
   margin: 0.5rem;
 }
@@ -689,6 +701,11 @@ video {
   text-align: center;
 }
 
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
 .text-3xl {
   font-size: 1.875rem;
   line-height: 2.25rem;
@@ -714,9 +731,9 @@ video {
   line-height: 1.75rem;
 }
 
-.text-2xl {
-  font-size: 1.5rem;
-  line-height: 2rem;
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }
 
 .font-bold {

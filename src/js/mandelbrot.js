@@ -1,5 +1,6 @@
 // Rendering 
 let canvas, canvasX, canvasY
+const fullScreenSize = 1280;
 const red = "rgb(255, 0, 0)";
 const green = "rgb(0, 255, 0)";
 const blue = "rgb(0, 0, 255)";
@@ -7,10 +8,8 @@ const blue = "rgb(0, 0, 255)";
 // Mandelbrot variables
 let divergence_iterations, z_0, ctx, inverted, renderAxes, gradient, brightness, scale;
 // Zooming
-const magicX = -0.761574;
-const magicY = -0.0847596
-let xOffset = magicX;
-let yOffset = magicY;
+let xOffset = 0;
+let yOffset = 0;
 
 // HTML Status Updates
 let timeToGenerateDisplay, scaleDisplay, brightnessDisplay, sharpnessDisplay
@@ -39,9 +38,9 @@ function addEventListeners(){
   // Canvas click event - Apply zoom on canvas and re-render
   canvas.addEventListener('click', function(){
     let clickX = Number(event.clientX - canvasX);
-    let clickY = Number(event.clientY - canvasY);
-    xOffset = scale * (clickX / canvas.width) - (scale/2) + xOffset
-    yOffset = scale * (clickY / canvas.width) - (scale/2) + yOffset;
+    let clickY = Number(event.clientY - canvasY + window.scrollY);
+    xOffset = Number(scale * (clickX / canvas.width) - (scale/2) + xOffset);
+    yOffset = Number(scale * (clickY / canvas.height) - (scale/2) + yOffset);
     scale *= 0.2;
     draw();
   });
@@ -82,7 +81,7 @@ function generateCanvas(){
   container = document.getElementById("mandelbrotContainer");
   canvas = document.getElementById("canvas");
   // Canvas will be a square to avoid a distorted mandelbrot set rendering
-  canvas.width = Math.min((container.offsetWidth > 900) ? container.offsetWidth/2 : container.offsetWidth-20, 700);
+  canvas.width = (container.offsetWidth >= fullScreenSize) ? Math.min(container.offsetWidth/2, fullScreenSize/2 - 20) : container.offsetWidth-20;
   canvas.height = canvas.width;
   ctx = canvas.getContext("2d");
   // Store the canvas' x and y positions
@@ -96,8 +95,8 @@ function applyDefaults(){
   // Get the canvas
   generateCanvas();
   // Default offset position
-  xOffset = magicX;
-  yOffset = magicY;
+  xOffset = 0;
+  yOffset = 0;
   // Default mandelbrot args
   divergence_iterations = 1_000;
   z_0 = 0;
@@ -119,18 +118,7 @@ function drawPoint(x, y, color) {
 // Modulates brightness in proportion to scale for visibility at lower scales
 function adjustBrightness(){
   // Smaller scales require low brightness for clarity
-  if (scale >= 1){
-    brightness = 6;
-  } else if (scale >= 0.1){
-    brightness = 3;
-  } else if (scale >= 0.001 ){
-    brightness = 1;
-  } else if (scale > 0.0001){
-    brightness = 0.8;
-  } else if (scale <= 0.0001){
-    brightness = 0.2;
-  }
-
+  brightness = 0.4*(Math.log10(scale + 10**(-6)) + 6) + 0.1;
 }
 
 // Rendering the Mandelbrot set and outputting the generation time to an HTML page
@@ -140,7 +128,7 @@ function draw() {
   // Display the scale, brightness, sharpness
   // Up to 3 sig-figs in scientific notation (i.e. 123456 > 1.23 * 10^5)
   scaleDisplay.innerHTML = (scale >= 1) ? scale : Number(scale.toPrecision(3)).toExponential();
-  brightnessDisplay.innerHTML = brightness;
+  brightnessDisplay.innerHTML = Number(brightness.toPrecision(3)).toExponential();
   sharpnessDisplay.innerHTML = divergence_iterations;
   // Start time in milliseconds
   const startTime = performance.now();
