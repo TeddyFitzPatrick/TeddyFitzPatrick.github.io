@@ -39,7 +39,7 @@ npx serve
 
 /* Projects */
 .project_panel{
-    @apply flex flex-col xl:flex-row p-4 sm:p-6 w-[98%] sm:w-[95%] border-4 border-white rounded-2xl
+    @apply flex flex-col xl:flex-row p-4 sm:p-6 w-[98%] sm:w-[95%] border-y-8 shadow-2xl bg-slate-700 border-white rounded-2xl
 }
 
 .project_text{
@@ -51,7 +51,11 @@ npx serve
 }
 
 .project_vids{
-    @apply flex flex-col lg:flex-row xl:flex-col 2xl:flex-row items-center justify-center w-fit rounded-xl 
+    @apply flex flex-col lg:flex-row xl:flex-col 2xl:flex-row items-center justify-center w-fit h-fit rounded-xl 
+}
+
+.project_vid{
+    @apply m-2 rounded-xl w-full lg:w-1/2
 }
 
 .rendering_button{
@@ -62,17 +66,21 @@ npx serve
 
 /* Classes */
 .semester{
-    @apply flex flex-col my-6 p-6 sm:p-12 w-[95%] h-fit border-4 border-white rounded-2xl text-xl
+    @apply flex flex-col my-6 p-6 sm:p-12 w-[95%] h-fit border-y-8 border-white bg-slate-700 rounded-2xl text-xl md:text-3xl
 }
-
+/* Semester season and year  */
 .semester h1{
-    @apply text-4xl sm:text-5xl font-bold no-underline text-center
+    @apply text-4xl sm:text-5xl font-extrabold no-underline text-center
 }
-
+/* STEM / Not Stem Header */
 .semester header{
-    @apply text-cyan-300    
+    @apply text-cyan-400 font-bold    
 }
-
+/* Course Titles */
 .semester b{
-    @apply underline font-extrabold
+    @apply font-extrabold not-italic
+}
+/* Course Descriptions */
+.semester li{
+    @apply text-white italic 
 }
