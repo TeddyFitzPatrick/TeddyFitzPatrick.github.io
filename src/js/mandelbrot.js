@@ -6,7 +6,7 @@ const green = "rgb(0, 255, 0)";
 const blue = "rgb(0, 0, 255)";
 
 // Mandelbrot variables
-let divergence_iterations, z_0, ctx, inverted, renderAxes, gradient, brightness, scale;
+let divergenceIterations, z_0, ctx, inverted, renderAxes, gradient, brightness, scale;
 // Zooming
 let xOffset = 0;
 let yOffset = 0;
@@ -66,7 +66,7 @@ function addEventListeners(){
       draw();
   });
   document.getElementById('sharpen').addEventListener('click', function(){
-      divergence_iterations += 1_000;
+      divergenceIterations += 1_000;
       draw();
   });
   document.getElementById('reset').addEventListener('click', function(){
@@ -98,7 +98,7 @@ function applyDefaults(){
   xOffset = 0;
   yOffset = 0;
   // Default mandelbrot args
-  divergence_iterations = 1_000;
+  divergenceIterations = 1_000;
   z_0 = 0;
   inverted = false;
   renderAxes = false;
@@ -129,7 +129,7 @@ function draw() {
   // Up to 3 sig-figs in scientific notation (i.e. 123456 > 1.23 * 10^5)
   scaleDisplay.innerHTML = (scale >= 1) ? scale : Number(scale.toPrecision(3)).toExponential();
   brightnessDisplay.innerHTML = Number(brightness.toPrecision(3)).toExponential();
-  sharpnessDisplay.innerHTML = divergence_iterations;
+  sharpnessDisplay.innerHTML = divergenceIterations;
   // Start time in milliseconds
   const startTime = performance.now();
   // Clear screen
@@ -181,7 +181,7 @@ function isInMandelbrot(a, b) {
   let z_a = z_0;
   let z_b = 0;
   // Check for divergence
-  for (let iteration = 1; iteration <= divergence_iterations; iteration++) {
+  for (let iteration = 1; iteration <= divergenceIterations; iteration++) {
     // Keep running the mandelbrot function for an arbitrary num of iterations to guesstimate divergence of a coordinate pair
     output = f(z_a, z_b, a, b);
     z_a = output[0];

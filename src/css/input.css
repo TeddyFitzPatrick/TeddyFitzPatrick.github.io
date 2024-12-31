@@ -12,6 +12,9 @@ npx serve
     font-family: "Montserrat", Geneva, Verdana, sans-serif;
 }
 
+/* Front Page */
+
+
 /* Universal page styling and navigation bar */
 .nav_bar{
     @apply fixed flex flex-row justify-around text-lg sm:text-2xl text-center items-center bg-white w-full h-[10vh]
@@ -48,7 +51,7 @@ npx serve
 }
 
 .project_vids{
-    @apply flex flex-col lg:flex-row xl:flex-col 2xl:flex-row items-center justify-center w-fit
+    @apply flex flex-col lg:flex-row xl:flex-col 2xl:flex-row items-center justify-center w-fit rounded-xl 
 }
 
 .rendering_button{

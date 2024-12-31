@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital@0;1&display=swap" rel="stylesheet">
+    <script src="src/js/frontPage.js"></script>
 </head>
 
 <body class="default_body">
@@ -20,15 +21,38 @@
         <a class="nav_tab" href="src/html/music.html">music</a>
         <a class="nav_tab" href="src/html/thoughts.html">thoughts</a>
     </nav>
-    <!-- title -->
-    <div class="w-full flex flex-col items-center pt-[30vh] text-center">
-        <h1 class="w-fit text-2xl md:text-4xl lg:text-6xl">Hello! This is my website.</h1>
-        <p class="w-fit text-xl sm:text-2xl p-4">Feel free to email me if you have any questions about anything:
-            <a class="hover:text-cyan-400 font-bold" href="mailto:tfitz200@gmail.com">tfitz200@gmail.com (click me)</a>
-        </p>
-    </div>
-    <div class="w-full text-3xl text-center pt-20">
-        Check out this page's <a class="text-cyan-400" href="https://github.com/TeddyFitzPatrick/TeddyFitzPatrick.github.io/" target="_blank">GitHub</a>
+
+    <!-- Title -->
+    <p id="title" class="absolute top-1/2 text-center text-4xl md:text-8xl lg:text-9xl text-cyan-500 opacity-100 z-10 
+    font-bold shadow-2xl border-y-8 bg-slate-800 border-white rounded-xl p-4"></p>
+
+    <a target="_blank" href="src/html/particleLife.html" class="absolute top-2/3 z-10 text-xl md:text-5xl 
+    hover:scale-110 font-bold bg-white border-slate-800 border-8 text-cyan-500 p-2 rounded-xl">
+        <span class="text-cyan-700 font-bold italic">* NEW * </span> { Particle Life Demo }
+    </a>
+
+    <!-- Media -->
+    <div class="grid grid-cols-2 mt-[10vh] w-[100vw] h-[90vh]">
+        <!-- top -->
+        <div class="flex w-[100vw] md:w-[50vw] h-[45vh]">
+            <video class="w-full h-full object-fill opacity-50" autoplay loop muted width="">
+                <source src="src/images/particle_life_main.mp4" />
+            </video>
+        </div>
+        <div class="flex w-0 md:w-[50vw] h-[45vh]">
+            <video class="w-full h-full object-fill opacity-50" autoplay loop muted width="">
+                <source src="src/images/tetris_main.mp4" />
+            </video>
+        </div>
+        <!-- bottom -->
+        <div class="flex w-[100vw] md:w-[50vw] h-[45vh]">
+            <video class="w-full h-full object-fill opacity-50" autoplay loop muted width="">
+                <source src="src/images/conway_main.mp4" />
+            </video>
+        </div>
+        <div class="flex w-0 md:w-[50vw] h-[45vh] opacity-80">
+            <img class="w-full h-full object-fill" src="src/images/mandelbrot_main.png">
+        </div>
     </div>
 
 </body>
