@@ -3,56 +3,78 @@ import { Particle } from './particle.js';
 export let canvas, ctx;
 
 // Particle life variables
-export const particleCount = 1_000;
-export const particleSize = 5;
-export const COLORS = ["red", "orange", "yellow", "green", "blue", "purple", "pink", "white"];
+export const COLORS = ["red", "orange", "yellow", "green", "blue", "purple"];
+export let particleCount = 1_000;
+export let particleSize = 4;
 export let forceMatrix 
 
-export const frictionCoefficient = 0.1;
-export const minRadius = 40;
-export const maxRadius = 100;
+export let frictionCoefficient = 0.1;
+export let minRadius = 40;
+export let maxRadius = 101;
 export let particles = []
 
+
+// Generates a specified number of particles, each with their own random position and color
+function generateParticles(particlesToGenerate){
+    for (let i = 1; i <= particlesToGenerate; i++){
+        particles.push(new Particle(
+            getRandomPosition(),
+            [0, 0],
+            COLORS[Math.floor(Math.random() * COLORS.length)]
+        ));
+    }
+}
+
+// Generate a matrix of attraction and repulsion values between different particle colors with random values
 function generateForceMatrix(){
-    const forceValues = [-1, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1];
     forceMatrix = {};
     COLORS.forEach(color => {
         // Each color gets its own force mapping to every other color
         forceMatrix[color] = {};
         COLORS.forEach(otherColor => {
             // Get random attraction/repulsion force coefficient between colors
-            forceMatrix[color][otherColor] = forceValues[Math.floor(Math.random() * forceValues.length)];
+            forceMatrix[color][otherColor] = Math.random() * 2 - 1;
         });
     });
 }
 
-function updateParticles(){
-    for (let particle of particles){
-        particle.update();
-    }
-}
-
+// Clear the screen, apply particle logic, and then render the particles
 function render(){
     // Clear screen
     ctx.fillStyle = "black"
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    // Logic
-    updateParticles();
+    // Apply particle forces, updating positions and velocities
+    for (let particle of particles){
+        particle.update();
+    }
     // Render particle(s)
     for (let particle of particles){
         particle.render();
     }
 }
 
-window.onload = function(){
-    // Get the canvas and set its size the body
-    canvas = document.getElementById("canvas");
-    ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    // Add Event Listeners
-
-    // Apply a force after clicking
+// Add event listeners for keyboard presses, mouse button clicks, and slider inputs
+function addListeners(){
+    // document.onkeypress = function (e) {
+    //     e = e || window.event;
+    //     // use e.keyCode
+    //     generateForceMatrix();
+    // };
+    // document.onkeypress = function (f) {
+    //     f = f || window.event;
+    //     // use f.keyCode
+    //     for (let colorOne of COLORS){
+    //         for (let colorTwo of COLORS){
+    //             forceMatrix[colorOne][colorTwo] *= -1;
+    //         }
+    //     }
+    // };
+    // Resize the canvas on window resize
+    window.addEventListener('resize', function() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+    // Apply a force on click
     canvas.addEventListener('click', function(){
         let deltaX, deltaY, angle, xDir, yDir
         let forceMagnitude = 40;
@@ -66,35 +88,67 @@ window.onload = function(){
             particle.velocity[1] += forceMagnitude * yDir;
         }
     });
+    // Slider inputs
+    const SLIDERS = ["minRadius", "maxRadius", "particleSize", "particleCount", "frictionCoefficient"];
 
-    window.onscroll = function(e){
-        console.log(performance.now());
-    }
+    SLIDERS.forEach((sliderName) => {
+        let slider = document.getElementById(sliderName + "Slider");
+        let display = document.getElementById(sliderName + "Display");
+        slider.addEventListener("input", (event) => {
+            display.textContent = event.target.value;
+            switch (sliderName){
+                case "minRadius":
+                    minRadius = Number(event.target.value);
+                    break;
+                case "maxRadius":
+                    maxRadius = Number(event.target.value);
+                    break;
+                case "particleSize":
+                    particleSize = Number(event.target.value);
+                    break;
+                case "particleCount":
+                    // Add remove particles
+                    let newParticleCount = Number(event.target.value);
+                    if (newParticleCount >= particleCount){
+                        generateParticles(newParticleCount - particleCount);
+                    } else{
+                        for (let i = 0; i < particleCount - newParticleCount; i++){
+                            particles.pop();
+                        }
+                    }
+                    particleCount = newParticleCount;
+                    break;
+                case "frictionCoefficient":
+                    frictionCoefficient = Number(event.target.value);
+                    break;
+            }
+        });
+    });
+    // Apply Defaults button
+    let reloadButton = document.getElementById("applyDefaults");
+    reloadButton.addEventListener("click", () => {
+        window.location.reload();
+    });
+}
+
+
+window.onload = function(){
+    // Get the canvas and set its size the body
+    canvas = document.getElementById("canvas");
+    ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Event Listeners
+    addListeners();
 
     // Generate particles
-    for (let i = 1; i <= particleCount; i++){
-        particles.push(new Particle(
-            getRandomPosition(),
-            [0, 0],
-            COLORS[Math.floor(Math.random() * COLORS.length)]
-        ));
-    }
-
-    // DEBUG
-    // particles.push(
-    //     new Particle([480, 500], [0, 0], "red")
-    // );
-    // particles.push(
-    //     new Particle([520, 500], [0, 0], "blue")
-    // );
+    generateParticles(particleCount);
 
     // Generate a force mapping between colors (attraction/repulsion values between different colored particles)
     generateForceMatrix();
 
-    console.log(forceMatrix);
-
     // Start the particle life rendering
-    // render();
     setInterval(render, 17);
 };
 

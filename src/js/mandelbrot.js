@@ -1,12 +1,10 @@
 // Rendering 
 let canvas, canvasX, canvasY
 const fullScreenSize = 1280;
-const red = "rgb(255, 0, 0)";
-const green = "rgb(0, 255, 0)";
-const blue = "rgb(0, 0, 255)";
 
 // Mandelbrot variables
-let divergenceIterations, z_0, ctx, inverted, renderAxes, gradient, brightness, scale;
+let divergenceIterations, zInitial, ctx, inverted, renderAxes, gradient, brightness, scale;
+
 // Zooming
 let xOffset = 0;
 let yOffset = 0;
@@ -61,8 +59,8 @@ function addEventListeners(){
       inverted = !inverted;
       draw();
   });
-  document.getElementById('z_0').addEventListener('click', function(){
-      z_0 = 1;
+  document.getElementById('zInitial').addEventListener('click', function(){
+      zInitial = 1;
       draw();
   });
   document.getElementById('sharpen').addEventListener('click', function(){
@@ -99,7 +97,7 @@ function applyDefaults(){
   yOffset = 0;
   // Default mandelbrot args
   divergenceIterations = 1_000;
-  z_0 = 0;
+  zInitial = 0;
   inverted = false;
   renderAxes = false;
   gradient = true;
@@ -178,17 +176,17 @@ When f(z) surpasses an arbitary divergence limit, the point will be colored with
 */
 function isInMandelbrot(a, b) {
   let output;
-  let z_a = z_0;
-  let z_b = 0;
+  let zReal = zInitial;
+  let zComplex = 0;
   // Check for divergence
   for (let iteration = 1; iteration <= divergenceIterations; iteration++) {
     // Keep running the mandelbrot function for an arbitrary num of iterations to guesstimate divergence of a coordinate pair
-    output = f(z_a, z_b, a, b);
-    z_a = output[0];
-    z_b = output[1];
+    output = f(zReal, zComplex, a, b);
+    zReal = output[0];
+    zComplex = output[1];
     // If the real or imaginary value of the coordinate pair exceeds a certain threshold, it is divergent
     // By definition, divergent coordinate pairs are not in the mandelbrot set
-    if (Math.abs(z_a) > 3 || Math.abs(z_b) > 3) {
+    if (Math.abs(zReal) > 3 || Math.abs(zComplex) > 3) {
       return iteration;
     }
   }
@@ -201,10 +199,10 @@ Defined as f(z) = z^2 + c, where z and c are complex numbers
 Recursive function, where f(z) represents the next iteration of z
 
 Expanded form:
-f(z) = (z_a + z_b * i)^2 + (a + bi)
+f(z) = (zReal + zComplex * i)^2 + (a + bi)
 =>
-f(z) = z_a^2 + a - z_b^2, 2(z_a)(z_b) + b
+f(z) = zReal^2 + a - zComplex^2, 2(zReal)(zComplex) + b
 */
-function f(z_a, z_b, a, b) {
-  return [z_a ** 2 + a - z_b ** 2, 2 * z_a * z_b + b];
+function f(zReal, zComplex, a, b) {
+  return [zReal ** 2 + a - zComplex ** 2, 2 * zReal * zComplex + b];
 }
