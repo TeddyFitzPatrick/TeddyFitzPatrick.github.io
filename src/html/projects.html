@@ -29,25 +29,24 @@
             <!-- Title and Desc -->
             <div class="flex flex-col w-full xl:w-2/3">
                 <h1 class="font-bold text-5xl">
-                    <a>Mandelbrot Generator</a>
+                    <a>Mandelbrot Rendering</a>
                 </h1>
-                <div class="project_description">
-                    Made with vanilla JavaScript and the canvas HTML element (no libraries).
-                    The Mandelbrot set you are looking at was rendered by your browser in
+                <div class="project_description flex-col">
+                    Made with JavaScript and the HTML canvas element. Rendered in
                     <a class="text-cyan-400 font-bold" id="timeToGenerate"></a> seconds.
-                    The canvas' pixels are colored according to their proximity to the Mandelbrot set, with a gradient surrounding
-                    the edge of the set. Proximity to the Mandelbrot set is determined by converting each pixel's cartesian (x, y) coordinates
-                    into equivalent complex coordinates and then testing these complex coordinates for divergence according to the function f(z) = z<sup>2</sup> + c.
-                    The sharpness of the image is the number of divergence testing steps used at each coordinate,
-                    where smaller scales require higher sharpness for clarity. The default value, 1000, was arbitrarily selected for performance.
-                    Try adjusting the re-rendering options below, but keep in mind that larger screens and higher sharpness values
-                    will decrease performance.<br>
-                    <i class="text-lg">*Left Click to ZOOM and Right Click to UNZOOM</i>
+                    The brightness at each point corresponds to the rate of divergence of complex coordinates according to the function
+                    <b>f(z) = z<sup>2</sup> + c.</b>
+
+                    <div class="flex flex-col">
+                        <i class="text-lg">*Left Click to ZOOM and Right Click to UNZOOM</i>
+                        <i class="text-lg">*Select "Sharpen" to make the rendering more accurate at smaller scales</i>
+                    </div>
+
                     <br>
                 </div>
                 <!-- Re-rendering options -->
                 <div class="flex flex-col p-2 my-2 bg-white rounded-xl text-left w-fit ">
-                    <p class="font-bold text-cyan-400 ">Re-rendering Options:</p>
+                    <p class="font-bold text-black text-bold"> Rendering Tools:</p>
                     <div class="w-full flex flex-wrap">
                         <button class="rendering_button" id="invert">Invert Colors</button><br>
                         <!-- Sub tag made the subscript overlap with the nav bar for some reason, so I used this span instead -->
@@ -58,7 +57,7 @@
                 </div>
             </div>
             <!-- Project Rendering -->
-            <div class="flex flex-col items-center justify-center w-full xl:w-1/3 h-full">
+            <div class="flex flex-col items-center justify-center w-full xl:w-1/2 h-full">
                 <div class="w-fit bg-white shadow-2xl p-2 md:p-4 rounded-xl">
                     <!-- Scale/Sharpness Tags -->
                     <div class="w-full flex flex-row justify-evenly text-black text-sm md:text-xl">

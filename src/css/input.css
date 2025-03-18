@@ -59,7 +59,7 @@ npx serve
 }
 
 .rendering_button{
-    @apply text-black text-2xl m-1 p-1 bg-white rounded-xl border-black border-4
+    @apply text-black hover:scale-105 text-2xl m-1 p-1 bg-white rounded-xl border-black border-4
 }
 
 
