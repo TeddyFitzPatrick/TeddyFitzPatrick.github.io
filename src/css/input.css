@@ -15,6 +15,11 @@ npx serve
 /* Front Page */
 
 
+/* Chess */
+.chess_button{
+    @apply p-4 rounded-2xl shadow-2xl bg-black text-white hover:scale-110
+}
+
 /* Universal page styling and navigation bar */
 .nav_bar{
     @apply fixed flex flex-row justify-around text-lg sm:text-2xl text-center items-center bg-white w-full h-[10vh]
