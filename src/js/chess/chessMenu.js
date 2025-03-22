@@ -70,6 +70,7 @@ const botGameButton = document.getElementById("botGame");
 
 // Online
 let isHosting = false;
+let hostColor;
 
 window.onload = function (){
     // Add event listeners
@@ -87,9 +88,17 @@ window.onload = function (){
         const hostRoom = document.getElementById("hostRoom");
         const roomCodeDisplay = document.getElementById("roomCodeDisplay");
         // Color select
-        let color;
         const selectWhite = document.getElementById("selectWhite");
         const selectBlack = document.getElementById("selectBlack");
+        // DEBUG
+        window.addEventListener("keydown", function (event){
+            if (event.key === "ArrowLeft"){
+                console.log("LL");
+                DELETE(DB_URL);
+            } else if (event.key === "ArrowRight"){
+                console.log("RR");
+            }
+        });
         // Join room code
         enterRoomCodeSubmit.addEventListener("click", function(){
             if (isHosting) {
@@ -102,27 +111,28 @@ window.onload = function (){
         selectWhite.addEventListener("click", function(){
             selectWhite.classList.add("border-cyan-500", "border-8");
             selectBlack.classList.remove("border-cyan-500", "border-8");
-            color = 1;
+            hostColor = 1;
         });
         selectBlack.addEventListener("click", function (){
             selectBlack.classList.add("border-cyan-500", "border-8");
             selectWhite.classList.remove("border-cyan-500", "border-8");
-            color = -1;
+            hostColor = -1;
         });
         // Host a room
-        hostRoom.addEventListener("click", function(){
+        hostRoom.addEventListener("click", async function(){
+            // DEBUG
+
             isHosting = true;
             // Generate a random 4-letter room code
-            const roomCode = generateRoomCode();
+            const hostRoomCode = generateRoomCode();
             // Display the code 
-            roomCodeDisplay.textContent = roomCode;
-            console.log("Room Code: " + roomCode);
+            roomCodeDisplay.textContent = hostRoomCode;
             // If a color has not been picked, then choose one randomly
-            if (color == null) color = Math.random() >= 0.5 ? 1 : -1;
+            hostColor = (hostColor !== undefined) ? hostColor :  Math.random() >= 0.5 ? 1 : -1;
             // Put the room on firebase
-            establishRoom(roomCode, color);
+            await POST(`${DB_URL}/rooms/${hostRoomCode}`, {"joined": 0, "hostColor": hostColor})
             // Wait for someone to join and then start
-            waitForOtherPlayer(roomCode, color);
+            waitForOtherPlayer(hostRoomCode, hostColor);
         });
         
     });
@@ -133,106 +143,36 @@ window.onload = function (){
     
 }
 
-async function establishRoom(roomCode, color){
-    // Room Establishment Info
-    const roomPacket = {
-        joined: 0,
-        hostColor: color
-    };
-    fetch(`https://struglauk-default-rtdb.firebaseio.com/rooms/${roomCode}.json`, {
-    method: 'POST', 
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(roomPacket)  
-    })
-    .then(response => response.json())  
-    .then(data => {
-        //Success
-        })
-    .catch(error => {
-        console.error('Error sending data:', error);
-    });
-}
-
-async function waitForOtherPlayer(roomCode, color) {
-    // Poll every two seconds to check if the "joined" variable has been set to 1
-    // Once a player has joined, start the game by navigating to the online game's HTML page
-    const waitInterval = setInterval(async () => {
-        const codeResponse = await fetch(`${DB_URL}/rooms/${roomCode}.json`);
-        const data = await codeResponse.json();
-        const roomId = getRoomId(data);
-        if (data !== null){
-            const joinedResponse = await fetch(`${DB_URL}/rooms/${roomCode}/${roomId}/joined.json`);
-            const joined = await joinedResponse.json();
-            if (joined == 0){
-                console.log("Waiting on player to join...");
-            } else{
-                // Player has joined, stop polling, and start the game
-                clearInterval(waitInterval);
-                console.log("Opponent joined, game starting.");
-                windowContent.innerHTML = onlineGameHTML;
-                main(roomCode, roomId, color);
-                return;
-            }
-        }
-    }, 2000); 
-}
-
-async function joinRoom(roomCode) {
-    const response = await fetch(`${DB_URL}/rooms/${roomCode}.json`);
-    if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+async function waitForOtherPlayer(hostRoomCode, hostColor) {
+    const hostRoomId = await getRoomId(hostRoomCode);
+    // Wait for the opponent to update the joined status to start the game
+    while (true){
+        const check = await GET(`${DB_URL}/rooms/${hostRoomCode}/${hostRoomId}/joined`);
+        // Player has joined
+        if (check == 1) break;
+        // Wait 1 second to check again if the opponent joined
+        await new Promise(resolve => setTimeout(resolve, 1000));
     }
-    const data = await response.json();
-    const roomId = getRoomId(data);
+    // Player has joined, start the game
+    windowContent.innerHTML = onlineGameHTML;
+    main(hostRoomCode, hostRoomId, hostColor);
+}
+
+async function joinRoom(joinRoomCode) {
+    const joinRoomId = await getRoomId(joinRoomCode);
     // Update the joined field to signal to the host the game has started
-    fetch(`https://struglauk-default-rtdb.firebaseio.com/rooms/${roomCode}/${roomId}.json`, {
-        method: 'PATCH', 
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({"joined": 1})  
-    })
-    .then(response => response.json())  
-    .then(data => {
-        // Success
-    })
-    .catch(error => {
-        console.error('Error sending data:', error);
-    });
+    const data = await PATCH(`${DB_URL}/rooms/${joinRoomCode}/${joinRoomId}`, {"joined": 1});
     // Host chooses their color first
-    let hostColor = data[roomId]["hostColor"];
-    let color = -1 * hostColor;
+    const hostColor = await GET(`${DB_URL}/rooms/${joinRoomCode}/${joinRoomId}/hostColor`)
+    const joinColor = -hostColor;
     // Start the game
     windowContent.innerHTML = onlineGameHTML;
-    main(roomCode, roomId, color);
+    main(joinRoomCode, joinRoomId, joinColor);
 }
 
-async function clearDatabase(){
-    fetch(`${DB_URL}/.json`, {
-        method: 'DELETE', 
-        headers: {
-          'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {// Poll every 2 seconds
-        if (!response.ok) {
-        console.error('Failed to delete data, status:', response.status);
-        }
-    })
-    .catch(error => {
-        console.error('Error deleting data:', error);
-    });
-}
-
-function getRoomId(data){
-    let roomId;
-    for (let id of Object.keys(data)){
-        roomId = id;
-    }
-    return roomId;
-    
+async function getRoomId(roomCode){
+    const roomData = await GET(`${DB_URL}/rooms/${roomCode}`);
+    return Object.keys(roomData)[0];
 }
 
 function generateRoomCode(color){
@@ -243,3 +183,63 @@ function generateRoomCode(color){
     }
     return roomCode;
 }
+
+/* Firebase GET Operation */
+export async function GET(URL){
+    const response = await fetch(`${URL}/.json`);
+    if (!response.ok){
+        console.log(`Failed to GET data at ${URL}`);
+    }
+    return await response.json();
+}
+/* Firebase POST Operation */
+export async function POST(URL, data){
+    return fetch(`${URL}/.json`, {
+        method: 'POST', 
+        headers: {
+            'Content-Type': 'application/json',  
+        },
+        body: JSON.stringify(data),  
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Data successfully posted
+    })
+    .catch(error => {
+        // Error sending data
+        console.log("POST error: " + error);
+    });
+}
+/* Firebase DELETE Operation */
+export async function DELETE(URL) {
+    return fetch(`${URL}/.json`, {
+        method: 'DELETE', 
+    })
+    .then(response => {
+        // Data successfully posted
+
+    })
+    .catch(error => {
+        // Error deleting data
+        console.log(error);
+    });
+}
+/* Firebase PATCH Operation */
+export async function PATCH(URL, data) {
+    return fetch(`${URL}/.json`, {
+        method: 'PATCH',  
+        headers: {
+            'Content-Type': 'application/json',  
+        },
+        body: JSON.stringify(data),  
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Data successfully patched
+    })
+    .catch(error => {
+        // Error updating data
+        console.log(error);
+    });
+}
+

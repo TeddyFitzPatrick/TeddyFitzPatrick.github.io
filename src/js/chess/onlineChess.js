@@ -1,6 +1,5 @@
-import { DB_URL } from "./chessMenu.js";
+import { DB_URL, PATCH, POST, GET, DELETE } from "./chessMenu.js";
 /* Image assets for pieces */
-// Pawns
 const pieceImageMap = new Map([
     [0,  loadImage("../assets/whitePawn.png")],
     [1,  loadImage("../assets/whitePawn.png")],
@@ -94,7 +93,7 @@ const options = document.getElementById("options");
 const boardDisplay = document.getElementById("boardDisplay"); 
 
 // Firebase
-const POLL_SPEED = 1000;
+const POLL_SPEED = 200;
 let roomId, roomCode;
 
 export default function main(rCode, rId, color) {
@@ -114,14 +113,6 @@ export default function main(rCode, rId, color) {
     });
     window.addEventListener("resize", resizeCanvas());
     window.addEventListener("click", (event) => {handleClick(event)});
-    window.addEventListener("keydown", function (event){
-        if (event.key === "ArrowLeft"){
-            console.log("YIPPEE");
-            clearDatabase();
-        } else if (event.key === "ArrowRight"){
-            clearDatabase();
-        }
-    });
     // Start game
     startGame(color);
 }
@@ -140,100 +131,17 @@ async function startGame(color){
     render();
 }
 
-async function clearDatabase(){
-    fetch(`${DB_URL}/.json`, {
-        method: 'DELETE', 
-        headers: {
-          'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-        console.error('Failed to delete move, status:', response.status);
-        }
-    })
-    .catch(error => {
-        console.error('Error deleting move:', error);
-    });
-}
-
-async function clearMove(){
-    // Delete the opponent's from component of their move
-    fetch(`${DB_URL}/rooms/${roomCode}/${roomId}/${-playerColor}from.json`, {
-        method: "DELETE"
-    })
-    .then(response => response.json())
-    .then(data => console.log("Field deleted successfully:", data))
-    .catch(error => console.error("Error deleting field:", error));
-    // Delete the opponent's to component of their move
-    fetch(`${DB_URL}/rooms/${roomCode}/${roomId}/${-playerColor}to.json`, {
-        method: "DELETE"
-    })
-    .then(response => response.json())
-    .then(data => console.log("Field deleted successfully:", data))
-    .catch(error => console.error("Error deleting field:", error));
-}
-
-async function readMove(){
-    let validMoveReceived = false;
-    await fetch(`${DB_URL}/rooms/${roomCode}/${roomId}.json`)
-    .then(response => response.json())
-    .then(data => {
-        // Check that the database contains a single move
-        if (data != null && Object.keys(data).length == 4 && `${-playerColor}from` in data){
-            // Mark that a move was read to stop polling
-            validMoveReceived = true;
-            // Get the move
-            const fromRank = data[`${-playerColor}from`][0]; 
-            const fromFile = data[`${-playerColor}from`][1]; 
-            const toRank = data[`${-playerColor}to`][0]; 
-            const toFile = data[`${-playerColor}to`][1]; 
-            // Clear the move from the database
-            clearMove();
-            // Play the move on the board
-            movePiece(fromRank, fromFile, toRank, toFile);
-            // Switch turns
-            turnToMove *= -1;
-        }
-    })
-    .catch(error => {
-        console.error('Error reading moves:', error);
-    });
-    // Exit if a valid move was read and played
-    if (validMoveReceived){
-        return;
-    }
-    // Otherwise, poll again every two seconds
-    console.log("poll");
-    await new Promise(resolve => setTimeout(resolve, POLL_SPEED));
-    readMove();
-}
-
-async function sendMove(moveData){
-    console.log("send move: " + moveData);
-
-    fetch(`${DB_URL}/rooms/${roomCode}/${roomId}.json`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(moveData)
-      })
-      .then(response => response.json())
-      .then(data => console.log("Move added successfully:", data))
-      .catch(error => console.error("Error updating move:", error))
-}
-
+/* User Input Handling Functions */
 function handleClick(event){
-    if (gameOver) return;
-    // Only handle the mouse click if it's the player's turn to move
-    if (turnToMove != playerColor) return;
+    // Do not allow moves to be played when it is not the player's turn or if the game is over
+    if (gameOver || turnToMove != playerColor) return;
     // Get the rank and file of the mouse click
     const rect = canvas.getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
+    // Flip the screen to put black on the bottom if the player's color is black
     const file = Math.floor(mouseX / TILE_SIZE);
-    const rank = Math.floor(mouseY / TILE_SIZE); 
+    const rank = getFlippedRank(Math.floor(mouseY / TILE_SIZE));
     // Get the piece clicked
     const pieceClicked = board[rank][file];
     renderBoard();
@@ -250,7 +158,9 @@ function handleClick(event){
                 showResults();
             }
             // Send the move to the opponent
-            sendMove({[`${playerColor}from`]: [pieceHeldRank, pieceHeldFile], [`${playerColor}to`]: [rank, file]});
+            const moveData = {[`${playerColor}from`]: [pieceHeldRank, pieceHeldFile], 
+                              [`${playerColor}to`]: [rank, file]};
+            PATCH(`${DB_URL}/rooms/${roomCode}/${roomId}`, moveData)
             // Wait for their response
             readMove();
             // TODO: Store move history
@@ -325,22 +235,21 @@ function movePiece(fromRank, fromFile, toRank, toFile){
     render();
 }
 
-
 function pickupPiece(rank, file){
     isHoldingPiece = true;
     pieceHeldRank = rank;
     pieceHeldFile = file;
-    // Highlight legal moves
+    // Draw a circle around legal spots to move
     ctx.strokeStyle = "lightgreen";
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 10;
     for (const [legalRank, legalFile] of getLegalMoves(rank, file)){
-        // Draw a circle around legal spots to move
         ctx.beginPath();
-        ctx.arc(legalFile * TILE_SIZE+TILE_SIZE/2, legalRank * TILE_SIZE+ TILE_SIZE/2, 20, 0, Math.PI * 2);
+        ctx.arc(legalFile * TILE_SIZE+TILE_SIZE/2, getFlippedRank(legalRank) * TILE_SIZE + TILE_SIZE/2, 25, 0, Math.PI * 2);
         ctx.stroke();
     }
 }
 
+/* Chess Implementation Functions */
 function isCheckmate(){
     for (let rank = 0; rank <= 7; rank++){
         for (let file = 0; file <= 7; file++){
@@ -535,6 +444,33 @@ function findPiece(piece){
     return [];
 }
 
+/* Reading Database Functions */
+async function readMove(){
+    while (true){
+        const roomData = await GET(`${DB_URL}/rooms/${roomCode}/${roomId}`);
+        
+        // Check that the database contains the opponent's move
+        if (roomData !== null && `${-playerColor}from` in roomData){
+            console.log("received move");
+            // Read the move
+            const from = roomData[`${-playerColor}from`];
+            const to = roomData[`${-playerColor}to`];
+            // Clear the opponent's move from the database to make room for your move
+            DELETE(`${DB_URL}/rooms/${roomCode}/${roomId}/${-playerColor}from`);
+            DELETE(`${DB_URL}/rooms/${roomCode}/${roomId}/${-playerColor}to`);
+            // Play the move on the board
+            movePiece(from[0], from[1], to[0], to[1]);
+            // Switch turns
+            turnToMove *= -1;
+            return;
+        }
+        // Keep checking until the opponent publishes their move
+        console.log("poll");
+        await new Promise(resolve => setTimeout(resolve, POLL_SPEED));
+    }
+}
+
+/* Simple Board Utility Functions */
 function resetBoard(){
     board = [
         [-4, -2, -3, -5, -6, -3, -2, -4],
@@ -562,6 +498,11 @@ function isInBounds(rank, file){
     return (rank >= 0 && rank <= 7) && (file >= 0 && file <= 7);
 }
 
+function getFlippedRank(rank){
+    return (playerColor == Color.WHITE) ? rank : 7 - rank;
+}
+
+/* Rendering and Canvas Functions */
 function resizeCanvas(){
     // Set canvas length to the minimum between the screen width and height
     let body = document.getElementById("body");
@@ -582,6 +523,20 @@ function render(){
     renderPieces();
 }
 
+function renderBoard(){
+    // Render the black and white squares
+    let white = playerColor == Piece.WHITE;
+    for (let rank = 0; rank <= 7; rank++){
+        white = !white
+        for (let file = 0; file <= 7; file++){
+            // Fill in the square
+            ctx.fillStyle = white ? "white" : "brown";
+            ctx.fillRect(file * TILE_SIZE, getFlippedRank(rank) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            white = !white;
+        }
+    }
+}
+
 function renderPieces() {
     // Render the pieces
     for (let rank = 0; rank <= 7; rank++) {
@@ -593,23 +548,7 @@ function renderPieces() {
             let pieceImg = pieceImageMap.get(piece);
             
             // Render the piece
-            ctx.drawImage(pieceImg, file * TILE_SIZE, rank * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-
-            // ctx.drawImage(pieceImg, (7-file) * TILE_SIZE, (7-rank) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-        }
-    }
-}
-
-function renderBoard(){
-    // Render the black and white squares
-    let white = false;
-    for (let rank = 0; rank <= 7; rank++){
-        white = !white
-        for (let file = 0; file <= 7; file++){
-            // Fill in the square
-            ctx.fillStyle = white ? "white" : "brown"; 
-            ctx.fillRect(file * TILE_SIZE, rank * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            white = !white;
+            ctx.drawImage(pieceImg, file * TILE_SIZE, getFlippedRank(rank) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
     }
 }
