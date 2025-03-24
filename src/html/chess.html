@@ -9,6 +9,67 @@
     <title>Chess</title>
 </head>
 <body class="flex justify-center items-center w-screen h-screen bg-slate-800 m-0 p-0" id="body">
-    <window-content class="w-screen h-screen flex justify-center items-center"></window-content>
+    <!-- Game Mode Options  -->
+    <div id="gamemodeSelection" class="hidden flex flex-col space-y-3 text-center items-center p-8 min-w-1/2 w-fit min-h-1/2 h-fit bg-white rounded-2xl shadow-2xl">
+        <h1 class="text-4xl font-bold">Teddy Chess</h1>
+        <button id="localGame" class="chess_button">Pass and Play (lame)</button>
+        <button id="onlineGame" class="chess_button">Play Online (cool)</button>
+        <button id="botGame" class="chess_button">Play my bot</button>
+    </div>
+
+    <!-- Multiplayer Game Config -->
+    <div id="multiplayerConfig" class="hidden flex flex-col p-8 rounded-2xl shadow-2xl justify-start space-y-2 items-center text-center bg-white w-3/4 lg:w-1/2 min-h-1/2 h-fit">
+        <h1 class="text-4xl font-bold">Online Room</h1>
+        <div class="flex flex-col lg:flex-row w-full h-full text-2xl font-bold space-x-2 space-y-2 ">
+            <!-- HOST -->
+            <div class="flex items-center space-y-4 flex-col w-full lg:w-1/2 h-full border-2 border-black rounded-xl p-2 lg:p-4">
+                <h1>Host</h1>
+                <button id="hostRoom" class="bg-white rounded-xl border-2 border-black hover:scale-105 p-2">
+                    Host Room
+                </button>
+                <div class="flex flex-col">
+                    <b>Your room code: </b> <p id="roomCodeDisplay"> .... </p>
+                </div>
+                <div class="w-full h-full">
+                    <h1 class="italic">Play As (Default Random):</h1>
+                    <div class="flex flex-row w-full h-full justify-around">
+                        <button id="selectWhite" class="w-36 h-36 bg-white rounded-xl border-2 border-aqua hover:scale-105"></button>
+                        <button id="selectBlack" class="w-36 h-36 bg-black rounded-xl border-2 hover:scale-105"></button>
+                    </div>
+                </div>
+            </div>
+            <!-- JOIN -->
+            <div class="flex items-center space-y-4 flex-col w-full lg:w-1/2 h-full border-2 border-black rounded-xl p-2 lg:p-4">
+                <h1>Join</h1>
+                <div class="flex flex-col space-y-2 w-full">
+                    <input type="text" 
+                        placeholder="Enter Room Code..." 
+                        class="bg-white text-lg border-2 p-2 w-full max-w-full rounded-xl border-black" 
+                        id="enterRoomCode">
+                    <input type="submit" id="enterRoomCodeSubmit" value="Enter"
+                        class="border-2 w-24 h-12 border-black p-2 rounded-xl hover:scale-105">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chess Board -->
+    <canvas id="canvas" class="hidden border-8 border-amber-950 rounded-xl shadow-2xl" width="800" height="800"></canvas>
+    <!-- Restart Window -->
+    <div id="restartWindow" class="hidden flex absolute flex-col justify-around items-center
+        bg-slate-500 w-1/2 h-1/2 top-1/4 left-1/4 rounded-xl shadow-2xl border-black border-8">
+        <!-- Game over text -->
+        <h1 id="winner" class="text-bold italic text-white text-3xl">
+            Winner Holder Text
+        </h1>
+        <!-- Restart -->
+        <button id="restartButton" class="text-black text-bold text-2xl border-4 p-2 hover:scale-110 rounded-2xl shadow-2xl border-black bg-white">
+            Play Again
+        </button>
+    </div>
+
+
+
+
 </body>
 </html>

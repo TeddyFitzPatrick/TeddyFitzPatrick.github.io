@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital@0;1&display=swap" rel="stylesheet">
-    <script src="src/js/frontPage.js"></script>
+    <script src="src/js/textAnimation.js"></script>
 </head>
 
 <body class="default_body">
@@ -24,37 +24,40 @@
 
     <!-- Animated Title Cards -->
     <div class="absolute flex flex-col w-1/2 h-1/2 top-1/4 left-1/4 items-center justify-evenly ">
+        <!-- Greeting -->
         <p id="title" class="text-center text-4xl md:text-7xl lg:text-8xl rounded-2xl text-black opacity-100 z-10 
         font-bold shadow-2xl  bg-white border-black p-4"></p>
-    
-        <a target="_blank" href="src/html/particleLife.html" class=" z-10 text-xl md:text-3xl 
-        hover:scale-105 font-bold bg-slate-800 text-cyan-500 border-cyan-500 border-8 p-2 rounded-xl">
-            <span id="demo_title" class="text-cyan-700 font-bold italic"> </span><span id="demo_text"></span>
+        <!-- Particle Life -->
+        <a id="plifeDemo" target="_blank" href="src/html/particleLife.html" class=" z-10 text-xl md:text-3xl 
+        hover:scale-105 font-bold bg-slate-800 text-cyan-700 italic border-cyan-500 border-8 p-2 rounded-xl shadow-2xl">
+        </a>
+        <!-- Chess -->
+        <a id="chessDemo" target="_blank" href="src/html/chess.html" class="z-10 text-xl md:text-3xl 
+        hover:scale-105 font-bold bg-slate-800 text-cyan-700 italic border-cyan-500 border-8 p-2 rounded-xl shadow-2xl">
         </a>
     </div>
 
-  
-
-
     <!-- Media -->
     <div class="grid grid-cols-2 mt-[10vh] w-[100vw] h-[90vh]">
-        <!-- top -->
+        <!-- Top Left Media -->
         <div class="flex w-[100vw] md:w-[50vw] h-[45vh]">
             <video class="w-full h-full object-fill opacity-50" autoplay loop muted width="">
                 <source src="src/images/particle_life_main.mp4" />
             </video>
         </div>
+        <!-- Top Right Media  -->
         <div class="flex w-0 md:w-[50vw] h-[45vh]">
             <video class="w-full h-full object-fill opacity-50" autoplay loop muted width="">
                 <source src="src/images/tetris_main.mp4" />
             </video>
         </div>
-        <!-- bottom -->
+        <!-- Bottom Left Media -->
         <div class="flex w-[100vw] md:w-[50vw] h-[45vh]">
             <video class="w-full h-full object-fill opacity-50" autoplay loop muted width="">
                 <source src="src/images/conway_main.mp4" />
             </video>
         </div>
+        <!-- Bottom Right Media  -->
         <div class="flex w-0 md:w-[50vw] h-[45vh] opacity-80">
             <img class="w-full h-full object-fill" src="src/images/mandelbrot_main.png">
         </div>
