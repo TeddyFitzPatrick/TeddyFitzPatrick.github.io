@@ -23,24 +23,49 @@
     </nav>
     <!-- projects -->
     <div class="flex flex-col text-white text-3xl items-center w-full h-full pt-[calc(10vh+1rem)] md:pt-[calc(10vh+3rem)] space-y-12"> 
+        
+
+        <!-- Online Chess -->
+        <div class="project_panel">
+            <!-- Title and Desc -->
+            <div class="project_text">
+                <h1 class="font-bold text-5xl ">
+                    <a class="text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/jschess/">
+                        Multiplayer Chess 
+                    </a>
+                </h1>
+                <p class="project_description">
+                    JavaScript chess implementation with Firebase realtime database for multiplayer. Chess bot gameplay using a minimax search tree with alpha-beta pruning. In progress...
+                  
+                </p>
+                <a target="_blank" class="my-2 w-fit text-white text-xl sm:text-3xl rounded-xl p-4 font-bold bg-blue-500  hover:scale-105 shadow-2xl" href="particleLife.html">
+                    Try it out!
+                </a>
+            </div>
+            <!--  -->
+            <div class="project_vids">
+                <video class="rounded-xl" autoplay loop muted width="1000">
+                    <source src=""/>
+                </video>
+            </div>
+        </div>
+
+
         <!-- Mandelbrot Generator -->
         <div id="mandelbrotContainer" class="project_panel">
-
             <!-- Title and Desc -->
             <div class="flex flex-col w-full xl:w-2/3">
-                <h1 class="font-bold text-5xl">
+                <h1 class="text-cyan-400 font-bold text-5xl">
                     <a>Mandelbrot Rendering</a>
                 </h1>
                 <div class="project_description flex-col">
                     Made with JavaScript and the HTML canvas element. Rendered in
                     <a class="text-cyan-400 font-bold" id="timeToGenerate"></a> seconds.
                     The brightness at each point corresponds to the rate of divergence of complex coordinates according to the function
-                    <b>f(z) = z<sup>2</sup> + c.</b>
-
-                    <div class="flex flex-col">
-                        <i class="text-lg">*Left Click to ZOOM and Right Click to UNZOOM</i>
-                        <i class="text-lg">*Select "Sharpen" to make the rendering more accurate at smaller scales</i>
-                    </div>
+                    <b>f(z) = z<sup>2</sup> + c</b>.
+                    <br><br>
+                    Left Click to ZOOM and Right Click to UNZOOM. <br>
+                    Select <i>Sharpen</i> to make the rendering more accurate at smaller scales
 
                     <br>
                 </div>
@@ -78,7 +103,6 @@
                     <canvas id="canvas" width="500" height="500"></canvas>
                 </div>
             </div>
-
         </div>
         
         <!-- Particle Life -->
@@ -86,7 +110,7 @@
             <!-- Title and Desc -->
             <div class="project_text">
                 <h1 class="font-bold text-5xl ">
-                    <a class="hover:text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/particle_life/">
+                    <a class="text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/particle_life/">
                         Particle Life
                         <b class="text-base md:text-lg hidden md:visible">
                             (click me)
@@ -99,13 +123,13 @@
                     Mohr. Randomly generated rules of attraction & repulsion between particles of different colors
                     compose a lifelike simulation. Built with a menu to adjust each particle's sphere of influence, velocity half-life, and radii.
                 </p>
-                <a target="_blank" class="my-2  w-fit text-base md:text-xl border-black border-4 rounded-xl p-2 font-bold bg-white text-black" href="particleLife.html">
-                    Click here for the web prototype
+                <a target="_blank" class="my-2 w-fit text-white text-xl sm:text-3xl rounded-xl p-4 font-bold bg-blue-500  hover:scale-105 shadow-2xl" href="particleLife.html">
+                    Web Version
                 </a>
             </div>
             <!-- Particle life demos -->
             <div class="project_vids">
-                <video class="rounded-xl" autoplay loop muted width="1000">
+                <video class="rounded-xl shadow-2xl" autoplay loop muted width="1000">
                     <source src="../images/particle_life_capture.mp4" />
                 </video>
             </div>
@@ -116,7 +140,7 @@
             <!-- Title and Desc -->
             <div class="project_text">
                 <h1 class="font-bold text-5xl ">
-                    <a class="hover:text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/pyTetris">PyTetris</a>
+                    <a class="text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/pyTetris">PyTetris</a>
                 </h1>
                 <p class="project_description">
                     A tetris clone made using pygame, a python wrapper of the DirectMedia Layer
@@ -143,7 +167,7 @@
             <!-- Title and Desc -->
             <div class="project_text">
                 <h1 class="font-bold text-5xl ">
-                    <a class="hover:text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/pyLife">PyLife</a>
+                    <a class="text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/pyLife">PyLife</a>
                 </h1>
                 <p class="project_description">
                     A GUI for Conway's Game of Life with adjustable update speed, grid-size, and tile coloring. Allows for both randomized and 
@@ -168,7 +192,7 @@
             <!-- Title and Desc -->
             <div class="project_text">
                 <h1 class="font-bold text-5xl ">
-                    <a class="hover:text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/fitzpatrickdesign">FitzPatrick Design Inc.</a>
+                    <a class="text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/fitzpatrickdesign">FitzPatrick Design Inc.</a>
                 </h1>
                 <p class="project_description">
                     Marketing website design for cabinetry company to attract customers. Showcases professional kitchen designs with an elegant UI. Made with HTML, Tailwind CSS, and JavaScript.

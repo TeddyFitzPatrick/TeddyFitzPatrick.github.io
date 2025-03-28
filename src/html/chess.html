@@ -10,45 +10,44 @@
 </head>
 <body class="flex justify-center items-center w-screen h-screen bg-slate-800 m-0 p-0" id="body">
     <!-- Game Mode Options  -->
-    <div id="gamemodeSelection" class="hidden flex flex-col space-y-3 text-center items-center p-8 min-w-1/2 w-fit min-h-1/2 h-fit bg-white rounded-2xl shadow-2xl">
-        <h1 class="text-4xl font-bold">Teddy Chess</h1>
-        <button id="localGame" class="chess_button">Pass and Play (lame)</button>
-        <button id="onlineGame" class="chess_button">Play Online (cool)</button>
-        <button id="botGame" class="chess_button">Play my bot</button>
+    <div id="gamemodeSelection" class="hidden flex justify-evenly flex-col space-y-3 text-center items-center p-8 w-4/5 sm: w-1/2 h-3/4 sm:h-1/2 bg-white rounded-2xl shadow-2xl">
+        <h1 class="text-4xl sm:text-5xl font-bold">Teddy Chess</h1>
+        <button id="localGame" class="chess_button">LOCAL</button>
+        <button id="onlineGame" class="chess_button">ONLINE</button>
+        <button id="botGame" class="chess_button">BOT</button>
     </div>
 
     <!-- Multiplayer Game Config -->
-    <div id="multiplayerConfig" class="hidden flex flex-col p-8 rounded-2xl shadow-2xl justify-start space-y-2 items-center text-center bg-white w-3/4 lg:w-1/2 min-h-1/2 h-fit">
-        <h1 class="text-4xl font-bold">Online Room</h1>
-        <div class="flex flex-col lg:flex-row w-full h-full text-2xl font-bold space-x-2 space-y-2 ">
-            <!-- HOST -->
-            <div class="flex items-center space-y-4 flex-col w-full lg:w-1/2 h-full border-2 border-black rounded-xl p-2 lg:p-4">
-                <h1>Host</h1>
-                <button id="hostRoom" class="bg-white rounded-xl border-2 border-black hover:scale-105 p-2">
-                    Host Room
-                </button>
-                <div class="flex flex-col">
-                    <b>Your room code: </b> <p id="roomCodeDisplay"> .... </p>
-                </div>
-                <div class="w-full h-full">
-                    <h1 class="italic">Play As (Default Random):</h1>
-                    <div class="flex flex-row w-full h-full justify-around">
-                        <button id="selectWhite" class="w-36 h-36 bg-white rounded-xl border-2 border-aqua hover:scale-105"></button>
-                        <button id="selectBlack" class="w-36 h-36 bg-black rounded-xl border-2 hover:scale-105"></button>
-                    </div>
+    <div id="multiplayerConfig" class="flex flex-col lg:flex-row space-x-0 lg:space-x-6 space-y-6 lg:space-y-0 bg-white w-[90%] sm:w-3/4 xl:w-3/5 h-fit lg:h-3/5 text-2xl font-bold border-black p-4 sm:p-8 rounded-2xl shadow-2xl">
+        <!-- HOST -->
+        <div class="flex items-center space-y-4 flex-col w-full lg:w-1/2 h-full border-4 border-black rounded-xl p-4">
+            <h1 class="font-bold text-4xl italic underline">Host Room</h1>
+            <div class="w-full w-fit h-fit text-center space-y-4">
+                <h1 class="italic">Pick Color (default random)</h1>
+                <div class="flex flex-row w-full h-full justify-around">
+                    <button id="selectWhite" class="w-36 h-36 bg-white rounded-xl border-4 border-aqua hover:scale-105"></button>
+                    <button id="selectBlack" class="w-36 h-36 bg-black rounded-xl border-4 hover:scale-105"></button>
                 </div>
             </div>
-            <!-- JOIN -->
-            <div class="flex items-center space-y-4 flex-col w-full lg:w-1/2 h-full border-2 border-black rounded-xl p-2 lg:p-4">
-                <h1>Join</h1>
-                <div class="flex flex-col space-y-2 w-full">
-                    <input type="text" 
-                        placeholder="Enter Room Code..." 
-                        class="bg-white text-lg border-2 p-2 w-full max-w-full rounded-xl border-black" 
-                        id="enterRoomCode">
-                    <input type="submit" id="enterRoomCodeSubmit" value="Enter"
-                        class="border-2 w-24 h-12 border-black p-2 rounded-xl hover:scale-105">
-                </div>
+            <button id="hostRoom" class="rounded-xl bg-blue-500 text-white hover:scale-110 shadow-lg p-4 sm:p-6">
+                Host Room
+            </button>
+            <div class="flex flex-col bg-gray-300 rounded-xl w-full p-6">
+                <b>Your room code: </b> <p class="text-3xl font-extrabold" id="roomCodeDisplay"> .... </p>
+            </div>
+        </div>
+        <!-- JOIN -->
+        <div class="flex items-center space-y-4 flex-col w-full lg:w-1/2 h-full border-4 border-black rounded-xl p-4 lg:p-4 ">
+            <h1 class="font-bold italic text-4xl underline">Join Room</h1>
+            <div class="flex flex-col space-y-2 w-full">
+                <input type="text" 
+                    placeholder="Enter Room Code..." 
+                    class="bg-white text-lg border-4 p-2 w-full max-w-full h-16 rounded-xl border-black" 
+                    id="enterRoomCode"
+                    autocomplete="off"
+                    autocapitalize="on">
+                <input type="submit" id="enterRoomCodeSubmit" value="Enter"
+                    class="w-28 h-12 bg-blue-500 shadow-xl text-white rext-2xl p-2 rounded-xl hover:scale-105">
             </div>
         </div>
     </div>

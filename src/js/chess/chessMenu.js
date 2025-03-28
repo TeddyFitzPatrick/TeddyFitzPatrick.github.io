@@ -11,14 +11,13 @@ let hostColor;
 const gamemodeSelection = document.getElementById("gamemodeSelection");
 const multiplayerConfig = document.getElementById("multiplayerConfig");
 const canvas = document.getElementById("canvas");
-
 const pages = [
     gamemodeSelection, multiplayerConfig, canvas
 ];
 
 window.onload = function (){
-    //
-    selectPage(gamemodeSelection);
+    // Page select
+    selectPage(multiplayerConfig);
     // Gamemode Selection
     const localGameButton = document.getElementById("localGame");
     const onlineGameButton = document.getElementById("onlineGame");
@@ -42,52 +41,59 @@ window.onload = function (){
             console.log("RR");
         }
     });
-    // TODO: Local Game
+
+    // Game Options Navigation
     localGameButton.addEventListener("click", function (){
         console.log("local");
     });
-    // Online => Room Selector / Generator
     onlineGameButton.addEventListener("click", function (){   
-        selectPage(multiplayerConfig); 
-        // Host a room
-        hostRoom.addEventListener("click", async function(){
-            // DEBUG
-            isHosting = true;
-            // Generate a random 4-letter room code
-            const hostRoomCode = generateRoomCode();
-            // Display the code 
-            roomCodeDisplay.textContent = hostRoomCode;
-            // If a color has not been picked, then choose one randomly
-            hostColor = (hostColor !== undefined) ? hostColor :  Math.random() >= 0.5 ? 1 : -1;
-            // Put the room on firebase
-            await POST(`${DB_URL}/rooms/${hostRoomCode}`, {"joined": 0, "hostColor": hostColor})
-            // Wait for someone to join and then start
-            waitForOtherPlayer(hostRoomCode, hostColor);
-        });    
-        // Join room code
-        enterRoomCodeSubmit.addEventListener("click", function(){
-            if (isHosting) {
-                alert("Can not join a game while hosting!")
-                return;
-            }
-            joinRoom(enterRoomCode.value);
-        });
-        // Select a color (default random)
-        selectWhite.addEventListener("click", function(){
-            selectWhite.classList.add("border-cyan-500", "border-8");
-            selectBlack.classList.remove("border-cyan-500", "border-8");
-            hostColor = 1;
-        });
-        selectBlack.addEventListener("click", function (){
-            selectBlack.classList.add("border-cyan-500", "border-8");
-            selectWhite.classList.remove("border-cyan-500", "border-8");
-            hostColor = -1;
-        });
+        selectPage(multiplayerConfig);  
     });
-    // TODO: BOT
     botGameButton.addEventListener("click", function (){
         console.log("bot");
     });
+
+    // Multiplayer Game Config
+    hostRoom.addEventListener("click", async function(){
+        // DEBUG
+        isHosting = true;
+        // Generate a random 4-letter room code
+        const hostRoomCode = generateRoomCode();
+        // Copy the room code to clipboard
+        navigator.clipboard.writeText(hostRoomCode);
+        // Display the code 
+        roomCodeDisplay.textContent = hostRoomCode;
+        roomCodeDisplay.alert("code copied to clipboard")
+        // If a color has not been picked, then choose one randomly
+        hostColor = (hostColor !== undefined) ? hostColor :  Math.random() >= 0.5 ? 1 : -1;
+        // Put the room on firebase
+        await POST(`${DB_URL}/rooms/${hostRoomCode}`, {"joined": 0, "hostColor": hostColor})
+        // Wait for someone to join and then start
+        waitForOtherPlayer(hostRoomCode, hostColor);
+    });    
+    // Join room code
+    enterRoomCodeSubmit.addEventListener("click", function(){
+        if (isHosting) {
+            alert("Can not join a game while hosting!")
+            return;
+        }
+        if (enterRoomCode.value == "CLEAR") DELETE(DB_URL);
+        joinRoom(enterRoomCode.value);
+    });
+    // Select a color (default random)
+    selectWhite.addEventListener("click", function(){
+        selectWhite.classList.add("border-cyan-500", "border-8", "scale-105");
+        selectBlack.classList.remove("border-cyan-500", "border-8", "scale-105");
+        hostColor = 1;
+    });
+    selectBlack.addEventListener("click", function (){
+        selectBlack.classList.add("border-cyan-500", "border-8", "scale-105");
+        selectWhite.classList.remove("border-cyan-500", "border-8", "scale-105");
+        hostColor = -1;
+    });
+
+
+
     
 }
 
