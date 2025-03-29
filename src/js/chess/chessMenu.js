@@ -17,7 +17,7 @@ const pages = [
 
 window.onload = function (){
     // Page select
-    selectPage(multiplayerConfig);
+    selectPage(gamemodeSelection);
     // Gamemode Selection
     const localGameButton = document.getElementById("localGame");
     const onlineGameButton = document.getElementById("onlineGame");
@@ -63,7 +63,6 @@ window.onload = function (){
         navigator.clipboard.writeText(hostRoomCode);
         // Display the code 
         roomCodeDisplay.textContent = hostRoomCode;
-        roomCodeDisplay.alert("code copied to clipboard")
         // If a color has not been picked, then choose one randomly
         hostColor = (hostColor !== undefined) ? hostColor :  Math.random() >= 0.5 ? 1 : -1;
         // Put the room on firebase
@@ -91,10 +90,6 @@ window.onload = function (){
         selectWhite.classList.remove("border-cyan-500", "border-8", "scale-105");
         hostColor = -1;
     });
-
-
-
-    
 }
 
 function selectPage(page){

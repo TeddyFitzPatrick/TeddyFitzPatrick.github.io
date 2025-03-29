@@ -63,8 +63,6 @@ const kingMoveDirections = [
 
 // Board State
 export let board
-let canvas, ctx
-let boardLength
 /* Castling */
 let whiteKingMoved = false;
 let whiteShortRookMoved = false;
@@ -83,7 +81,9 @@ let gameOver = false;
 // movesPlayed = [];
 
 // Canvas Rendering
-const TILE_SIZE = 100;
+let canvas, ctx;
+let boardLength;
+let TILE_SIZE;
 // Game results
 let gameOverMessage;
 const notification = document.getElementById("notification");
@@ -101,9 +101,6 @@ export default function main(rCode, rId, color) {
     console.log("RUNNING ONLINE: " + color);
     roomCode = rCode;
     roomId = rId;
-    // Set up canvas rendering
-    resizeCanvas();
-
     // Add event listeners
     const restartButton = document.getElementById("restartButton");
     restartButton.addEventListener("click", function(){
@@ -111,7 +108,7 @@ export default function main(rCode, rId, color) {
         hideResults();
         gameLoop();
     });
-    window.addEventListener("resize", resizeCanvas());
+    window.addEventListener("resize", (event) => {resizeCanvas(); render();});
     window.addEventListener("click", (event) => {handleClick(event)});
     // Start game
     startGame(color);
@@ -120,6 +117,8 @@ export default function main(rCode, rId, color) {
 async function startGame(color){
     // Initial board layout
     resetBoard();
+    // Resize and re-render canvas
+    resizeCanvas();
     // Assign the player color. White goes first
     playerColor = color;
     turnToMove = Color.WHITE;
@@ -139,7 +138,7 @@ function handleClick(event){
     const rect = canvas.getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
-    // Flip the screen to put black on the bottom if the player's color is black
+    // Flip the rank to put black on the bottom if the player's color is black
     const file = Math.floor(mouseX / TILE_SIZE);
     const rank = getFlippedRank(Math.floor(mouseY / TILE_SIZE));
     // Get the piece clicked
@@ -241,11 +240,13 @@ function pickupPiece(rank, file){
     pieceHeldFile = file;
     // Draw a circle around legal spots to move
     ctx.strokeStyle = "lightgreen";
-    ctx.lineWidth = 10;
+    ctx.fillStyle = "lightgreen";
+    ctx.lineWidth = 5;
     for (const [legalRank, legalFile] of getLegalMoves(rank, file)){
         ctx.beginPath();
-        ctx.arc(legalFile * TILE_SIZE+TILE_SIZE/2, getFlippedRank(legalRank) * TILE_SIZE + TILE_SIZE/2, 25, 0, Math.PI * 2);
+        ctx.arc(legalFile * TILE_SIZE+TILE_SIZE/2, getFlippedRank(legalRank) * TILE_SIZE + TILE_SIZE/2, TILE_SIZE/8, 0, Math.PI * 2);
         ctx.stroke();
+        ctx.fill();
     }
 }
 
@@ -506,9 +507,16 @@ function getFlippedRank(rank){
 function resizeCanvas(){
     // Set canvas length to the minimum between the screen width and height
     let body = document.getElementById("body");
-    boardLength = Math.min(body.offsetWidth, body.offsetHeight);
+    boardLength = Math.min(body.offsetWidth, body.offsetHeight) - 20;
     canvas = document.getElementById("canvas");
     ctx = canvas.getContext("2d");
+    console.log("RESIZE");
+    console.log(boardLength);
+
+    TILE_SIZE = boardLength / 8;
+    canvas.width = boardLength;
+    canvas.height = boardLength;
+    renderBoard();
 }
 
 function loadImage(src){
@@ -546,7 +554,6 @@ function renderPieces() {
             if (piece == Piece.EMPTY) continue;
             // Get the corresponding piece image
             let pieceImg = pieceImageMap.get(piece);
-            
             // Render the piece
             ctx.drawImage(pieceImg, file * TILE_SIZE, getFlippedRank(rank) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
