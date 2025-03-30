@@ -18,11 +18,11 @@
     </div>
 
     <!-- Multiplayer Game Config -->
-    <div id="multiplayerConfig" class="flex flex-col lg:flex-row space-x-0 lg:space-x-6 space-y-6 lg:space-y-0 bg-white w-[90%] sm:w-3/4 xl:w-3/5 h-fit lg:h-3/5 text-2xl font-bold border-black p-4 sm:p-8 rounded-2xl shadow-2xl">
+    <div id="multiplayerConfig" class="hidden flex flex-col lg:flex-row space-x-0 lg:space-x-6 space-y-6 lg:space-y-0 bg-white w-[90%] sm:w-3/4 xl:w-3/5 h-fit lg:h-3/5 text-2xl font-bold border-black p-4 sm:p-8 rounded-2xl shadow-2xl">
         <!-- HOST -->
         <div class="flex items-center space-y-4 flex-col w-full lg:w-1/2 h-full border-4 border-black rounded-xl p-4">
             <h1 class="font-bold text-4xl italic underline">Host Room</h1>
-            <div class="w-full w-fit h-fit text-center space-y-4">
+            <div class="w-fit h-fit text-center space-y-4">
                 <h1 class="italic">Pick Color (default random)</h1>
                 <div class="flex flex-row w-full h-full justify-around">
                     <button id="selectWhite" class="w-36 h-36 bg-white rounded-xl border-4 border-aqua hover:scale-105"></button>
@@ -56,13 +56,13 @@
     <canvas id="canvas" class="hidden border-8 border-amber-950 rounded-xl shadow-2xl" width="800" height="800"></canvas>
     <!-- Restart Window -->
     <div id="restartWindow" class="hidden flex absolute flex-col justify-around items-center
-        bg-slate-500 w-1/2 h-1/2 top-1/4 left-1/4 rounded-xl shadow-2xl border-black border-8">
+        bg-slate-500 w-[90%] sm:w-1/2 h-1/2 top-1/4 left-0 sm:left-1/4 rounded-2xl border-black border-8">
         <!-- Game over text -->
-        <h1 id="winner" class="text-bold italic text-white text-3xl">
-            Winner Holder Text
+        <h1 id="gameOverText" class="text-center text-bold italic text-white text-3xl">
+            Game Over Text Placeholder
         </h1>
         <!-- Restart -->
-        <button id="restartButton" class="text-black text-bold text-2xl border-4 p-2 hover:scale-110 rounded-2xl shadow-2xl border-black bg-white">
+        <button id="restart" class="text-bold text-3xl p-4 hover:scale-105 rounded-2xl shadow-2xl border-black bg-blue-500 text-white">
             Play Again
         </button>
     </div>

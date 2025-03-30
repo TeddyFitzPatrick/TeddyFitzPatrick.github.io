@@ -1,6 +1,11 @@
-import { DB_URL, PATCH, POST, GET, DELETE } from "./chessMenu.js";
+import { DB_URL, selectPage, PATCH, POST, GET, DELETE } from "./chessMenu.js";
+
+/* Canvas Rendering */
+let canvas, ctx;
+let boardLength;
+let TILE_SIZE;
 /* Image assets for pieces */
-const pieceImageMap = new Map([
+export const pieceImageMap = new Map([
     [0,  loadImage("../assets/whitePawn.png")],
     [1,  loadImage("../assets/whitePawn.png")],
     [-1, loadImage("../assets/blackPawn.png")],
@@ -17,7 +22,7 @@ const pieceImageMap = new Map([
 ]);
 
 /* Encodings */
-const Piece = Object.freeze({
+export const Piece = Object.freeze({
     EMPTY: 0,
     WHITE_PAWN: 1,
     BLACK_PAWN: -1,
@@ -76,40 +81,38 @@ let turnToMove;  // -1 (black), 1 (white)
 let pieceHeldRank = null;
 let pieceHeldFile = null;
 let isHoldingPiece = false;
-let gameOver = false;
 // Move order
 // movesPlayed = [];
-
-// Canvas Rendering
-let canvas, ctx;
-let boardLength;
-let TILE_SIZE;
-// Game results
-let gameOverMessage;
-const notification = document.getElementById("notification");
-const winner = document.getElementById("winner");
-// Options
-const options = document.getElementById("options");
-const boardDisplay = document.getElementById("boardDisplay"); 
-
 // Firebase
 const POLL_SPEED = 200;
-let roomId, roomCode;
+let roomURL;
 
-export default function main(rCode, rId, color) {
+// Game results and restart
+let gameOver = false;
+let gameOverMessage;
+const restartButton = document.getElementById("restart");
+const restartWindow = document.getElementById("restartWindow");
+const gameOverText = document.getElementById("gameOverText");
+
+export function main(roomCode, roomId, color) {
     // GAME ENTRY
     console.log("RUNNING ONLINE: " + color);
-    roomCode = rCode;
-    roomId = rId;
+    // Firebase room URL
+    roomURL = `${DB_URL}/rooms/${roomCode}/${roomId}`;
+    // Canvas rendering
+    resizeCanvas();
     // Add event listeners
-    const restartButton = document.getElementById("restartButton");
+    window.addEventListener("keydown", (event) => {
+        if (event.key == "Enter") console.log("enter");
+    }); 
     restartButton.addEventListener("click", function(){
+        // Remove the last moves of the previous game
         gameOver = false;
-        hideResults();
-        gameLoop();
+        hideRestartMenu();
+        startGame(playerColor);
     });
     window.addEventListener("resize", (event) => {resizeCanvas(); render();});
-    window.addEventListener("click", (event) => {handleClick(event)});
+    canvas.addEventListener("click", (event) => {handleClick(event)});
     // Start game
     startGame(color);
 }
@@ -117,14 +120,12 @@ export default function main(rCode, rId, color) {
 async function startGame(color){
     // Initial board layout
     resetBoard();
-    // Resize and re-render canvas
-    resizeCanvas();
     // Assign the player color. White goes first
     playerColor = color;
     turnToMove = Color.WHITE;
     // Black starts by waiting for white's initial move
     if (playerColor == Color.BLACK){
-        readMove();
+        receiveMove();
     }
     // Render the original board
     render();
@@ -141,6 +142,8 @@ function handleClick(event){
     // Flip the rank to put black on the bottom if the player's color is black
     const file = Math.floor(mouseX / TILE_SIZE);
     const rank = getFlippedRank(Math.floor(mouseY / TILE_SIZE));
+    // Ignore out-of-bounds clicks
+    if (!isInBounds(rank, file)) return;
     // Get the piece clicked
     const pieceClicked = board[rank][file];
     renderBoard();
@@ -150,18 +153,18 @@ function handleClick(event){
             // Switch the pieces on the board representation
             movePiece(pieceHeldRank, pieceHeldFile, rank, file);
             turnToMove *= -1;
-            // Check if the move played checkmated the opponents
-            if (isCheckmate()){
-                gameOver = true;
-                gameOverMessage = `${turnToMove == Color.WHITE ? "Black" : "White"} wins by checkmate`;
-                showResults();
-            }
             // Send the move to the opponent
             const moveData = {[`${playerColor}from`]: [pieceHeldRank, pieceHeldFile], 
                               [`${playerColor}to`]: [rank, file]};
-            PATCH(`${DB_URL}/rooms/${roomCode}/${roomId}`, moveData)
+            PATCH(roomURL, moveData)
+            // Check if the move sent checkmated the opponents
+            if (isCheckmate()){
+                gameOverMessage = `${turnToMove == Color.WHITE ? "Black" : "White"} wins by checkmate`;
+                endGame();
+                return;
+            }
             // Wait for their response
-            readMove();
+            receiveMove();
             // TODO: Store move history
             // ...
         }
@@ -187,7 +190,7 @@ function handleClick(event){
 }
 
 function movePiece(fromRank, fromFile, toRank, toFile){
-    const pieceMoved = board[fromRank][fromFile];
+    let pieceMoved = board[fromRank][fromFile];
     /* Move the rook during a castle move */
     // White short castle
     if (pieceMoved == Piece.WHITE_KING && fromFile + 2 == toFile){
@@ -226,6 +229,11 @@ function movePiece(fromRank, fromFile, toRank, toFile){
         if (fromRank == 0 && fromFile == 7) blackShortRookMoved = true; 
         if (fromRank == 0 && fromFile == 0) blackLongRookMoved = true;
     }
+    /* Give pawn promotion options */
+    if (Math.abs(pieceMoved) == Math.abs(Piece.WHITE_PAWN) && Math.sign(pieceMoved) == playerColor){
+        pieceMoved = playerColor * Math.abs(Piece.WHITE_QUEEN);
+    }
+
     // Move the piece from the old square to the new 
     isHoldingPiece = false;
     board[toRank][toFile] = pieceMoved;
@@ -254,11 +262,9 @@ function pickupPiece(rank, file){
 function isCheckmate(){
     for (let rank = 0; rank <= 7; rank++){
         for (let file = 0; file <= 7; file++){
-            if (Math.sign(board[rank][file]) == turnToMove){
-                // If one of the player's pieces has a legal move, checkmate has not occurred 
-                if (getLegalMoves(rank, file).length > 0){
-                    return false
-                }
+            // If one of the player's pieces has a legal move, checkmate has not occurred 
+            if (Math.sign(board[rank][file]) == turnToMove && getLegalMoves(rank, file).length > 0){
+                return false;
             }
         }
     }
@@ -302,8 +308,8 @@ function getAllMoves(rank, file){
     if (piece == Piece.EMPTY) return allMoves;
     // Pawns
     else if (Math.abs(piece) == Math.abs(Piece.WHITE_PAWN)){
-        const forward = piece > 0 ? -1 : 1; 
-        const startRank = piece > 0 ? 6 : 1;
+        const forward = Math.sign(piece) === Math.sign(Color.WHITE) ? Color.BLACK : Color.WHITE; 
+        const startRank = Math.sign(piece) === Math.sign(Color.WHITE) ? 6 : 1;
         // Move forward 1
         if (isInBounds(rank + forward, file) && board[rank + forward][file] == Piece.EMPTY){
             allMoves.push([rank + forward, file]);
@@ -446,42 +452,53 @@ function findPiece(piece){
 }
 
 /* Reading Database Functions */
-async function readMove(){
-    while (true){
-        const roomData = await GET(`${DB_URL}/rooms/${roomCode}/${roomId}`);
-        
+async function receiveMove(){
+    // Wait to receive the opponent's response
+    while (turnToMove !== playerColor){
+        const roomData = await GET(roomURL);
         // Check that the database contains the opponent's move
         if (roomData !== null && `${-playerColor}from` in roomData){
-            console.log("received move");
             // Read the move
             const from = roomData[`${-playerColor}from`];
             const to = roomData[`${-playerColor}to`];
             // Clear the opponent's move from the database to make room for your move
-            DELETE(`${DB_URL}/rooms/${roomCode}/${roomId}/${-playerColor}from`);
-            DELETE(`${DB_URL}/rooms/${roomCode}/${roomId}/${-playerColor}to`);
+            deleteMove(-playerColor);
             // Play the move on the board
             movePiece(from[0], from[1], to[0], to[1]);
+            // Handle pawn promotion
+            // ...
             // Switch turns
             turnToMove *= -1;
-            return;
         }
         // Keep checking until the opponent publishes their move
         console.log("poll");
         await new Promise(resolve => setTimeout(resolve, POLL_SPEED));
     }
+
+    // Check if the move received resulted in checkmate
+    if (isCheckmate()){
+        gameOverMessage = `${turnToMove == Color.WHITE ? "Black" : "White"} wins by checkmate`;
+        endGame();
+        return;
+    } 
+}
+
+async function deleteMove(color){
+    DELETE(`${roomURL}/${color}from`);
+    DELETE(`${roomURL}/${color}to`);
 }
 
 /* Simple Board Utility Functions */
 function resetBoard(){
     board = [
-        [-4, -2, -3, -5, -6, -3, -2, -4],
-        [-1, -1, -1, -1, -1, -1, -1, -1],
+        [-4, -2, -3, -5, -6, -3, 0, 0],
+        [-1, -1, -1, -1, -1, 0, 0, 1],
         [0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1],
-        [4, 2, 3, 5, 6, 3, 2, 4]
+        [1, 1, 1, 1, 0, 1, 0, -1],
+        [4, 2, 3, 5, 6, 3, 0, 0]
     ]
     /*   REFERENCE DEFAULT GAME BOARD
         [-4, -2, -3, -5, -6, -3, -2, -4],
@@ -510,16 +527,13 @@ function resizeCanvas(){
     boardLength = Math.min(body.offsetWidth, body.offsetHeight) - 20;
     canvas = document.getElementById("canvas");
     ctx = canvas.getContext("2d");
-    console.log("RESIZE");
-    console.log(boardLength);
-
+    // Fit the canvas and the chess squares to match the new window dimensions
     TILE_SIZE = boardLength / 8;
     canvas.width = boardLength;
     canvas.height = boardLength;
-    renderBoard();
 }
 
-function loadImage(src){
+export function loadImage(src){
     const img = new Image();
     img.src = src;
     return img;
@@ -560,11 +574,18 @@ function renderPieces() {
     }
 }
 
-function showResults(){
-    notification.style.display = "flex";
-    winner.textContent = gameOverMessage;
+/* Restart Menu */
+function endGame(){
+    gameOver = true;
+    gameOverText.textContent = gameOverMessage;
+    showRestartMenu();
+
 }
 
-function hideResults(){
-    notification.style.display = "none";
+function showRestartMenu(){
+    restartWindow.classList.remove("hidden");
+}
+
+function hideRestartMenu(){
+    restartWindow.classList.add("hidden");
 }

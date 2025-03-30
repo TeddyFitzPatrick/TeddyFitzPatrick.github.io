@@ -1,7 +1,6 @@
-import main from './onlineChess.js';
+import {main, Piece, pieceImageMap, loadImage} from './onlineChess.js';
 
-const DB_URL = `https://struglauk-default-rtdb.firebaseio.com`;
-export { DB_URL };
+export const DB_URL = `https://struglauk-default-rtdb.firebaseio.com`;
 
 // Online
 let isHosting = false;
@@ -14,34 +13,33 @@ const canvas = document.getElementById("canvas");
 const pages = [
     gamemodeSelection, multiplayerConfig, canvas
 ];
+// Gamemode Selection
+const localGameButton = document.getElementById("localGame");
+const onlineGameButton = document.getElementById("onlineGame");
+const botGameButton = document.getElementById("botGame");
+// Join
+const enterRoomCode = document.getElementById("enterRoomCode");
+const enterRoomCodeSubmit = document.getElementById("enterRoomCodeSubmit");
+// Host
+const hostRoom = document.getElementById("hostRoom");
+const roomCodeDisplay = document.getElementById("roomCodeDisplay");
+// Color select
+const selectWhite = document.getElementById("selectWhite");
+const selectBlack = document.getElementById("selectBlack");
 
 window.onload = function (){
     // Page select
     selectPage(gamemodeSelection);
-    // Gamemode Selection
-    const localGameButton = document.getElementById("localGame");
-    const onlineGameButton = document.getElementById("onlineGame");
-    const botGameButton = document.getElementById("botGame");
-    // Join
-    const enterRoomCode = document.getElementById("enterRoomCode");
-    const enterRoomCodeSubmit = document.getElementById("enterRoomCodeSubmit");
-    // Host
-    const hostRoom = document.getElementById("hostRoom");
-    const roomCodeDisplay = document.getElementById("roomCodeDisplay");
-    // Color select
-    const selectWhite = document.getElementById("selectWhite");
-    const selectBlack = document.getElementById("selectBlack");
+
     // Add event listeners
     // DEBUG
     window.addEventListener("keydown", function (event){
-        if (event.key === "ArrowLeft"){
-            console.log("LL");
+        if (event.key === "Enter"){
             DELETE(DB_URL);
         } else if (event.key === "ArrowRight"){
             console.log("RR");
         }
     });
-
     // Game Options Navigation
     localGameButton.addEventListener("click", function (){
         console.log("local");
@@ -71,14 +69,7 @@ window.onload = function (){
         waitForOtherPlayer(hostRoomCode, hostColor);
     });    
     // Join room code
-    enterRoomCodeSubmit.addEventListener("click", function(){
-        if (isHosting) {
-            alert("Can not join a game while hosting!")
-            return;
-        }
-        if (enterRoomCode.value == "CLEAR") DELETE(DB_URL);
-        joinRoom(enterRoomCode.value);
-    });
+    enterRoomCodeSubmit.addEventListener("click", (event) => {joinRoom()});
     // Select a color (default random)
     selectWhite.addEventListener("click", function(){
         selectWhite.classList.add("border-cyan-500", "border-8", "scale-105");
@@ -92,11 +83,11 @@ window.onload = function (){
     });
 }
 
-function selectPage(page){
+export function selectPage(pageSelected){
     for (const page of pages){
         page.classList.add("hidden");
     }
-    page.classList.remove("hidden");
+    pageSelected.classList.remove("hidden");
 }
 
 async function waitForOtherPlayer(hostRoomCode, hostColor) {
@@ -114,7 +105,19 @@ async function waitForOtherPlayer(hostRoomCode, hostColor) {
     main(hostRoomCode, hostRoomId, hostColor);
 }
 
-async function joinRoom(joinRoomCode) {
+async function joinRoom() {
+    // Read the room code
+    const joinRoomCode = enterRoomCode.value.toUpperCase();
+    console.log("Join: " + joinRoomCode);
+    if (isHosting) {
+        alert("Can not join a game while hosting!")
+        return;
+    }
+    if (joinRoomCode.length != 4){
+        alert("Invalid room code length (must be four letters)")
+        return;
+    }
+    if (enterRoomCode.value == "CLEAR") DELETE(DB_URL);    
     const joinRoomId = await getRoomId(joinRoomCode);
     // Update the joined field to signal to the host the game has started
     const data = await PATCH(`${DB_URL}/rooms/${joinRoomCode}/${joinRoomId}`, {"joined": 1});
