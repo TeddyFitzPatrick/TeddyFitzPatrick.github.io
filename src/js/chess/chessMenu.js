@@ -1,6 +1,5 @@
-import {main, Piece, pieceImageMap, loadImage} from './onlineChess.js';
-
-export const DB_URL = `https://struglauk-default-rtdb.firebaseio.com`;
+import main from './chess.js';
+import { database, WaitFor, GET, REMOVE, UPDATE } from "./networking.js";
 
 // Online
 let isHosting = false;
@@ -9,9 +8,9 @@ let hostColor;
 /* Pages */
 const gamemodeSelection = document.getElementById("gamemodeSelection");
 const multiplayerConfig = document.getElementById("multiplayerConfig");
-const canvas = document.getElementById("canvas");
+const chessBoard = document.getElementById("chessBoard");
 const pages = [
-    gamemodeSelection, multiplayerConfig, canvas
+    gamemodeSelection, multiplayerConfig, chessBoard
 ];
 // Gamemode Selection
 const localGameButton = document.getElementById("localGame");
@@ -29,13 +28,17 @@ const selectBlack = document.getElementById("selectBlack");
 
 window.onload = function (){
     // Page select
-    selectPage(gamemodeSelection);
+    selectPage(gamemodeSelection)
+
+    // selectPage(chessBoard);
+    // main(1, 1, 1);
 
     // Add event listeners
     // DEBUG
     window.addEventListener("keydown", function (event){
         if (event.key === "Enter"){
-            DELETE(DB_URL);
+            REMOVE("/");
+            console.log("deleted")
         } else if (event.key === "ArrowRight"){
             console.log("RR");
         }
@@ -64,9 +67,13 @@ window.onload = function (){
         // If a color has not been picked, then choose one randomly
         hostColor = (hostColor !== undefined) ? hostColor :  Math.random() >= 0.5 ? 1 : -1;
         // Put the room on firebase
-        await POST(`${DB_URL}/rooms/${hostRoomCode}`, {"joined": 0, "hostColor": hostColor})
-        // Wait for someone to join and then start
-        waitForOtherPlayer(hostRoomCode, hostColor);
+        await UPDATE(hostRoomCode, {"joined": 0, "hostColor": hostColor})
+        // Wait for the opponent to update the joined status to start the game
+        await WaitFor(`${hostRoomCode}/joined`, 1);
+        // Player has joined, start the game
+        selectPage(chessBoard);
+        main(hostRoomCode, hostColor);
+
     });    
     // Join room code
     enterRoomCodeSubmit.addEventListener("click", (event) => {joinRoom()});
@@ -90,25 +97,10 @@ export function selectPage(pageSelected){
     pageSelected.classList.remove("hidden");
 }
 
-async function waitForOtherPlayer(hostRoomCode, hostColor) {
-    const hostRoomId = await getRoomId(hostRoomCode);
-    // Wait for the opponent to update the joined status to start the game
-    while (true){
-        const check = await GET(`${DB_URL}/rooms/${hostRoomCode}/${hostRoomId}/joined`);
-        // Player has joined
-        if (check == 1) break;
-        // Wait 1 second to check again if the opponent joined
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-    // Player has joined, start the game
-    selectPage(canvas);
-    main(hostRoomCode, hostRoomId, hostColor);
-}
-
 async function joinRoom() {
     // Read the room code
     const joinRoomCode = enterRoomCode.value.toUpperCase();
-    console.log("Join: " + joinRoomCode);
+    console.log("Join Room: " + joinRoomCode);
     if (isHosting) {
         alert("Can not join a game while hosting!")
         return;
@@ -117,21 +109,13 @@ async function joinRoom() {
         alert("Invalid room code length (must be four letters)")
         return;
     }
-    if (enterRoomCode.value == "CLEAR") DELETE(DB_URL);    
-    const joinRoomId = await getRoomId(joinRoomCode);
     // Update the joined field to signal to the host the game has started
-    const data = await PATCH(`${DB_URL}/rooms/${joinRoomCode}/${joinRoomId}`, {"joined": 1});
+    const data = await UPDATE(joinRoomCode, {"joined": 1});
     // Host chooses their color first
-    const hostColor = await GET(`${DB_URL}/rooms/${joinRoomCode}/${joinRoomId}/hostColor`)
-    const joinColor = -hostColor;
+    const hostColor = await GET(`${joinRoomCode}/hostColor`)
     // Start the game
-    selectPage(canvas);
-    main(joinRoomCode, joinRoomId, joinColor);
-}
-
-async function getRoomId(roomCode){
-    const roomData = await GET(`${DB_URL}/rooms/${roomCode}`);
-    return Object.keys(roomData)[0];
+    selectPage(chessBoard);
+    main(joinRoomCode, -hostColor);
 }
 
 function generateRoomCode(color){
@@ -143,62 +127,5 @@ function generateRoomCode(color){
     return roomCode;
 }
 
-/* Firebase GET Operation */
-export async function GET(URL){
-    const response = await fetch(`${URL}/.json`);
-    if (!response.ok){
-        console.log(`Failed to GET data at ${URL}`);
-    }
-    return await response.json();
-}
-/* Firebase POST Operation */
-export async function POST(URL, data){
-    return fetch(`${URL}/.json`, {
-        method: 'POST', 
-        headers: {
-            'Content-Type': 'application/json',  
-        },
-        body: JSON.stringify(data),  
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Data successfully posted
-    })
-    .catch(error => {
-        // Error sending data
-        console.log("POST error: " + error);
-    });
-}
-/* Firebase DELETE Operation */
-export async function DELETE(URL) {
-    return fetch(`${URL}/.json`, {
-        method: 'DELETE', 
-    })
-    .then(response => {
-        // Data successfully posted
 
-    })
-    .catch(error => {
-        // Error deleting data
-        console.log(error);
-    });
-}
-/* Firebase PATCH Operation */
-export async function PATCH(URL, data) {
-    return fetch(`${URL}/.json`, {
-        method: 'PATCH',  
-        headers: {
-            'Content-Type': 'application/json',  
-        },
-        body: JSON.stringify(data),  
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Data successfully patched
-    })
-    .catch(error => {
-        // Error updating data
-        console.log(error);
-    });
-}
 

@@ -13,8 +13,12 @@ npx serve
 }
 
 /* Chess */
-.chess_button{
+.chessButton{
     @apply p-4 w-full h-1/3 rounded-2xl shadow-2xl text-3xl bg-black font-bold text-white hover:scale-105
+}
+
+.chessPromotion{
+    @apply bg-slate-200 rounded-2xl w-1/5 aspect-square hover:scale-110 shadow-2xl invert
 }
 
 /* Universal page styling and navigation bar */

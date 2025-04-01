@@ -2,25 +2,33 @@
 <html lang="en">
 <head>
     <link href="../css/output.css" rel="stylesheet">
-    <script type="module" src="../js/chess/onlineChess.js"></script>
+    <script type="module" src="../js/chess/networking.js"></script>
+    <script type="module" src="../js/chess/chess.js"></script>
     <script type="module" src="../js/chess/chessMenu.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chess</title>
 </head>
 <body class="flex justify-center items-center w-screen h-screen bg-slate-800 m-0 p-0" id="body">
+
+    
     <!-- Game Mode Options  -->
-    <div id="gamemodeSelection" class="hidden flex justify-evenly flex-col space-y-3 text-center items-center p-8 w-4/5 sm: w-1/2 h-3/4 sm:h-1/2 bg-white rounded-2xl shadow-2xl">
+    <div id="gamemodeSelection" class="hidden flex justify-evenly flex-col space-y-3 text-center items-center p-12 w-4/5 sm: w-1/2 h-3/4 sm:h-1/2 bg-white rounded-2xl shadow-2xl">
+        <!-- Back to Home -->
+        <a href="../../index.html" class="text-xl sm:text-4xl bg-blue-400 text-white shadow-2xl p-6 rounded-2xl hover:scale-110 absolute left-6 top-4">
+            Back to Home
+        </a>
+
         <h1 class="text-4xl sm:text-5xl font-bold">Teddy Chess</h1>
-        <button id="localGame" class="chess_button">LOCAL</button>
-        <button id="onlineGame" class="chess_button">ONLINE</button>
-        <button id="botGame" class="chess_button">BOT</button>
+        <button id="localGame" class="chessButton">LOCAL</button>
+        <button id="onlineGame" class="chessButton">ONLINE</button>
+        <button id="botGame" class="chessButton">BOT</button>
     </div>
 
     <!-- Multiplayer Game Config -->
-    <div id="multiplayerConfig" class="hidden flex flex-col lg:flex-row space-x-0 lg:space-x-6 space-y-6 lg:space-y-0 bg-white w-[90%] sm:w-3/4 xl:w-3/5 h-fit lg:h-3/5 text-2xl font-bold border-black p-4 sm:p-8 rounded-2xl shadow-2xl">
+    <div id="multiplayerConfig" class="hidden flex flex-col lg:flex-row space-y-6 lg:space-y-0 bg-white w-[90%] sm:w-3/4 xl:w-3/5 h-fit lg:h-3/5 text-2xl font-bold border-black p-4 sm:p-8 rounded-2xl shadow-2xl">
         <!-- HOST -->
-        <div class="flex items-center space-y-4 flex-col w-full lg:w-1/2 h-full border-4 border-black rounded-xl p-4">
+        <div class="flex items-center mr-0 lg:mr-6 space-y-4 flex-col w-full lg:w-1/2 h-full border-4 border-black rounded-xl p-4">
             <h1 class="font-bold text-4xl italic underline">Host Room</h1>
             <div class="w-fit h-fit text-center space-y-4">
                 <h1 class="italic">Pick Color (default random)</h1>
@@ -52,20 +60,33 @@
         </div>
     </div>
 
-    <!-- Chess Board -->
-    <canvas id="canvas" class="hidden border-8 border-amber-950 rounded-xl shadow-2xl" width="800" height="800"></canvas>
-    <!-- Restart Window -->
-    <div id="restartWindow" class="hidden flex absolute flex-col justify-around items-center
-        bg-slate-500 w-[90%] sm:w-1/2 h-1/2 top-1/4 left-0 sm:left-1/4 rounded-2xl border-black border-8">
-        <!-- Game over text -->
-        <h1 id="gameOverText" class="text-center text-bold italic text-white text-3xl">
-            Game Over Text Placeholder
-        </h1>
-        <!-- Restart -->
-        <button id="restart" class="text-bold text-3xl p-4 hover:scale-105 rounded-2xl shadow-2xl border-black bg-blue-500 text-white">
-            Play Again
-        </button>
+    <div id="chessBoard" class="hidden flex w-full h-full justify-center items-center">
+        <!-- Chess Board -->
+        <canvas id="canvas" class="border-8 border-amber-950 rounded-xl shadow-2xl" width="69" height="69"></canvas>
+        <!-- Pawn Promotion Selection -->
+        <div id="promotionWindow" class="hidden flex absolute flex-row justify-around items-center
+        bg-opacity-70 bg-slate-600 w-full sm:w-1/2 h-[20%] top-[40%] left-0 sm:left-1/4 rounded-3xl border-black border-8">
+            <img id="queenPromote"  src="../assets/whiteQueen.png" alt="queen" class="chessPromotion">
+            <img id="rookPromote"   src="../assets/whiteRook.png" alt="rook"  class="chessPromotion">
+            <img id="bishopPromote" src="../assets/whiteBishop.png" alt="bishop" class="chessPromotion">
+            <img id="knightPromote" src="../assets/blackKnight.png" alt="knight" class="chessPromotion">
+        </div>
+
+
+        <!-- Restart Window -->
+        <div id="restartWindow" class="hidden flex absolute flex-col justify-around items-center
+            bg-slate-500 w-[90%] sm:w-1/2 h-1/2 top-1/4 left-0 sm:left-1/4 rounded-2xl border-black border-8">
+            <!-- Game over text -->
+            <h1 id="gameOverText" class="text-center text-bold italic text-white text-3xl">
+                Game Over Text Placeholder
+            </h1>
+            <!-- Restart -->
+            <button id="restart" class="text-bold text-3xl p-4 hover:scale-105 rounded-2xl shadow-2xl border-black bg-blue-500 text-white">
+                Play Again
+            </button>
+        </div>
     </div>
+
 
 
 
