@@ -1,25 +1,37 @@
-// Rendering 
-let canvas, canvasX, canvasY
+// Rendering
 const fullScreenSize = 1280;
+let container;
+let canvas;
+let canvasX, canvasY;
+let startRenderingButton;
 
 // Mandelbrot variables
-let divergenceIterations, zInitial, ctx, inverted, renderAxes, gradient, brightness, scale;
+let divergenceIterations,
+  zInitial,
+  ctx,
+  inverted,
+  renderAxes,
+  gradient,
+  brightness,
+  scale;
 
 // Zooming
 let xOffset = 0;
 let yOffset = 0;
 
 // HTML Status Updates
-let timeToGenerateDisplay, scaleDisplay, brightnessDisplay, sharpnessDisplay
+let timeToGenerateDisplay, scaleDisplay, brightnessDisplay, sharpnessDisplay;
 
 window.onload = function () {
-  // Default program args
-  applyDefaults();
-  // HTML Status update
+  // Locate DOM Elements
+  canvas = document.getElementById("canvas"); 
+  startRenderingButton = document.getElementById("renderMandelbrot");
   timeToGenerateDisplay = document.getElementById("timeToGenerate");
   scaleDisplay = document.getElementById("scaleDisplay");
   brightnessDisplay = document.getElementById("brightnessDisplay");
   sharpnessDisplay = document.getElementById("sharpnessDisplay");
+  // Default program args
+  // applyDefaults();
   // Add event listeners
   addEventListeners();
   // Handle canvas retrieval failure
@@ -27,69 +39,82 @@ window.onload = function () {
     console.log("Couldn't get context");
     return;
   }
-  // Mandelbrot rendering
-  draw();
-}
+
+};
 
 // Adds event listeners to the buttons, canvas, and window resizing
-function addEventListeners(){
+function addEventListeners() {
   // Canvas click event - Apply zoom on canvas and re-render
-  canvas.addEventListener('click', function(){
+  canvas.addEventListener("click", () => {
     let clickX = Number(event.clientX - canvasX);
     let clickY = Number(event.clientY - canvasY + window.scrollY);
-    xOffset = Number(scale * (clickX / canvas.width) - (scale/2) + xOffset);
-    yOffset = Number(scale * (clickY / canvas.height) - (scale/2) + yOffset);
+    xOffset = Number(scale * (clickX / canvas.width) - scale / 2 + xOffset);
+    yOffset = Number(scale * (clickY / canvas.height) - scale / 2 + yOffset);
     scale *= 0.2;
     draw();
   });
   // Canvas right click event - Apply unzoom on canvas and re-render
-  canvas.addEventListener('contextmenu', (event) => {
+  canvas.addEventListener("contextmenu", (event) => {
     event.preventDefault();
     scale *= 5;
     draw();
   });
-
   // Update the canvas and rendering on window resize
-  window.addEventListener('resize', function() {
+  // window.addEventListener("resize", () => {
+  //   applyDefaults();
+  //   draw();
+  // });
+  // Start the mandelbrot rendering
+  startRenderingButton.addEventListener("click", () => {
+    startRenderingButton.classList.add("hidden");
     applyDefaults();
     draw();
   });
+  
   // Add event listeners for option selection
-  document.getElementById('invert').addEventListener('click', function(){
-      inverted = !inverted;
-      draw();
+  document.getElementById("invert").addEventListener("click", () => {
+    inverted = !inverted;
+    draw();
   });
-  document.getElementById('zInitial').addEventListener('click', function(){
-      zInitial = 1;
-      draw();
+  document.getElementById("zInitial").addEventListener("click", () => {
+    zInitial = 1;
+    draw();
   });
-  document.getElementById('sharpen').addEventListener('click', function(){
-      divergenceIterations += 1_000;
-      draw();
+  document.getElementById("sharpen").addEventListener("click", () => {
+    divergenceIterations += 1_000;
+    draw();
   });
-  document.getElementById('reset').addEventListener('click', function(){
+  document.getElementById("reset").addEventListener("click", () => {
     applyDefaults();
     draw();
   });
 }
 
 // Creates the canvas according to the size of the parent container (div).
-function generateCanvas(){
-  // Initialize canvas with default dimensions
+function generateCanvas() {
   container = document.getElementById("mandelbrotContainer");
-  canvas = document.getElementById("canvas");
   // Canvas will be a square to avoid a distorted mandelbrot set rendering
-  canvas.width = (container.offsetWidth >= fullScreenSize) ? Math.min(container.offsetWidth/2, fullScreenSize/2 - 20) : container.offsetWidth-20;
+  // canvas.width =
+    // (container.offsetWidth >= fullScreenSize)
+      // ? Math.min(container.offsetWidth / 2, fullScreenSize / 2 - 20)
+      // : container.offsetWidth - 20;
+  // full screen size+ (1280)
+  console.log(window.innerWidth);
+  if (window.innerWidth >= fullScreenSize){
+    canvas.width = container.offsetWidth;
+  } else{
+    canvas.width = Math.min(container.offsetWidth, container.offsetHeight);
+  }
   canvas.height = canvas.width;
+  console.log(canvas.width + " " + canvas.height);
   ctx = canvas.getContext("2d");
   // Store the canvas' x and y positions
-  let rect = canvas.getBoundingClientRect(); 
-  canvasX = rect.left + window.scrollX; 
-  canvasY = rect.top + window.scrollY; 
+  let rect = canvas.getBoundingClientRect();
+  canvasX = rect.left + window.scrollX;
+  canvasY = rect.top + window.scrollY;
 }
 
-
-function applyDefaults(){
+function applyDefaults() {
   // Get the canvas
   generateCanvas();
   // Default offset position
@@ -101,32 +126,28 @@ function applyDefaults(){
   inverted = false;
   renderAxes = false;
   gradient = true;
-  scale = 4
-  brightness = 5
-}
-
-// Drawing a pixel at an (x, y) coordinate of a specified rgb color
-function drawPoint(x, y, color) {
-  ctx.beginPath();
-  ctx.fillStyle = color;
-  ctx.fillRect(x, y, 1, 1)
-  ctx.fill();
+  scale = 4;
+  brightness = 5;
 }
 
 // Modulates brightness in proportion to scale for visibility at lower scales
-function adjustBrightness(){
+function adjustBrightness() {
   // Smaller scales require low brightness for clarity
-  brightness = 0.4*(Math.log10(scale + 10**(-6)) + 6) + 0.1;
+  brightness = 0.4 * (Math.log10(scale + 10 ** -6) + 6) + 0.1;
 }
 
 // Rendering the Mandelbrot set and outputting the generation time to an HTML page
 function draw() {
+  console.log("RENDER");
   // Adjust brightness according to scale
   adjustBrightness();
   // Display the scale, brightness, sharpness
   // Up to 3 sig-figs in scientific notation (i.e. 123456 > 1.23 * 10^5)
-  scaleDisplay.innerHTML = (scale >= 1) ? scale : Number(scale.toPrecision(3)).toExponential();
-  brightnessDisplay.innerHTML = Number(brightness.toPrecision(3)).toExponential();
+  scaleDisplay.innerHTML =
+    scale >= 1 ? scale : Number(scale.toPrecision(3)).toExponential();
+  brightnessDisplay.innerHTML = Number(
+    brightness.toPrecision(3)
+  ).toExponential();
   sharpnessDisplay.innerHTML = divergenceIterations;
   // Start time in milliseconds
   const startTime = performance.now();
@@ -138,8 +159,8 @@ function draw() {
     for (let y = 0; y <= canvas.height; y++) {
       // Check if the screen coordinates mapped onto the complex plane fit in the Mandelbrot set
       let inMandelbrot = isInMandelbrot(
-        scale * (x / canvas.width) - (scale/2) + xOffset,
-        scale * (y / canvas.height) - (scale/2) + yOffset       
+        scale * (x / canvas.width) - scale / 2 + xOffset,
+        scale * (y / canvas.height) - scale / 2 + yOffset
       );
       // (-0.761574, -0.0847596)
       if (inMandelbrot == 0) {
@@ -149,8 +170,8 @@ function draw() {
         } else {
           drawPoint(x, y, "black");
         }
-      // Gradient effects only apply when the selector is activated
-      } else if(gradient){
+        // Gradient effects only apply when the selector is activated
+      } else if (gradient) {
         // Otherwise, plot the point with a brightness relative to the rate of its divergence (iteration count)
         let off;
         if (inverted) {
@@ -168,6 +189,15 @@ function draw() {
   const timeToGenerate = (endTime - startTime) / 1000;
   timeToGenerateDisplay.innerHTML = timeToGenerate.toFixed(3);
 }
+
+// Drawing a pixel at an (x, y) coordinate of a specified rgb color
+function drawPoint(x, y, color) {
+  ctx.beginPath();
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, 1, 1);
+  ctx.fill();
+}
+
 
 /*
 Runs an arbitary number of iterations of the f(z) = z^2 + c, determining if it diverges for complex number c

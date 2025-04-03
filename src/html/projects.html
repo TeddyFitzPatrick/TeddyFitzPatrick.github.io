@@ -30,15 +30,14 @@
             <!-- Title and Desc -->
             <div class="project_text">
                 <h1 class="font-bold text-5xl ">
-                    <a class="text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/jschess/">
+                    <a class="text-cyan-400">
                         Multiplayer Chess 
                     </a>
                 </h1>
                 <p class="project_description">
                     JavaScript chess implementation with Firebase realtime database for multiplayer. Chess bot gameplay using a minimax search tree with alpha-beta pruning. In progress...
-                  
                 </p>
-                <a target="_blank" class="my-2 w-fit text-white text-xl sm:text-3xl rounded-xl p-4 font-bold bg-blue-500  hover:scale-105 shadow-2xl" href="particleLife.html">
+                <a target="_blank" class="my-2 w-fit text-white text-xl sm:text-3xl rounded-xl p-4 font-bold bg-blue-500  hover:scale-105 shadow-2xl" href="chess.html">
                     Try it out!
                 </a>
             </div>
@@ -52,11 +51,11 @@
 
 
         <!-- Mandelbrot Generator -->
-        <div id="mandelbrotContainer" class="project_panel">
+        <div class="project_panel">
             <!-- Title and Desc -->
-            <div class="flex flex-col w-full xl:w-2/3">
+            <div id="mandelbrotContainer" class="flex flex-col w-full h-full xl:w-1/2">
                 <h1 class="text-cyan-400 font-bold text-5xl">
-                    <a>Mandelbrot Rendering</a>
+                    <a>Mandelbrot Zoom Rendering</a>
                 </h1>
                 <div class="project_description flex-col">
                     Made with JavaScript and the HTML canvas element. Rendered in
@@ -82,26 +81,28 @@
                 </div>
             </div>
             <!-- Project Rendering -->
-            <div class="flex flex-col items-center justify-center w-full xl:w-1/2 h-full">
-                <div class="w-fit bg-white shadow-2xl p-2 md:p-4 rounded-xl">
-                    <!-- Scale/Sharpness Tags -->
-                    <div class="w-full flex flex-row justify-evenly text-black text-sm md:text-xl">
-                        <div class="flex flex-row">
-                            <p>Scale:&nbsp;</p>
-                            <b id="scaleDisplay"> </b>
-                        </div>
-                        <div class="flex flex-row">
-                            <p>Brightness:&nbsp;</p>
-                            <b id="brightnessDisplay"> </b>
-                        </div>
-                        <div class="flex flex-row">
-                            <p>Sharpness:&nbsp;</p>
-                            <b id="sharpnessDisplay"> </b>
-                        </div>
+            <div class="flex flex-col items-center justify-center w-full xl:w-1/2 h-full bg-white shadow-2xl p-2 md:p-4 rounded-xl">
+                <!-- Scale/Sharpness Tags -->
+                <div class="w-full flex flex-row justify-evenly text-black text-sm md:text-xl">
+                    <div class="flex flex-row">
+                        <p>Scale:&nbsp;</p>
+                        <b id="scaleDisplay"> </b>
                     </div>
-                    <!-- Mandelbrot Set Rendering-->
-                    <canvas id="canvas" width="500" height="500"></canvas>
+                    <div class="flex flex-row">
+                        <p>Brightness:&nbsp;</p>
+                        <b id="brightnessDisplay"> </b>
+                    </div>
+                    <div class="flex flex-row">
+                        <p>Sharpness:&nbsp;</p>
+                        <b id="sharpnessDisplay"> </b>
+                    </div>
                 </div>
+                <!-- Mandelbrot Set Rendering-->
+                <canvas id="canvas" width="3" height="3"></canvas>
+                <!-- Generate -->
+                <button id="renderMandelbrot" class="z-10 rounded-2xl shadow-2xl hover:scale-105 text-white bg-blue-500 p-4">
+                    Start Rendering
+                </button>
             </div>
         </div>
         
