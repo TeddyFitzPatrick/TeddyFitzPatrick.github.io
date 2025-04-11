@@ -24,22 +24,14 @@ let timeToGenerateDisplay, scaleDisplay, brightnessDisplay, sharpnessDisplay;
 
 window.onload = function () {
   // Locate DOM Elements
-  canvas = document.getElementById("canvas"); 
+  canvas = document.getElementById("canvas");
   startRenderingButton = document.getElementById("renderMandelbrot");
   timeToGenerateDisplay = document.getElementById("timeToGenerate");
   scaleDisplay = document.getElementById("scaleDisplay");
   brightnessDisplay = document.getElementById("brightnessDisplay");
   sharpnessDisplay = document.getElementById("sharpnessDisplay");
-  // Default program args
-  // applyDefaults();
   // Add event listeners
   addEventListeners();
-  // Handle canvas retrieval failure
-  if (!canvas.getContext) {
-    console.log("Couldn't get context");
-    return;
-  }
-
 };
 
 // Adds event listeners to the buttons, canvas, and window resizing
@@ -59,18 +51,13 @@ function addEventListeners() {
     scale *= 5;
     draw();
   });
-  // Update the canvas and rendering on window resize
-  // window.addEventListener("resize", () => {
-  //   applyDefaults();
-  //   draw();
-  // });
   // Start the mandelbrot rendering
   startRenderingButton.addEventListener("click", () => {
     startRenderingButton.classList.add("hidden");
     applyDefaults();
     draw();
   });
-  
+
   // Add event listeners for option selection
   document.getElementById("invert").addEventListener("click", () => {
     inverted = !inverted;
@@ -93,20 +80,14 @@ function addEventListeners() {
 // Creates the canvas according to the size of the parent container (div).
 function generateCanvas() {
   container = document.getElementById("mandelbrotContainer");
-  // Canvas will be a square to avoid a distorted mandelbrot set rendering
-  // canvas.width =
-    // (container.offsetWidth >= fullScreenSize)
-      // ? Math.min(container.offsetWidth / 2, fullScreenSize / 2 - 20)
-      // : container.offsetWidth - 20;
+  // Canvas dimensions set to a square to avoid distorted rendering
   // full screen size+ (1280)
-  console.log(window.innerWidth);
-  if (window.innerWidth >= fullScreenSize){
+  if (window.innerWidth >= fullScreenSize) {
     canvas.width = container.offsetWidth;
-  } else{
+  } else {
     canvas.width = Math.min(container.offsetWidth, container.offsetHeight);
   }
   canvas.height = canvas.width;
-  console.log(canvas.width + " " + canvas.height);
   ctx = canvas.getContext("2d");
   // Store the canvas' x and y positions
   let rect = canvas.getBoundingClientRect();
@@ -138,7 +119,6 @@ function adjustBrightness() {
 
 // Rendering the Mandelbrot set and outputting the generation time to an HTML page
 function draw() {
-  console.log("RENDER");
   // Adjust brightness according to scale
   adjustBrightness();
   // Display the scale, brightness, sharpness
@@ -197,7 +177,6 @@ function drawPoint(x, y, color) {
   ctx.fillRect(x, y, 1, 1);
   ctx.fill();
 }
-
 
 /*
 Runs an arbitary number of iterations of the f(z) = z^2 + c, determining if it diverges for complex number c

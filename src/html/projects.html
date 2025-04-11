@@ -13,51 +13,50 @@
     <script src="../js/mandelbrot.js"></script>
 </head>
 
-<body class="default_body pb-12">
-    <nav class="nav_bar">
-        <a class="nav_tab" href="../../index.html">home</a>
-        <a class="nav_tab" href="projects.html">projects</a>
-        <a class="nav_tab" href="classes.html">classes</a>
-        <a class="nav_tab" href="music.html">music</a>
-        <a class="nav_tab" href="thoughts.html">thoughts</a>
+<body class="defaultBody pb-12">
+    <nav class="navBar">
+        <a class="navTab" href="../../index.html">home</a>
+        <a class="navTab" href="projects.html">projects</a>
+        <a class="navTab" href="classes.html">classes</a>
+        <a class="navTab" href="music.html">music</a>
+        <a class="navTab" href="thoughts.html">thoughts</a>
     </nav>
     <!-- projects -->
     <div class="flex flex-col text-white text-3xl items-center w-full h-full pt-[calc(10vh+1rem)] md:pt-[calc(10vh+3rem)] space-y-12"> 
         
 
         <!-- Online Chess -->
-        <div class="project_panel">
+        <div class="projectPanel">
             <!-- Title and Desc -->
-            <div class="project_text">
+            <div class="projectText">
                 <h1 class="font-bold text-5xl ">
                     <a class="text-cyan-400">
                         Multiplayer Chess 
                     </a>
                 </h1>
-                <p class="project_description">
+                <p class="projectDescription">
                     JavaScript chess implementation with Firebase realtime database for multiplayer. Chess bot gameplay using a minimax search tree with alpha-beta pruning. In progress...
                 </p>
                 <a target="_blank" class="my-2 w-fit text-white text-xl sm:text-3xl rounded-xl p-4 font-bold bg-blue-500  hover:scale-105 shadow-2xl" href="chess.html">
                     Try it out!
                 </a>
             </div>
-            <!--  -->
-            <div class="project_vids">
-                <video class="rounded-xl" autoplay loop muted width="1000">
-                    <source src=""/>
-                </video>
+            <!-- Chess Captures -->
+            <div class="projectVids">
+                <img class="projectVid" src="../images/chessCapture.png" width="500">
+                <img class="projectVid" src="../images/chessPromotionCapture.png" width="500">
             </div>
         </div>
 
 
         <!-- Mandelbrot Generator -->
-        <div class="project_panel">
+        <div class="projectPanel">
             <!-- Title and Desc -->
             <div id="mandelbrotContainer" class="flex flex-col w-full h-full xl:w-1/2">
                 <h1 class="text-cyan-400 font-bold text-5xl">
                     <a>Mandelbrot Zoom Rendering</a>
                 </h1>
-                <div class="project_description flex-col">
+                <div class="projectDescription flex-col">
                     Made with JavaScript and the HTML canvas element. Rendered in
                     <a class="text-cyan-400 font-bold" id="timeToGenerate"></a> seconds.
                     The brightness at each point corresponds to the rate of divergence of complex coordinates according to the function
@@ -81,7 +80,7 @@
                 </div>
             </div>
             <!-- Project Rendering -->
-            <div class="flex flex-col items-center justify-center w-full xl:w-1/2 h-full bg-white shadow-2xl p-2 md:p-4 rounded-xl">
+            <div class="flex flex-col w-full xl:w-1/2 h-full bg-white shadow-2xl p-2 md:p-4 rounded-xl">
                 <!-- Scale/Sharpness Tags -->
                 <div class="w-full flex flex-row justify-evenly text-black text-sm md:text-xl">
                     <div class="flex flex-row">
@@ -98,18 +97,18 @@
                     </div>
                 </div>
                 <!-- Mandelbrot Set Rendering-->
-                <canvas id="canvas" width="3" height="3"></canvas>
+                <canvas id="canvas"></canvas>
                 <!-- Generate -->
-                <button id="renderMandelbrot" class="z-10 rounded-2xl shadow-2xl hover:scale-105 text-white bg-blue-500 p-4">
+                <button id="renderMandelbrot" class="rounded-2xl shadow-2xl hover:scale-105 text-white bg-blue-500 p-4">
                     Start Rendering
                 </button>
             </div>
         </div>
         
         <!-- Particle Life -->
-        <div class="project_panel">
+        <div class="projectPanel">
             <!-- Title and Desc -->
-            <div class="project_text">
+            <div class="projectText">
                 <h1 class="font-bold text-5xl ">
                     <a class="text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/particle_life/">
                         Particle Life
@@ -118,7 +117,7 @@
                         </b>
                     </a>
                 </h1>
-                <p class="project_description">
+                <p class="projectDescription">
                     Particle life simulation inspired by <a class="font-bold underline hover:text-cyan-400"
                         target="_blank" href="https://www.youtube.com/watch?v=p4YirERTVF0">this video</a> made by Tom
                     Mohr. Randomly generated rules of attraction & repulsion between particles of different colors
@@ -129,21 +128,21 @@
                 </a>
             </div>
             <!-- Particle life demos -->
-            <div class="project_vids">
+            <div class="projectVids">
                 <video class="rounded-xl shadow-2xl" autoplay loop muted width="1000">
-                    <source src="../images/particle_life_capture.mp4" />
+                    <source src="../images/particleLifeCapture.mp4" />
                 </video>
             </div>
         </div>
 
         <!-- PyTetris -->
-        <div class="project_panel">
+        <div class="projectPanel">
             <!-- Title and Desc -->
-            <div class="project_text">
+            <div class="projectText">
                 <h1 class="font-bold text-5xl ">
                     <a class="text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/pyTetris">PyTetris</a>
                 </h1>
-                <p class="project_description">
+                <p class="projectDescription">
                     A tetris clone made using pygame, a python wrapper of the DirectMedia Layer
                     (SDL) used create multimedia applications. I implemented Tetris' Super Rotation System
                     (<a href="https://tetris.wiki/Super_Rotation_System" class="text-cyan-400" target="_blank">wiki</a>)
@@ -153,24 +152,24 @@
                 </p>
             </div>
             <!-- PyTetris vids -->
-            <div class="project_vids">
-                <video class="project_vid" autoplay loop muted width="500">
+            <div class="projectVids">
+                <video class="projectVid" autoplay loop muted width="500">
                     <source src="../images/tetris.mp4" />
                 </video>
-                <video class="project_vid" autoplay loop muted width="500">
-                    <source src="../images/tetris_gameplay.mp4" />
+                <video class="projectVid" autoplay loop muted width="500">
+                    <source src="../images/tetrisGameplay.mp4" />
                 </video>
             </div>
         </div>
 
         <!-- PyLife -->
-        <div class="project_panel">
+        <div class="projectPanel">
             <!-- Title and Desc -->
-            <div class="project_text">
+            <div class="projectText">
                 <h1 class="font-bold text-5xl ">
                     <a class="text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/pyLife">PyLife</a>
                 </h1>
-                <p class="project_description">
+                <p class="projectDescription">
                     A GUI for Conway's Game of Life with adjustable update speed, grid-size, and tile coloring. Allows for both randomized and 
                     user-inputted initial game configurations. Grid cells will wrap around the edges of the grid instead of terminating.
                     Fun for experimenting with various designs and gliders, many of which can be found on the 
@@ -178,34 +177,34 @@
                 </p>
             </div>
             <!-- PyLife demos -->
-            <div class="project_vids">
-                <video class="project_vid" autoplay loop muted width="500">
-                    <source src="../images/pylife_controls.mp4" />
+            <div class="projectVids">
+                <video class="projectVid" autoplay loop muted width="500">
+                    <source src="../images/pylifeControls.mp4" />
                 </video>
-                <video class="project_vid" autoplay loop muted width="500">
-                    <source src="../images/pylife_random_configs.mp4" />
+                <video class="projectVid" autoplay loop muted width="500">
+                    <source src="../images/pylifeRandomConfigs.mp4" />
                 </video>
             </div>
         </div>
 
         <!-- Design By Fitz -->
-        <div class="project_panel">
+        <div class="projectPanel">
             <!-- Title and Desc -->
-            <div class="project_text">
+            <div class="projectText">
                 <h1 class="font-bold text-5xl ">
                     <a class="text-cyan-400" target="_blank" href="https://github.com/TeddyFitzPatrick/fitzpatrickdesign">FitzPatrick Design Inc.</a>
                 </h1>
-                <p class="project_description">
+                <p class="projectDescription">
                     Marketing website design for cabinetry company to attract customers. Showcases professional kitchen designs with an elegant UI. Made with HTML, Tailwind CSS, and JavaScript.
                     Here's a link if you would like to see for yourself: <a class="text-cyan-400" href="https://designbyfitz.com/" target="_blank">designbyfitz.com</a>
                 </p>
             </div>
             <!-- design by fitz images -->
-            <div class="project_vids">
-                <video class="project_vid" autoplay loop muted width="500">
+            <div class="projectVids">
+                <video class="projectVid" autoplay loop muted width="500">
                     <source src="../images/designbyfitz.mp4" />
                 </video>
-                <img class="project_vid" width="500" src="../images/designbyfitz_projects.png"/>
+                <img class="projectVid" width="500" src="../images/designbyfitzProjects.png"/>
             </div>
         </div>
     </div>

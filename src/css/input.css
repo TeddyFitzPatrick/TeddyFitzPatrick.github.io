@@ -5,32 +5,22 @@
 /* 
 npx tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch
 npx serve
- */
+*/
 
-/* I know its bad to use *, don't judge */
 *{
     font-family: "Montserrat", Geneva, Verdana, sans-serif;
 }
 
-/* Chess */
-.chessButton{
-    @apply p-4 w-full h-1/3 rounded-2xl shadow-2xl text-3xl bg-black font-bold text-white hover:scale-105
-}
-
-.chessPromotion{
-    @apply bg-slate-200 rounded-2xl w-1/5 aspect-square hover:scale-110 shadow-2xl invert
-}
-
 /* Universal page styling and navigation bar */
-.nav_bar{
+.navBar{
     @apply fixed flex flex-row justify-around text-lg sm:text-2xl text-center items-center bg-white w-full h-[10vh]
 }
 
-.nav_tab{
+.navTab{
     @apply w-auto h-fit text-pink-800 hover:underline
 }
 
-.default_body{
+.defaultBody{
     @apply min-h-screen bg-gradient-to-br from-orange-500 to-fuchsia-400 text-white flex flex-col items-center
 }
 
@@ -39,35 +29,34 @@ npx serve
 }
 
 .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;  
+    scrollbar-width: none;  
 }
 
 /* Projects */
-.project_panel{
-    @apply flex flex-col xl:flex-row p-4 sm:p-6 w-[98%] sm:w-[95%] border-y-8 shadow-2xl bg-slate-700 border-slate-800 rounded-2xl
+.projectPanel{
+    @apply flex flex-col items-stretch xl:flex-row min-h-[100px] p-4 sm:p-6 w-[98%] sm:w-[95%] border-y-8 shadow-2xl bg-slate-700 border-slate-800 rounded-2xl
 }
 
-.project_text{
+.projectText{
     @apply flex flex-col w-full xl:w-[calc(100%-500px)] 2xl:w-[calc(100%-1000px)]
 }
 
-.project_description{
+.projectDescription{
     @apply text-xl sm:text-3xl p-2 px-0 sm:p-6
 }
 
-.project_vids{
+.projectVids{
     @apply flex flex-col lg:flex-row xl:flex-col 2xl:flex-row items-center justify-center w-fit h-fit rounded-xl 
 }
 
-.project_vid{
+.projectVid{
     @apply m-2 rounded-xl w-full lg:w-1/2 shadow-2xl
 }
 
 .rendering_button{
     @apply text-black hover:scale-105 text-2xl m-1 p-1 bg-white rounded-xl border-black border-4
 }
-
 
 /* Classes */
 .semester{
@@ -88,4 +77,13 @@ npx serve
 /* Course Descriptions */
 .semester li{
     @apply text-white italic 
+}
+
+/* Chess */
+.chessButton{
+    @apply p-4 w-full h-1/3 rounded-2xl shadow-2xl text-3xl bg-black font-bold text-white hover:scale-105
+}
+
+.chessPromotion{
+    @apply bg-slate-200 rounded-2xl w-1/5 aspect-square hover:scale-110 shadow-2xl invert
 }

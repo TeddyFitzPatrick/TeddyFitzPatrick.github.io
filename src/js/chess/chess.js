@@ -7,19 +7,19 @@ let boardLength;
 let TILE_SIZE;
 /* Image assets for pieces */
 export const pieceImageMap = new Map([
-    [0,  loadImage("../assets/whitePawn.png")],
-    [1,  loadImage("../assets/whitePawn.png")],
-    [-1, loadImage("../assets/blackPawn.png")],
-    [2,  loadImage("../assets/whiteKnight.png")],
-    [-2, loadImage("../assets/blackKnight.png")],
-    [3,  loadImage("../assets/whiteBishop.png")],
-    [-3, loadImage("../assets/blackBishop.png")],
-    [4,  loadImage("../assets/whiteRook.png")],
-    [-4, loadImage("../assets/blackRook.png")],
-    [5,  loadImage("../assets/whiteQueen.png")],
-    [-5, loadImage("../assets/blackQueen.png")],
-    [6,  loadImage("../assets/whiteKing.png")],
-    [-6, loadImage("../assets/blackKing.png")]
+    [0,  loadImage("../chessAssets/whitePawn.png")],
+    [1,  loadImage("../chessAssets/whitePawn.png")],
+    [-1, loadImage("../chessAssets/blackPawn.png")],
+    [2,  loadImage("../chessAssets/whiteKnight.png")],
+    [-2, loadImage("../chessAssets/blackKnight.png")],
+    [3,  loadImage("../chessAssets/whiteBishop.png")],
+    [-3, loadImage("../chessAssets/blackBishop.png")],
+    [4,  loadImage("../chessAssets/whiteRook.png")],
+    [-4, loadImage("../chessAssets/blackRook.png")],
+    [5,  loadImage("../chessAssets/whiteQueen.png")],
+    [-5, loadImage("../chessAssets/blackQueen.png")],
+    [6,  loadImage("../chessAssets/whiteKing.png")],
+    [-6, loadImage("../chessAssets/blackKing.png")]
 ]);
 
 /* Encodings */
