@@ -21,16 +21,7 @@ npx serve
 }
 
 .defaultBody{
-    @apply min-h-screen bg-gradient-to-br from-orange-500 to-fuchsia-400 text-white flex flex-col items-center
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-    display: none;
-}
-
-.scrollbar-hide {
-    -ms-overflow-style: none;  
-    scrollbar-width: none;  
+    @apply min-h-screen bg-gradient-to-br from-orange-500 to-fuchsia-400 text-white flex flex-col items-center 
 }
 
 /* Projects */
@@ -81,7 +72,7 @@ npx serve
 
 /* Chess */
 .chessButton{
-    @apply p-4 w-full h-1/3 rounded-2xl shadow-2xl text-3xl bg-black font-bold text-white hover:scale-105
+    @apply p-4 w-full h-1/3 rounded-2xl shadow-2xl text-3xl bg-black font-bold text-white hover:scale-[102%]
 }
 
 .chessPromotion{

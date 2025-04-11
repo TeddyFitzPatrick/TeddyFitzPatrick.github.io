@@ -1,6 +1,7 @@
 import { Particle } from './particle.js';
 // Canvas variables
 export let canvas, ctx;
+const opacity = 0.015;
 
 // Particle life variables
 export const COLORS = ["red", "orange", "yellow", "green", "blue", "purple"];
@@ -10,12 +11,40 @@ export let forceMatrix
 
 export let frictionCoefficient = 0.1;
 export let minRadius = 40;
-export let maxRadius = 101;
-export let particles = []
+export let maxRadius = 300;
+export let particles = [];
 
+window.addEventListener("load", () => {
+    // TODO: 
+    particleCount = Math.min(1000, 0.0006 * (window.innerWidth * window.innerHeight));
+    particleCount = Math.max(particleCount, 200);
+    loadSimulation();
+    // setInterval(loadSimulation, 2000);
+});
+
+export function loadSimulation(){
+    // Get the canvas and set its size the body
+    canvas = document.getElementById("canvas");
+    ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Event Listeners
+    addListeners();
+
+    // Generate particles
+    generateParticles(particleCount);
+
+    // Generate a force mapping between colors (attraction/repulsion values between different colored particles)
+    generateForceMatrix();
+
+    // Start the particle life rendering
+    setInterval(render, 17);
+}
 
 // Generates a specified number of particles, each with their own random position and color
 function generateParticles(particlesToGenerate){
+    particles = [];
     for (let i = 1; i <= particlesToGenerate; i++){
         particles.push(new Particle(
             getRandomPosition(),
@@ -41,7 +70,7 @@ function generateForceMatrix(){
 // Clear the screen, apply particle logic, and then render the particles
 function render(){
     // Clear screen
-    ctx.fillStyle = "black"
+    ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     // Apply particle forces, updating positions and velocities
     for (let particle of particles){
@@ -70,14 +99,14 @@ function addListeners(){
     //     }
     // };
     // Resize the canvas on window resize
-    window.addEventListener('resize', function() {
+    window.addEventListener("resize", function() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     });
     // Apply a force on click
-    canvas.addEventListener('click', function(){
+    window.addEventListener("click", function(){
         let deltaX, deltaY, angle, xDir, yDir
-        let forceMagnitude = 40;
+        let forceMagnitude = 20;
         for (let particle of particles){
             deltaX = Number(event.clientX) - particle.position[0];
             deltaY = Number(event.clientY) - particle.position[1];
@@ -88,6 +117,8 @@ function addListeners(){
             particle.velocity[1] += forceMagnitude * yDir;
         }
     });
+
+    if (document.getElementById("minRadiusSlider") === null) return;
     // Slider inputs
     const SLIDERS = ["minRadius", "maxRadius", "particleSize", "particleCount", "frictionCoefficient"];
 
@@ -131,32 +162,12 @@ function addListeners(){
     });
 }
 
-
-window.onload = function(){
-    // Get the canvas and set its size the body
-    canvas = document.getElementById("canvas");
-    ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    // Event Listeners
-    addListeners();
-
-    // Generate particles
-    generateParticles(particleCount);
-
-    // Generate a force mapping between colors (attraction/repulsion values between different colored particles)
-    generateForceMatrix();
-
-    // Start the particle life rendering
-    setInterval(render, 17);
-};
-
 // Utility
 function getRandomNumber(min, max){
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function getRandomPosition(){
-    return [getRandomNumber(0, canvas.width), getRandomNumber(0, canvas.height)];
+    return [getRandomNumber(Math.floor(canvas.width*0.4), Math.floor(canvas.width*0.6)), 
+            getRandomNumber(Math.floor(canvas.height*0.4), Math.floor(canvas.height*0.6))];
 }
