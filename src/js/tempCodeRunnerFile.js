@@ -7,7 +7,7 @@ let startRenderingButton;
 
 // Mandelbrot variables
 let divergenceIterations,
-    zInitial,
+	zInitial,
     ctx,
     inverted,
     renderAxes,
