@@ -1,17 +1,17 @@
 import { Particle } from './particle.js';
 // Canvas variables
 export let canvas, ctx;
-const opacity = 0.015;
+const opacity = 0.03;
 
 // Particle life variables
 export const COLORS = ["red", "orange", "yellow", "green", "blue", "purple"];
 export let particleCount = 1_000;
-export let particleSize = 4;
+export let particleSize = 7;
 export let forceMatrix 
 
-export let frictionCoefficient = 0.1;
+export let frictionCoefficient = 0.03;
 export let minRadius = 40;
-export let maxRadius = 300;
+export let maxRadius = 200;
 export let particles = [];
 
 window.addEventListener("load", () => {
@@ -21,66 +21,6 @@ window.addEventListener("load", () => {
     loadSimulation();
     // setInterval(loadSimulation, 2000);
 });
-
-export function loadSimulation(){
-    // Get the canvas and set its size the body
-    canvas = document.getElementById("canvas");
-    ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    // Event Listeners
-    addListeners();
-
-    // Generate particles
-    generateParticles(particleCount);
-
-    // Generate a force mapping between colors (attraction/repulsion values between different colored particles)
-    generateForceMatrix();
-
-    // Start the particle life rendering
-    setInterval(render, 17);
-}
-
-// Generates a specified number of particles, each with their own random position and color
-function generateParticles(particlesToGenerate){
-    particles = [];
-    for (let i = 1; i <= particlesToGenerate; i++){
-        particles.push(new Particle(
-            getRandomPosition(),
-            [0, 0],
-            COLORS[Math.floor(Math.random() * COLORS.length)]
-        ));
-    }
-}
-
-// Generate a matrix of attraction and repulsion values between different particle colors with random values
-function generateForceMatrix(){
-    forceMatrix = {};
-    COLORS.forEach(color => {
-        // Each color gets its own force mapping to every other color
-        forceMatrix[color] = {};
-        COLORS.forEach(otherColor => {
-            // Get random attraction/repulsion force coefficient between colors
-            forceMatrix[color][otherColor] = Math.random() * 2 - 1;
-        });
-    });
-}
-
-// Clear the screen, apply particle logic, and then render the particles
-function render(){
-    // Clear screen
-    ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    // Apply particle forces, updating positions and velocities
-    for (let particle of particles){
-        particle.update();
-    }
-    // Render particle(s)
-    for (let particle of particles){
-        particle.render();
-    }
-}
 
 // Add event listeners for keyboard presses, mouse button clicks, and slider inputs
 function addListeners(){
@@ -160,6 +100,72 @@ function addListeners(){
     reloadButton.addEventListener("click", () => {
         window.location.reload();
     });
+}
+
+// Start the simulation 
+export function loadSimulation(){
+    // Get the canvas and set its size the body
+    canvas = document.getElementById("canvas");
+    ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Event Listeners
+    addListeners();
+
+    // Generate particles
+    generateParticles(particleCount);
+
+    // Generate a force mapping between colors (attraction/repulsion values between different colored particles)
+    generateForceMatrix();
+
+    // Start the particle life rendering
+    setInterval(() => {
+        render(opacity);
+    }, 15);
+
+}
+
+// Generates a specified number of particles, each with their own random position and color
+function generateParticles(particlesToGenerate){
+    particles = [];
+    for (let i = 1; i <= particlesToGenerate; i++){
+        particles.push(new Particle(
+            getRandomPosition(),
+            [0, 0],
+            COLORS[Math.floor(Math.random() * COLORS.length)]
+        ));
+    }
+}
+
+// Generate a matrix of attraction and repulsion values between different particle colors with random values
+function generateForceMatrix(){
+    forceMatrix = {};
+    COLORS.forEach(color => {
+        // Each color gets its own force mapping to every other color
+        forceMatrix[color] = {};
+        COLORS.forEach(otherColor => {
+            // Get random attraction/repulsion force coefficient between colors
+            // forceMatrix[color][otherColor] = Math.random() * 2 - 1;
+            // NEGATIVE
+            forceMatrix[color][otherColor] = Math.random() * 2 - 1.5;
+        });
+    });
+}
+
+// Clear the screen, apply particle logic, and then render the particles
+function render(opacity){
+    // Clear screen
+    ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Apply particle forces, updating positions and velocities
+    for (let particle of particles){
+        particle.update();
+    }
+    // Render particle(s)
+    for (let particle of particles){
+        particle.render();
+    }
 }
 
 // Utility
