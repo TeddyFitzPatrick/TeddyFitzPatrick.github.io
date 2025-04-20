@@ -18,7 +18,6 @@ appId: "1:235440467476:web:fd2cdc5f6d8f3179f60101",
 measurementId: "G-EBFXSCT3PZ"
 };
 
-
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const database = getDatabase(app);

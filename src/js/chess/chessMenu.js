@@ -20,7 +20,7 @@ const botGameButton = document.getElementById("botGame");
 const enterRoomCode = document.getElementById("enterRoomCode");
 const enterRoomCodeSubmit = document.getElementById("enterRoomCodeSubmit");
 // Host
-const hostRoom = document.getElementById("hostRoom");
+const hostRoomSubmit = document.getElementById("hostRoomSubmit");
 const roomCodeDisplay = document.getElementById("roomCodeDisplay");
 // Color select
 const selectWhite = document.getElementById("selectWhite");
@@ -29,10 +29,6 @@ const selectBlack = document.getElementById("selectBlack");
 window.onload = function (){
     // Page select
     selectPage(gamemodeSelection)
-
-    // selectPage(chessBoard);
-    // main(1, 1, 1);
-
     // Add event listeners
     // DEBUG
     window.addEventListener("keydown", function (event){
@@ -45,7 +41,9 @@ window.onload = function (){
     });
     // Game Options Navigation
     localGameButton.addEventListener("click", function (){
-        console.log("local");
+        // Start a local game
+        selectPage(chessBoard);
+        main();
     });
     onlineGameButton.addEventListener("click", function (){   
         selectPage(multiplayerConfig);  
@@ -53,28 +51,8 @@ window.onload = function (){
     botGameButton.addEventListener("click", function (){
         console.log("bot");
     });
-
     // Multiplayer Game Config
-    hostRoom.addEventListener("click", async function(){
-        // DEBUG
-        isHosting = true;
-        // Generate a random 4-letter room code
-        const hostRoomCode = generateRoomCode();
-        // Copy the room code to clipboard
-        navigator.clipboard.writeText(hostRoomCode);
-        // Display the code 
-        roomCodeDisplay.textContent = hostRoomCode;
-        // If a color has not been picked, then choose one randomly
-        hostColor = (hostColor !== undefined) ? hostColor :  Math.random() >= 0.5 ? 1 : -1;
-        // Put the room on firebase
-        await UPDATE(hostRoomCode, {"joined": 0, "hostColor": hostColor})
-        // Wait for the opponent to update the joined status to start the game
-        await WaitFor(`${hostRoomCode}/joined`, 1);
-        // Player has joined, start the game
-        selectPage(chessBoard);
-        main(hostRoomCode, hostColor);
-
-    });    
+    hostRoomSubmit.addEventListener("click", (event) => {hostRoom()});
     // Join room code
     enterRoomCodeSubmit.addEventListener("click", (event) => {joinRoom()});
     // Select a color (default random)
@@ -83,24 +61,38 @@ window.onload = function (){
         selectBlack.classList.remove("border-cyan-500", "border-8", "scale-105");
         hostColor = 1;
     });
-    selectBlack.addEventListener("click", function (){
+    selectBlack.addEventListener("click", async function (){
         selectBlack.classList.add("border-cyan-500", "border-8", "scale-105");
         selectWhite.classList.remove("border-cyan-500", "border-8", "scale-105");
         hostColor = -1;
+        if (isHosting) await UPDATE(hostRoomCode, {"joined": 0, "hostColor": hostColor})
+
     });
 }
 
-export function selectPage(pageSelected){
-    for (const page of pages){
-        page.classList.add("hidden");
-    }
-    pageSelected.classList.remove("hidden");
+async function hostRoom(){
+    isHosting = true;
+    // Generate a random 4-letter room code
+    const hostRoomCode = generateRoomCode();
+    // Copy the room code to clipboard
+    navigator.clipboard.writeText(hostRoomCode);
+    // Display the code 
+    roomCodeDisplay.textContent = hostRoomCode;
+    // If a color has not been picked, then choose one randomly
+    hostColor = (hostColor !== undefined) ? hostColor :  Math.random() >= 0.5 ? 1 : -1;
+    // Put the room on firebase
+    await UPDATE(hostRoomCode, {"joined": 0, "hostColor": hostColor})
+    // Wait for the opponent to update the joined status to start the game
+    await WaitFor(`${hostRoomCode}/joined`, 1);
+    // Player has joined, start the game
+    selectPage(chessBoard);
+    main(true, hostRoomCode, hostColor);
 }
 
 async function joinRoom() {
     // Read the room code
     const joinRoomCode = enterRoomCode.value.toUpperCase();
-    console.log("Join Room: " + joinRoomCode);
+    // Block joining a room while hosting
     if (isHosting) {
         alert("Can not join a game while hosting!")
         return;
@@ -110,12 +102,12 @@ async function joinRoom() {
         return;
     }
     // Update the joined field to signal to the host the game has started
-    const data = await UPDATE(joinRoomCode, {"joined": 1});
+    await UPDATE(joinRoomCode, {"joined": 1});
     // Host chooses their color first
     const hostColor = await GET(`${joinRoomCode}/hostColor`)
     // Start the game
     selectPage(chessBoard);
-    main(joinRoomCode, -hostColor);
+    main(true, joinRoomCode, -hostColor);
 }
 
 function generateRoomCode(color){
@@ -127,5 +119,9 @@ function generateRoomCode(color){
     return roomCode;
 }
 
-
-
+export function selectPage(pageSelected){
+    for (const page of pages){
+        page.classList.add("hidden");
+    }
+    pageSelected.classList.remove("hidden");
+}

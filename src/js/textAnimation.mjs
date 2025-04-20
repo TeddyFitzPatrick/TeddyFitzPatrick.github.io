@@ -23,7 +23,7 @@ window.onload = function () {
     const animations = [
         new TextAnimation("title", "Hi I'm Teddy", 90),
         // new TextAnimation("plifeDemo", "{ Particle Life Demo }", 40),
-        // new TextAnimation("chessDemo", "{ Multiplayer Chess Demo }", 30)
+        new TextAnimation("chessDemo", "{ Chess }", 30)
     ];
     // Load animations
     for (let animation of animations){
