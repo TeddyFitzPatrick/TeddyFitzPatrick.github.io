@@ -8,14 +8,14 @@ import { getDatabase, onValue, ref, get, remove, update } from "https://www.gsta
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-apiKey: "AIzaSyAql9QEt6t6aXXAOUnLhFs0QpA2eNHR7E4",
-authDomain: "struglauk.firebaseapp.com",
-databaseURL: "https://struglauk-default-rtdb.firebaseio.com",
-projectId: "struglauk",
-storageBucket: "struglauk.firebasestorage.app",
-messagingSenderId: "235440467476",
-appId: "1:235440467476:web:fd2cdc5f6d8f3179f60101",
-measurementId: "G-EBFXSCT3PZ"
+    apiKey: "AIzaSyAql9QEt6t6aXXAOUnLhFs0QpA2eNHR7E4",
+    authDomain: "struglauk.firebaseapp.com",
+    databaseURL: "https://struglauk-default-rtdb.firebaseio.com",
+    projectId: "struglauk",
+    storageBucket: "struglauk.firebasestorage.app",
+    messagingSenderId: "235440467476",
+    appId: "1:235440467476:web:fd2cdc5f6d8f3179f60101",
+    measurementId: "G-EBFXSCT3PZ"
 };
 
 // Initialize Firebase

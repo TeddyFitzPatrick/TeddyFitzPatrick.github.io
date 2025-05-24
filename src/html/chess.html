@@ -10,8 +10,6 @@
     <title>Chess</title>
 </head>
 <body class="flex justify-center items-center w-screen h-screen bg-slate-800 m-0 p-0" id="body">
-
-    
     <!-- Game Mode Options  -->
     <div id="gamemodeSelection" class="hidden flex justify-evenly flex-col space-y-3 text-center items-center p-12 w-4/5 sm:w-1/2 h-3/4 min-h-fit sm:h-1/2 bg-white rounded-2xl shadow-2xl">
         <!-- Back to Home -->
@@ -63,6 +61,18 @@
     <div id="chessBoard" class="hidden flex w-full h-full justify-center items-center">
         <!-- Chess Board -->
         <canvas id="canvas" class="border-8 border-amber-950 rounded-xl shadow-2xl" width="69" height="69"></canvas>
+        <!-- Restart Window -->
+        <div id="restartWindow" class="hidden flex absolute flex-col justify-center items-center space-y-10  opacity-65
+            bg-slate-500 w-[90%] h-[90%] rounded-2xl border-black border-8">
+            <!-- Game over text -->
+            <h1 id="gameOverText" class="text-center text-bold italic text-white text-3xl">
+                Game Over Text Placeholder
+            </h1>
+            <!-- Restart -->
+            <button id="restart" class="text-bold text-3xl p-4 hover:scale-105 rounded-2xl shadow-2xl border-black bg-blue-500 text-white">
+                Play Again
+            </button>
+        </div>
         <!-- Pawn Promotion Selection -->
         <div id="promotionWindow" class="hidden flex absolute flex-row justify-around items-center
         bg-opacity-70 bg-slate-600 w-full sm:w-1/2 h-[20%] top-[40%] left-0 sm:left-1/4 rounded-3xl border-black border-8">
@@ -73,18 +83,7 @@
         </div>
 
 
-        <!-- Restart Window -->
-        <div id="restartWindow" class="hidden flex absolute flex-col justify-around items-center
-            bg-slate-500 w-[90%] sm:w-1/2 h-1/2 top-1/4 left-0 sm:left-1/4 rounded-2xl border-black border-8">
-            <!-- Game over text -->
-            <h1 id="gameOverText" class="text-center text-bold italic text-white text-3xl">
-                Game Over Text Placeholder
-            </h1>
-            <!-- Restart -->
-            <button id="restart" class="text-bold text-3xl p-4 hover:scale-105 rounded-2xl shadow-2xl border-black bg-blue-500 text-white">
-                Play Again
-            </button>
-        </div>
+        
     </div>
 
 </body>

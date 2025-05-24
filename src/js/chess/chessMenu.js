@@ -1,30 +1,28 @@
 import main from './chess.js';
-import { database, WaitFor, GET, REMOVE, UPDATE } from "./networking.js";
+import { WaitFor, GET, REMOVE, UPDATE } from "./networking.js";
 
 // Online
 let isHosting = false;
 let hostColor;
 
 /* Pages */
-const gamemodeSelection = document.getElementById("gamemodeSelection");
-const multiplayerConfig = document.getElementById("multiplayerConfig");
-const chessBoard = document.getElementById("chessBoard");
-const pages = [
-    gamemodeSelection, multiplayerConfig, chessBoard
-];
+const gamemodeSelection = document.getElementById("gamemodeSelection"),
+    multiplayerConfig = document.getElementById("multiplayerConfig"),
+    chessBoard = document.getElementById("chessBoard"),
+    pages = [gamemodeSelection, multiplayerConfig, chessBoard];
 // Gamemode Selection
-const localGameButton = document.getElementById("localGame");
-const onlineGameButton = document.getElementById("onlineGame");
-const botGameButton = document.getElementById("botGame");
+const localGameButton = document.getElementById("localGame"),
+    onlineGameButton = document.getElementById("onlineGame"),
+    botGameButton = document.getElementById("botGame");
 // Join
-const enterRoomCode = document.getElementById("enterRoomCode");
-const enterRoomCodeSubmit = document.getElementById("enterRoomCodeSubmit");
+const enterRoomCode = document.getElementById("enterRoomCode"),
+    enterRoomCodeSubmit = document.getElementById("enterRoomCodeSubmit");
 // Host
-const hostRoomSubmit = document.getElementById("hostRoomSubmit");
-const roomCodeDisplay = document.getElementById("roomCodeDisplay");
+const hostRoomSubmit = document.getElementById("hostRoomSubmit"),
+    roomCodeDisplay = document.getElementById("roomCodeDisplay");
 // Color select
-const selectWhite = document.getElementById("selectWhite");
-const selectBlack = document.getElementById("selectBlack");
+const selectWhite = document.getElementById("selectWhite"),
+    selectBlack = document.getElementById("selectBlack");
 
 window.onload = function (){
     // Page select
@@ -35,8 +33,6 @@ window.onload = function (){
         if (event.key === "Enter"){
             REMOVE("/");
             console.log("deleted")
-        } else if (event.key === "ArrowRight"){
-            console.log("RR");
         }
     });
     // Game Options Navigation
@@ -49,7 +45,8 @@ window.onload = function (){
         selectPage(multiplayerConfig);  
     });
     botGameButton.addEventListener("click", function (){
-        console.log("bot");
+        selectPage(chessBoard);
+        main(true, "bot");
     });
     // Multiplayer Game Config
     hostRoomSubmit.addEventListener("click", (event) => {hostRoom()});
@@ -66,7 +63,6 @@ window.onload = function (){
         selectWhite.classList.remove("border-cyan-500", "border-8", "scale-105");
         hostColor = -1;
         if (isHosting) await UPDATE(hostRoomCode, {"joined": 0, "hostColor": hostColor})
-
     });
 }
 
