@@ -1,6 +1,5 @@
 import { loadImage } from "./chess.js";
 
-/* Image assets for pieces */
 export const pieceImages = new Map([
     [1, loadImage("../assets/chessAssets/whitePawn.png")],
     [-1, loadImage("../assets/chessAssets/blackPawn.png")],
@@ -15,28 +14,6 @@ export const pieceImages = new Map([
     [6, loadImage("../assets/chessAssets/whiteKing.png")],
     [-6, loadImage("../assets/chessAssets/blackKing.png")],
 ]);
-/* Encodings */
-export const Piece = {
-    EMPTY: 0,
-    WHITE_PAWN: 1,
-    BLACK_PAWN: -1,
-    WHITE_KNIGHT: 2,
-    BLACK_KNIGHT: -2,
-    WHITE_BISHOP: 3,
-    BLACK_BISHOP: -3,
-    WHITE_ROOK: 4,
-    BLACK_ROOK: -4,
-    WHITE_QUEEN: 5,
-    BLACK_QUEEN: -5,
-    WHITE_KING: 6,
-    BLACK_KING: -6,
-};
-/* Player Colors */
-export const Color = {
-    WHITE: 1,
-    BLACK: -1,
-};
-/* Piece Move Rules */
 export const pieceMovements = {
     2: [
         [-2, -1],
@@ -80,4 +57,33 @@ export const pieceMovements = {
         [0, -1],
         [0, 1],
     ],
+};
+export const pieceValues = new Map([
+    [1, 1],
+    [2, 3],
+    [3, 3],
+    [4, 5],
+    [5, 9],
+    [6, 1000000]
+]);
+/* Piece Encodings */
+export const Piece = {
+    EMPTY: 0,
+    WHITE_PAWN: 1,
+    BLACK_PAWN: -1,
+    WHITE_KNIGHT: 2,
+    BLACK_KNIGHT: -2,
+    WHITE_BISHOP: 3,
+    BLACK_BISHOP: -3,
+    WHITE_ROOK: 4,
+    BLACK_ROOK: -4,
+    WHITE_QUEEN: 5,
+    BLACK_QUEEN: -5,
+    WHITE_KING: 6,
+    BLACK_KING: -6,
+};
+
+export const Color = {
+    WHITE: 1,
+    BLACK: -1,
 };

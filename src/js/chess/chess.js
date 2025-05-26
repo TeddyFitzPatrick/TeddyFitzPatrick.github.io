@@ -1,5 +1,5 @@
 import { WaitFor, REMOVE, UPDATE } from "./networking.js";
-import { pieceImages, Piece, Color, pieceMovements } from "./consts.js";
+import { pieceImages, pieceValues, pieceMovements, Piece, Color } from "./consts.js";
 import { Move } from "./move.js";
 
 /* DOM */
@@ -12,17 +12,25 @@ const restartButton = document.getElementById("restart"),
     restartWindow = document.getElementById("restartWindow"),
     gameOverText = document.getElementById("gameOverText");
 /* Rendering */
+
+const LIGHT_SQUARE_COLOR = "rgb(173, 189, 143)";
+const DARK_SQUARE_COLOR = "rgb(111, 143, 114)";
+const MOVE_INDICATOR_COLOR = "rgb(254, 57, 57)";
+// const LIGHT_SQUARE_COLOR = "rgb(227, 193, 111)";
+// const DARK_SQUARE_COLOR = "rgb(184, 139, 74)";
+
 let canvas, ctx, boardLength, TILE_SIZE; 
+let moveIndicators;
+
 /* Game state */
 export let board;
-let moveHistory = [];
-let moveHistoryIndex = -1;
+let moveHistory = [],
+    moveHistoryIndex = -1;
 let playerColor,
     turnToMove,
-    gameOver,
     promotionSelection;
 /* Castling Rights */
-const castlingRights = {
+export const castlingRights = {
     white: {
         kingMoved: false,
         shortRookMoved: false,
@@ -34,6 +42,12 @@ const castlingRights = {
         longRookMoved: false,
     }
 }
+/* En Passant */
+
+/* Game Over */
+let gameOver,
+    winner = 0;
+
 /* Piece Held */
 const heldPiece = {
     rank: null,
@@ -43,10 +57,9 @@ const heldPiece = {
 /* Multiplayer */
 let roomCode, isMultiplayer;
 /* BOT */
-const SEARCH_DEPTH = 3;
 let isBotGame;
 
-export default function main(multiplayer = false, code = null, color = null) {
+export default function main(multiplayer = false, code = null, color = Color.BLACK) {
     /* GAMEMODES */
     // LOCAL
     if (!multiplayer){
@@ -71,28 +84,124 @@ export default function main(multiplayer = false, code = null, color = null) {
     startGame(color);
 }
 
+async function startGame(color) {
+    // Randomly assign a color if one wasn't selected
+    playerColor = (color != null) ? color : Math.random() >= 0.5 ? 1 : -1;
+    turnToMove = Color.WHITE; // White moves first
+    // Initial board layout
+    resetBoard();
+    // Render the original game board
+    render();
+    // Player is black, wait for response on online & bot games
+    if (playerColor === Color.BLACK){
+        if (isMultiplayer){
+            // Wait for opponent
+            await receiveMove();
+            turnToMove *= -1;
+        } else if (isBotGame){
+            // Bot starts the game
+            playBotMove();
+            turnToMove *= -1;
+        }
+    }
+}
+
+function endGame() {
+    gameOver = true;
+    toggle(restartWindow);
+}
+
+let positions = 0;
+/* Bot */
+function playBotMove(){
+    const searchDepth = 1;
+    // Generate a random move
+    const botMove = negamaxMove(searchDepth, -playerColor); 
+    console.log("Depth: " + searchDepth + ", Positions: " + positions);
+    // Play the bot move
+    playMove( botMove );
+}
+
+function negamaxMove(depth, color){
+    let bestMove;
+    let bestScore = Number.MIN_SAFE_INTEGER;
+    for (const move of getAllLegalMoves(color)){
+        move.play();
+        const score = -negamax(depth-1, -color);
+        move.undo();
+        if (score > bestScore){
+            bestScore = score;
+            bestMove = move;
+        }
+    }
+    return bestMove;
+}
+
+function negamax(depth, color){
+    const allLegalMoves = getAllLegalMoves(color);
+    // Penalize having no moves
+    if (allLegalMoves.length === 0){
+        return Number.MIN_SAFE_INTEGER;
+    } 
+    if (depth === 0){
+        positions++;
+        return getHeuristicValue(color);        
+    }
+    let bestScore = Number.MIN_SAFE_INTEGER;
+    for (const move of allLegalMoves){
+        move.play();
+        bestScore = Math.max(bestScore, -negamax(depth-1, -color));
+        move.undo();
+    }
+
+    return bestScore;
+}
+
+function getHeuristicValue(color){
+    let heuristicValue = 0;
+    for (let rank = 0; rank <= 7; rank++){
+        for (let file = 0; file <= 7; file++){
+            const piece = board[rank][file];
+            const pieceValue = pieceValues.get(Math.abs(piece));
+            // Calculate the material advantage
+            if (board[rank][file] !== Piece.EMPTY){
+                if (Math.abs(piece) === Piece.WHITE_PAWN && (rank === 0 || rank === 7)){
+                    // Promoted pawns have same material as queens
+                    heuristicValue += (Math.sign(color) === Math.sign(piece)) ? 9 : -9;
+                } else{
+                    // Every other piece has a fixed material value
+                    heuristicValue += (Math.sign(color) === Math.sign(piece)) ? pieceValue : -pieceValue;
+                }
+            }
+            
+        }
+    } 
+    return heuristicValue;
+}
+
+/* User Input Handling Functions */
 function addEventListeners(){
     // Add event listeners
     window.addEventListener("keydown", (event) => {
         // TODO: Previous game states
-        // if (moveHistory.length === 0) return;
-
-        // if (event.key == "ArrowLeft") {
-        //     if (moveHistoryIndex === 0) return;
-        //     // Undo the last move
-        //     const lastMove = moveHistory.pop();
-        //     lastMove.undo();
-        //     // Switch board if local
-        //     if (!isMultiplayer && !isBotGame) playerColor *= -1;
-        //     // Switch player move
-        //     turnToMove *= -1;
-        //     // Render the new position
-        //     render();
-        // } else if (event.key == "ArrowRight"){
-        //     if (moveHistoryIndex === moveHistory.length) return;
-        //     // Render the new position
-        //     render();
-        // }
+        if (moveHistory.length === 0) return;
+        if (event.key == "ArrowLeft") {
+            if (moveHistoryIndex === -1) return;
+            console.log("undo");
+            // Undo the last move
+            const lastMove = moveHistory.pop();
+            lastMove.undo();
+            // Switch board if local
+            if (!isMultiplayer && !isBotGame) playerColor *= -1;
+            // Switch player move
+            turnToMove *= -1;
+            // Render the new position
+            render();
+        } else if (event.key == "ArrowRight"){
+            if (moveHistoryIndex === moveHistory.length) return;
+            // Render the new position
+            render();
+        }
     });
     restartButton.addEventListener("click", function () {
         // Restart the game
@@ -104,8 +213,25 @@ function addEventListeners(){
         resizeCanvas();
         render();
     });
-    canvas.addEventListener("click", (event) => {
-        handleClick(event);
+    /* Piece Manipulation */
+    canvas.addEventListener("mousedown", (event) => {pickupPiece(event)});
+    canvas.addEventListener("mousemove", (event) => {
+        if (!heldPiece.isHolding) return; 
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        // Render the board
+        render();
+        // Render the held piece
+        if (heldPiece.isHolding){
+            renderPiece(pieceImages.get(board[heldPiece.rank][heldPiece.file]), mouseX - 0.5 * TILE_SIZE, mouseY - 0.5 * TILE_SIZE);
+        }
+    }); 
+    canvas.addEventListener("mouseup", (event) => {
+        if (!heldPiece.isHolding) return;
+        heldPiece.isHolding = false;
+        moveIndicators = [];
+        handleMouseup(event);
     });
     /* Pawn Promotion */
     queenPromote.addEventListener("click", (event) => {
@@ -122,64 +248,7 @@ function addEventListeners(){
     });
 }
 
-async function startGame(color) {
-    // Randomly assign a color if one wasn't selected
-    playerColor = (color != null) ? color : Math.random() >= 0.5 ? 1 : -1;
-    turnToMove = Color.WHITE; // White moves first
-    // Initial board layout
-    resetBoard();
-    // Render the original game board
-    render();
-    // Player is black, wait for response on online & bot games
-    if (playerColor === Color.BLACK){
-        // Wait for opponent
-        if (isMultiplayer){
-            await receiveMove();
-            turnToMove *= -1;
-        } else if (isBotGame){
-            playBotMove();
-            turnToMove *= -1;
-        }
-    }
-
-}
-
-function endGame() {
-    gameOver = true;
-    toggle(restartWindow);
-}
-
-/* Bot */
-function playBotMove(){
-    // Generate the set of all legal bot moves
-    const legalBotMoves = [];
-    for (let rank = 0; rank <= 7; rank++){
-        for (let file = 0; file <= 7; file++){
-            // Get legal moves of the bot's pieces
-            if (Math.sign(board[rank][file]) === -playerColor){
-                legalBotMoves.push(...getLegalMoves(rank, file));
-            }
-        }
-    }
-    // No legal moves
-    if (legalBotMoves.length === 0){
-        return;
-    }
-    // Generate a random move
-    const botMove = legalBotMoves[Math.floor(Math.random() * legalBotMoves.length)];
-    // TODO: Minimax
-    // Play the bot move
-    playMove( botMove );
-}
-
-
-/* User Input Handling Functions */
-async function handleClick(event) {
-    // Moves can't be played if the game's over
-    if (gameOver) return;
-    // TODO: Premove
-    // Player must wait for opponent's move
-    if ((isBotGame || isMultiplayer) && turnToMove != playerColor) return;
+async function pickupPiece(event) {
     // Get the rank and file of the mouse click
     const rect = canvas.getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
@@ -187,115 +256,83 @@ async function handleClick(event) {
     // Flip the rank to put black on the bottom if the player's color is black
     const clickedRank = getFlippedRank(Math.floor(mouseY / TILE_SIZE));
     const clickedFile = Math.floor(mouseX / TILE_SIZE);
-    // Ignore out-of-bounds clicks
-    if (!isInBounds(clickedRank, clickedFile)) return;
     // Get the piece clicked
     const pieceClicked = board[clickedRank][clickedFile];
+    // Moves can't be played if the game's over
+    if (gameOver) return;
+    // Player must wait for opponent's move
+    if ((isBotGame || isMultiplayer) && turnToMove != playerColor) return;
+    // Clicked on a piece of the right color
+    if (pieceClicked === Piece.EMPTY || Math.sign(pieceClicked) !== Math.sign(turnToMove)) return;
+    // Record the piece being picked up
+    heldPiece.isHolding = true;
+    heldPiece.rank = clickedRank;
+    heldPiece.file = clickedFile;
+    // Store move indicators
+    moveIndicators = [];
+    for (const legalMove of getLegalMoves(clickedRank, clickedFile)){
+        moveIndicators.push([legalMove.toRank, legalMove.toFile]);
+    }
     // Render the board
     render();
-    // Pick up a piece
-    if (
-        !heldPiece.isHolding &&
-        pieceClicked != Piece.EMPTY &&
-        Math.sign(pieceClicked) === Math.sign(turnToMove)
-    ) {
-        pickupPiece(clickedRank, clickedFile);
-    } else if (heldPiece.isHolding) {
-        const playerMove = new Move(heldPiece.rank, heldPiece.file, clickedRank, clickedFile);
-        // Play a legal move
-        if (isLegalMove(playerMove)) {
-            // Play the move on the board
-            await playMove(playerMove);
-            // Switch the turn
-            turnToMove *= -1;
-
-            /* PROMPT OPPONENT RESPONSE */
-            // Multiplayer
-            if (isMultiplayer){
-                // Send the move to the DB for the opponent to read
-                sendMove(playerMove);
-                // Wait for the opponent's response
-                await receiveMove();
-                // Switch back to the player's move
-                turnToMove *= -1;
-            } 
-            // Bot
-            else if (isBotGame){
-                // Play the bot's response
-                playBotMove();
-                // Switch back to the player's move
-                turnToMove *= -1;
-            }
-            // Local
-            else {
-                // Switch the player color to flip the board
-                playerColor *= -1;
-                render();
-            }
-        }
-        // Reselect same piece to deselect
-        else if (clickedRank == heldPiece.rank && clickedFile == heldPiece.file) {
-            heldPiece.isHolding = false;
-        }
-        // Select another piece
-        else if (
-            pieceClicked != 0 &&
-            Math.sign(pieceClicked) == Math.sign(turnToMove)
-        ) {
-            pickupPiece(clickedRank, clickedFile);
-        }
-        // Empty square or enemy piece selected, deselect held piece
-        else {
-            heldPiece.isHolding = false;
-        }
+    // Render the held piece
+    if (heldPiece.isHolding){
+        renderPiece(pieceImages.get(board[heldPiece.rank][heldPiece.file]), mouseX - 0.5 * TILE_SIZE, mouseY - 0.5 * TILE_SIZE);
     }
 
 }
 
-async function playMove(move) {
-    /* Move the rook during a castling move*/
-    // White short castle
-    if (move.piece == Piece.WHITE_KING && move.fromFile + 2 == move.toFile) {
-        board[7][5] = Piece.WHITE_ROOK;
-        board[7][7] = Piece.EMPTY;
+async function handleMouseup(event){
+    // Render the board on mouse release
+    render();
+    // Get the rank and file of the mouse click
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    // Flip the rank to put black on the bottom if the player's color is black
+    const clickedRank = getFlippedRank(Math.floor(mouseY / TILE_SIZE));
+    const clickedFile = Math.floor(mouseX / TILE_SIZE);
+    // Get the piece clicked
+    const pieceClicked = board[clickedRank][clickedFile];
+    // Played move
+    const playerMove = new Move(heldPiece.rank, heldPiece.file, clickedRank, clickedFile);
+    // Play a legal move
+    if (isLegalMove(playerMove)) {
+        // Play the move on the board
+        await playMove(playerMove);
+        // Switch the turn
+        turnToMove *= -1;
+        /* PROMPT OPPONENT RESPONSE */
+        // Multiplayer
+        if (isMultiplayer){
+            // Send the move to the DB for the opponent to read
+            sendMove(playerMove);
+            // Wait for the opponent's response
+            await receiveMove();
+            turnToMove *= -1;
+        } 
+        // Bot
+        else if (isBotGame){
+            // Play the bot's response
+            playBotMove();
+            turnToMove *= -1;
+        }
+        // Local
+        else {
+            // Switch the player color to flip the board
+            playerColor *= -1;
+        }
     }
-    // White long castle
-    else if (move.piece == Piece.WHITE_KING && move.fromFile  - 2 == move.toFile) {
-        board[7][3] = Piece.WHITE_ROOK;
-        board[7][0] = Piece.EMPTY;
-    }
-    // Black short castle
-    else if (move.piece == Piece.BLACK_KING && move.fromFile  + 2 == move.toFile) {
-        board[0][5] = Piece.BLACK_ROOK;
-        board[0][7] = Piece.EMPTY;
-    }
-    // Black long castle
-    else if (move.piece == Piece.BLACK_KING && move.fromFile  - 2 == move.toFile) {
-        board[0][3] = Piece.BLACK_ROOK;
-        board[0][0] = Piece.EMPTY;
-    }
+    render();
+}
 
-    /* Keep track if the king or rook moved to disqualifying future castling */
-    // King moved
-    if (move.piece == Piece.WHITE_KING) {
-        castlingRights.white.kingMoved = true;
-    } else if (move.piece == Piece.BLACK_KING) {
-        castlingRights.black.kingMoved = true;
-    }
-    // Rook moved
-    else if (move.piece == Piece.WHITE_ROOK) {
-        if (move.fromRank == 7 && move.fromFile  == 7) castlingRights.white.shortRookMoved = true;
-        if (move.fromRank == 7 && move.fromFile  == 0) castlingRights.white.longRookMoved = true;
-    } else if (move.piece == Piece.BLACK_ROOK) {
-        if (move.fromRank == 0 && move.fromFile  == 7) castlingRights.black.shortRookMoved = true;
-        if (move.fromRank == 0 && move.fromFile  == 0) castlingRights.black.longRookMoved = true;
-    }
+async function playMove(move) {
     /* Promote pawns */
     if (Math.abs(move.piece) == Piece.WHITE_PAWN && (move.toRank == 0 || move.toRank == 7)) {
         // Player promotes a pawn, wait for a selection
         if (Math.sign(move.piece) === playerColor) {
             // Show the pawn being moved up and render before promoting
-            move.apply();
+            move.play();
             render(move);
             // Turn on the promotion window and wait for a selection
             toggle(promotionWindow);
@@ -309,43 +346,25 @@ async function playMove(move) {
             });
             toggle(promotionWindow);
         }
-        // Bot selects 
+        // Bot selects queen
         else if (isBotGame) promotionSelection = Math.abs(Piece.WHITE_QUEEN);
         // Apply the promotion by changing the pawn's piece type
         move.piece = Math.sign(move.piece) * promotionSelection;
         // Remove the cached promotion 
         promotionSelection = null;
     }
-
-    /* Applying the move */
-    // Move the piece from the old square to the new
-    move.apply();
+    /* Apply the move */
+    move.play();
     heldPiece.isHolding = false;
     // Store the move
     moveHistory.push(move);
     moveHistoryIndex++;
     // Highlight the move and update the board with the new position
     render(move);
-
     /* The move played ended the game */
-    // TODO: game-over
     if (isGameOver()){
         endGame();
-        render();
     }
-}
-
-function pickupPiece(rank, file) {
-    // Record the piece being picked up
-    heldPiece.isHolding = true;
-    heldPiece.rank = rank;
-    heldPiece.file = file;
-    // Circle parameters;
-    ctx.strokeStyle = "lightgreen";
-    ctx.fillStyle = "lightgreen";
-    ctx.lineWidth = 5;
-    // Render indicators for legal moves of the held piece
-    renderMoveIndicators(getLegalMoves(rank, file));
 }
 
 /* Chess Implementation Functions */
@@ -373,6 +392,7 @@ function isGameOver() {
             const kingPos = findPiece(color * Math.abs(Piece.WHITE_KING));
             // Checkmate
             if (isAttacked(kingPos[0], kingPos[1], color)){
+                winner = color;
                 gameOverText.textContent = `${color == Color.WHITE ? "Black" : "White"} wins by checkmate`;
             // Stalemate
             } else{
@@ -395,6 +415,19 @@ function isLegalMove(move) {
     return false;
 }
 
+function getAllLegalMoves(color){
+    let allLegalMoves = [];
+    // Get all legal moves for a given color
+    for (let rank = 0; rank <= 7; rank++){
+        for (let file = 0; file <= 7; file++){
+            if (Math.sign(board[rank][file]) === color){
+                allLegalMoves.push(...getLegalMoves(rank, file));
+            }
+        }
+    }
+    return allLegalMoves;
+}
+
 function getLegalMoves(fromRank, fromFile) {
     // Get the set of all moves possible for a piece at a given rank and file
     let legalMoves = [];
@@ -402,7 +435,7 @@ function getLegalMoves(fromRank, fromFile) {
     const piece = board[fromRank][fromFile];
     for (const move of getAllMoves(fromRank, fromFile)) {
         // Temporary play the move
-        move.apply();
+        move.play();
         /* Check all legal moves available to the opponent to see if any capture the king */
         const kingPos = findPiece(Math.sign(piece) * Math.abs(Piece.WHITE_KING));
         // If the opponent cannot capture the king after playing the move, it is legal
@@ -416,6 +449,7 @@ function getLegalMoves(fromRank, fromFile) {
 function getAllMoves(fromRank, fromFile) {
     // Get the set of all moves of a piece at a given rank and file
     const piece = board[fromRank][fromFile];
+    const color = Math.sign(piece);
     if (piece == Piece.EMPTY) return [];
     // Generate the set of legal moves
     let allMoves = [];
@@ -432,11 +466,12 @@ function getAllMoves(fromRank, fromFile) {
     }
     /* Pawns have more complicated moves */
     if (Math.abs(piece) == Piece.WHITE_PAWN) {
-        const forward = Math.sign(piece) == Color.WHITE ? -1 : 1;
-        const startRank = Math.sign(piece) == Color.WHITE ? 6 : 1;
+        const forward = (color === Color.WHITE) ? -1 : 1;
+        const startRank = (color === Color.WHITE) ? 6 : 1;
         // Move forward 1
         if (isInBounds(fromRank+forward, fromFile) && board[fromRank + forward][fromFile] == Piece.EMPTY) {
-            allMoves.push(new Move(fromRank, fromFile, fromRank + forward, fromFile));
+            const toRank = fromRank + forward;
+            allMoves.push(new Move(fromRank, fromFile, toRank, fromFile));
         }
         // Move forward 2
         if (fromRank == startRank &&
@@ -446,29 +481,30 @@ function getAllMoves(fromRank, fromFile) {
         }
         // Captures
         for (const df of [-1, 1]) {
-            if (isInBounds(fromRank + forward, fromFile + df) && Math.sign(board[fromRank + forward][fromFile + df]) == -Math.sign(piece)) {
+            if (isInBounds(fromRank + forward, fromFile + df) && Math.sign(board[fromRank + forward][fromFile + df]) === -color) {
                 allMoves.push(new Move(fromRank, fromFile, fromRank + forward, fromFile + df));
             }
         }
         // TODO: En passant
+        
     }
     /* Castling Moves */
     if (Math.abs(piece) == Piece.WHITE_KING) {
         // WHITE CASTLING
         if (!castlingRights.white.kingMoved) {
-            if (!castlingRights.white.shortRookMoved && canCastle(Color.WHITE, [[7, 4], [7, 5], [7, 6]], [[7, 5], [7, 6]])){
+            if (!castlingRights.white.shortRookMoved && board[7][7] === Piece.WHITE_ROOK && canCastle(Color.WHITE, [[7, 4], [7, 5], [7, 6]], [[7, 5], [7, 6]])){
                 allMoves.push(new Move(fromRank, fromFile, 7, 6));
             }
-            if (!castlingRights.white.longRookMoved && canCastle(Color.WHITE, [[7, 2], [7, 3], [7, 4]], [[7, 1], [7, 2], [7, 3]])){
+            if (!castlingRights.white.longRookMoved && board[7][0] === Piece.WHITE_ROOK && canCastle(Color.WHITE, [[7, 2], [7, 3], [7, 4]], [[7, 1], [7, 2], [7, 3]])){
                 allMoves.push(new Move(fromRank, fromFile, 7, 2));
             }
         }
         // BLACK CASTLING
         if (!castlingRights.black.kingMoved) {
-            if (!castlingRights.black.shortRookMoved && canCastle(Color.BLACK, [[0, 4], [0, 5], [0, 6]], [[0, 5], [0, 6]])){
+            if (!castlingRights.black.shortRookMoved && board[0][7] === Piece.BLACK_ROOK && canCastle(Color.BLACK, [[0, 4], [0, 5], [0, 6]], [[0, 5], [0, 6]])){
                 allMoves.push(new Move(fromRank, fromFile, 0, 6));
             }
-            if (!castlingRights.black.longRookMoved && canCastle(Color.BLACK, [[0, 2], [0, 3], [0, 4]], [[0, 1], [0, 2], [0, 3]])){
+            if (!castlingRights.black.longRookMoved && board[0][0] === Piece.BLACK_ROOK && canCastle(Color.BLACK, [[0, 2], [0, 3], [0, 4]], [[0, 1], [0, 2], [0, 3]])){
                 allMoves.push(new Move(fromRank, fromFile, 0, 2));
             }
         }
@@ -527,25 +563,21 @@ function canCastle(color, attackedSquares, emptySquares) {
 }
 
 function isAttacked(rank, file, color, castleCheck = false) {
-    for (let searchRank = 0; searchRank <= 7; searchRank++) {
-        for (let searchFile = 0; searchFile <= 7; searchFile++) {
-            let searchPiece = board[searchRank][searchFile];
-            // Look for opponent piece's legal moves
-            if (Math.sign(searchPiece) != color) {
-                // Ignore king moves to avoid infinite recursion in castle eligibility check
-                if (castleCheck &&
-                    Math.abs(searchPiece) == Math.abs(Piece.WHITE_KING))
-                continue;
-
-
-                // If any of the opponent's legal moves can reach the given square, it is attacked
-                for (const attackMove of getAllMoves(searchRank, searchFile)) {
-                    const attackedRank = attackMove.toRank, attackedFile = attackMove.toFile;
-                    if (attackedRank == rank && attackedFile == file) {
-                        return true;
-                    }
-                }
+    let opponentMoves = [];
+    for (let rank=0; rank <= 7; rank++){
+        for (let file=0; file <= 7; file++){
+            const piece = board[rank][file];
+            // Ignore castling moves in response to castling to avoid infinite recursion
+            if (castleCheck && Math.abs(piece) === Piece.WHITE_KING) continue;
+            if (Math.sign(piece) !== color){
+                opponentMoves.push(...getAllMoves(rank, file));
             }
+        }
+    }
+    // If any opponent move lands on the square, it is attacked
+    for (const opponentMove of opponentMoves){
+        if (opponentMove.toRank === rank && opponentMove.toFile === file){
+            return true;
         }
     }
     return false;
@@ -555,7 +587,7 @@ function findPiece(piece) {
     let rank, file;
     for (let searchRank = 0; searchRank <= 7; searchRank++) {
         for (let searchFile = 0; searchFile <= 7; searchFile++) {
-            if (board[searchRank][searchFile] == piece) {
+            if (board[searchRank][searchFile] === piece) {
                 return [searchRank, searchFile];
             }
         }
@@ -606,6 +638,7 @@ function resetBoard() {
         [1, 1, 1, 1, 1, 1, 1, 1],
         [4, 2, 3, 5, 6, 3, 2, 4]
     ];
+    
     /*   REFERENCE DEFAULT GAME BOARD
         [-4, -2, -3, -5, -6, -3, -2, -4],
         [-1, -1, -1, -1, -1, -1, -1, -1],
@@ -615,6 +648,16 @@ function resetBoard() {
         [0, 0, 0, 0, 0, 0, 0, 0],
         [1, 1, 1, 1, 1, 1, 1, 1],
         [4, 2, 3, 5, 6, 3, 2, 4]
+    */
+    /*   TESTING BOARD
+        [0, 0, -3, -5, -6, -3, -2, -4],
+        [1, 0, -1, -1, -1, -1, -1, -1],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [-1, 0, 1, 1, 1, 1, 1, 1],
+        [0, 0, 3, 5, 6, 3, 2, 4]
     */
 }
 
@@ -640,8 +683,12 @@ function resizeCanvas() {
 }
 
 function render(moveToHighlight = null) {
+    // Render in the right order
     renderBoard();
-    if (moveToHighlight != null) highlightMove(moveToHighlight);
+    if (moveToHighlight != null){
+        highlightMove(moveToHighlight);
+    }
+    renderMoveIndicators();
     renderPieces();
 }
 
@@ -652,7 +699,7 @@ function renderBoard() {
         white = !white;
         for (let file = 0; file <= 7; file++) {
             // Fill in the square
-            ctx.fillStyle = white ? "white" : "brown";
+            ctx.fillStyle = white ? LIGHT_SQUARE_COLOR : DARK_SQUARE_COLOR;
             ctx.fillRect(
                 file * TILE_SIZE,
                 getFlippedRank(rank) * TILE_SIZE,
@@ -660,6 +707,11 @@ function renderBoard() {
                 TILE_SIZE
             );
             white = !white;
+
+            // Render square labels
+            // ctx.font = "30px Arial";
+            // ctx.fillStyle = "pink";
+            // ctx.fillText(`${String.fromCharCode(97 + file)}${8-rank}`, file * TILE_SIZE + 0.5 * TILE_SIZE-15, getFlippedRank(rank) * TILE_SIZE + 0.5 * TILE_SIZE+15);
         }
     }
 }
@@ -671,33 +723,29 @@ function renderPieces() {
             const piece = board[rank][file];
             // Ignore empty squares
             if (piece === Piece.EMPTY) continue;
-            // Get the corresponding piece image
-            let pieceImg = pieceImages.get(piece);
+            // Ignore the held piece
+            if (heldPiece.isHolding && heldPiece.rank == rank && heldPiece.file == file) continue;
             // Render the piece
-            ctx.drawImage(
-                pieceImg,
-                file * TILE_SIZE,
-                getFlippedRank(rank) * TILE_SIZE,
-                TILE_SIZE,
-                TILE_SIZE
-            );
+            renderPiece(pieceImages.get(piece), file * TILE_SIZE, getFlippedRank(rank) * TILE_SIZE);
         }
     }
 }
 
-function renderMoveIndicators(moves){
-    // Draw a circular move indicator for each move
-    for (const move of moves) {
-        const legalRank = move.toRank, legalFile = move.toFile;
-        ctx.beginPath();
-        ctx.arc(
-            legalFile * TILE_SIZE + TILE_SIZE / 2,
-            getFlippedRank(legalRank) * TILE_SIZE + TILE_SIZE / 2,
-            TILE_SIZE / 8,
-            0,
-            Math.PI * 2
-        );
-        ctx.stroke();
+function renderPiece(pieceImg, x, y){
+    // Render a piece
+    ctx.drawImage(pieceImg, x, y, TILE_SIZE, TILE_SIZE);
+}
+
+function renderMoveIndicators(){
+    if (moveIndicators == null || moveIndicators.length === 0) return;
+    ctx.fillStyle = MOVE_INDICATOR_COLOR;
+    // Draw a circle move indicator for each legal move available
+    for (const [rank, file] of moveIndicators) {
+        ctx.fillRect(
+            file * TILE_SIZE - 1,
+            getFlippedRank(rank) * TILE_SIZE - 1,
+            TILE_SIZE + 2,
+            TILE_SIZE + 2);
         ctx.fill();
     }
 }
