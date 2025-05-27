@@ -5,5 +5,5 @@ tailwind.config.js
 .github
 
 firebase.json
+.firebase
 .firebaserc
-.github

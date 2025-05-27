@@ -12,15 +12,14 @@ const restartButton = document.getElementById("restart"),
     restartWindow = document.getElementById("restartWindow"),
     gameOverText = document.getElementById("gameOverText");
 /* Rendering */
-
 const LIGHT_SQUARE_COLOR = "rgb(173, 189, 143)";
 const DARK_SQUARE_COLOR = "rgb(111, 143, 114)";
 const MOVE_INDICATOR_COLOR = "rgb(254, 57, 57)";
 // const LIGHT_SQUARE_COLOR = "rgb(227, 193, 111)";
 // const DARK_SQUARE_COLOR = "rgb(184, 139, 74)";
-
 let canvas, ctx, boardLength, TILE_SIZE; 
-let moveIndicators;
+let moveIndicators = [],
+ moveHighlights = [];
 
 /* Game state */
 export let board;
@@ -87,6 +86,8 @@ export default function main(multiplayer = false, code = null, color = Color.BLA
 async function startGame(color) {
     // Randomly assign a color if one wasn't selected
     playerColor = (color != null) ? color : Math.random() >= 0.5 ? 1 : -1;
+    // Local games start with white
+    if (!isMultiplayer && !isBotGame) playerColor = Color.WHITE;
     turnToMove = Color.WHITE; // White moves first
     // Initial board layout
     resetBoard();
@@ -111,10 +112,10 @@ function endGame() {
     toggle(restartWindow);
 }
 
-let positions = 0;
 /* Bot */
+let positions = 0;
 function playBotMove(){
-    const searchDepth = 1;
+    const searchDepth = 2;
     // Generate a random move
     const botMove = negamaxMove(searchDepth, -playerColor); 
     console.log("Depth: " + searchDepth + ", Positions: " + positions);
@@ -213,8 +214,19 @@ function addEventListeners(){
         resizeCanvas();
         render();
     });
-    /* Piece Manipulation */
-    canvas.addEventListener("mousedown", (event) => {pickupPiece(event)});
+    /* Desktop Piece Manipulation */
+    canvas.addEventListener("mousedown", (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        pickupPiece(getFlippedRank(Math.floor(mouseY / TILE_SIZE)), Math.floor(mouseX / TILE_SIZE));
+        // Render the board
+        render();
+        // Render the held piece
+        if (heldPiece.isHolding){
+            renderPiece(pieceImages.get(board[heldPiece.rank][heldPiece.file]), mouseX - 0.5 * TILE_SIZE, mouseY - 0.5 * TILE_SIZE);
+        }
+    });
     canvas.addEventListener("mousemove", (event) => {
         if (!heldPiece.isHolding) return; 
         const rect = canvas.getBoundingClientRect();
@@ -230,9 +242,56 @@ function addEventListeners(){
     canvas.addEventListener("mouseup", (event) => {
         if (!heldPiece.isHolding) return;
         heldPiece.isHolding = false;
+        moveHighlights = [];
         moveIndicators = [];
-        handleMouseup(event);
+        const rect = canvas.getBoundingClientRect();
+        const mouseRank = Math.floor((event.clientY - rect.top) / TILE_SIZE);
+        const mouseFile = Math.floor((event.clientX - rect.left) / TILE_SIZE);
+        releasePiece(getFlippedRank(mouseRank), mouseFile);
     });
+
+    /* Mobile */
+    canvas.addEventListener("touchstart", (event) => {
+        event.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const touch = event.touches[0];
+        const tapX = touch.clientX - rect.left;
+        const tapY = touch.clientY - rect.top;
+        pickupPiece(getFlippedRank(Math.floor(tapY / TILE_SIZE)), Math.floor(tapX / TILE_SIZE));
+        // Render the board
+        render();
+        // Render the held piece
+        if (heldPiece.isHolding){
+            renderPiece(pieceImages.get(board[heldPiece.rank][heldPiece.file]), tapX - 0.5 * TILE_SIZE, tapY - 0.5 * TILE_SIZE);
+        }
+    });
+    canvas.addEventListener("touchmove", (event) => {
+        if (!heldPiece.isHolding) return; 
+        event.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const touch = event.touches[0];
+        const tapX = touch.clientX - rect.left;
+        const tapY = touch.clientY - rect.top;
+        // Render the board
+        render();
+        // Render the held piece
+        if (heldPiece.isHolding){
+            renderPiece(pieceImages.get(board[heldPiece.rank][heldPiece.file]), tapX - 0.5 * TILE_SIZE, tapY - 0.5 * TILE_SIZE);
+        }
+    });
+    canvas.addEventListener("touchend", (event) => {
+        if (!heldPiece.isHolding) return;
+        event.preventDefault();
+        heldPiece.isHolding = false;
+        moveHighlights = []
+        moveIndicators = [];
+        const rect = canvas.getBoundingClientRect();
+        const touch = event.changedTouches[0];
+        const tappedRank = Math.floor((touch.clientY - rect.top) / TILE_SIZE);
+        const tappedFile = Math.floor((touch.clientX - rect.left) / TILE_SIZE);
+        releasePiece(getFlippedRank(tappedRank), tappedFile);
+    });
+
     /* Pawn Promotion */
     queenPromote.addEventListener("click", (event) => {
         promotionSelection = Piece.WHITE_QUEEN;
@@ -248,16 +307,9 @@ function addEventListeners(){
     });
 }
 
-async function pickupPiece(event) {
-    // Get the rank and file of the mouse click
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
-    // Flip the rank to put black on the bottom if the player's color is black
-    const clickedRank = getFlippedRank(Math.floor(mouseY / TILE_SIZE));
-    const clickedFile = Math.floor(mouseX / TILE_SIZE);
+function pickupPiece(rank, file) {
     // Get the piece clicked
-    const pieceClicked = board[clickedRank][clickedFile];
+    const pieceClicked = board[rank][file];
     // Moves can't be played if the game's over
     if (gameOver) return;
     // Player must wait for opponent's move
@@ -266,36 +318,18 @@ async function pickupPiece(event) {
     if (pieceClicked === Piece.EMPTY || Math.sign(pieceClicked) !== Math.sign(turnToMove)) return;
     // Record the piece being picked up
     heldPiece.isHolding = true;
-    heldPiece.rank = clickedRank;
-    heldPiece.file = clickedFile;
+    heldPiece.rank = rank;
+    heldPiece.file = file;
     // Store move indicators
     moveIndicators = [];
-    for (const legalMove of getLegalMoves(clickedRank, clickedFile)){
-        moveIndicators.push([legalMove.toRank, legalMove.toFile]);
+    for (const legalMove of getLegalMoves(rank, file)){
+        moveIndicators.push(legalMove);
     }
-    // Render the board
-    render();
-    // Render the held piece
-    if (heldPiece.isHolding){
-        renderPiece(pieceImages.get(board[heldPiece.rank][heldPiece.file]), mouseX - 0.5 * TILE_SIZE, mouseY - 0.5 * TILE_SIZE);
-    }
-
 }
 
-async function handleMouseup(event){
-    // Render the board on mouse release
-    render();
-    // Get the rank and file of the mouse click
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
-    // Flip the rank to put black on the bottom if the player's color is black
-    const clickedRank = getFlippedRank(Math.floor(mouseY / TILE_SIZE));
-    const clickedFile = Math.floor(mouseX / TILE_SIZE);
-    // Get the piece clicked
-    const pieceClicked = board[clickedRank][clickedFile];
+async function releasePiece(rank, file){
     // Played move
-    const playerMove = new Move(heldPiece.rank, heldPiece.file, clickedRank, clickedFile);
+    const playerMove = new Move(heldPiece.rank, heldPiece.file, rank, file);
     // Play a legal move
     if (isLegalMove(playerMove)) {
         // Play the move on the board
@@ -323,6 +357,7 @@ async function handleMouseup(event){
             playerColor *= -1;
         }
     }
+    // Render the new position
     render();
 }
 
@@ -333,7 +368,8 @@ async function playMove(move) {
         if (Math.sign(move.piece) === playerColor) {
             // Show the pawn being moved up and render before promoting
             move.play();
-            render(move);
+            moveHighlights.push(move);
+            render();
             // Turn on the promotion window and wait for a selection
             toggle(promotionWindow);
             await new Promise((resolve) => {
@@ -359,8 +395,10 @@ async function playMove(move) {
     // Store the move
     moveHistory.push(move);
     moveHistoryIndex++;
+    // Store the move highlight
+    moveHighlights.push(move);
     // Highlight the move and update the board with the new position
-    render(move);
+    render();
     /* The move played ended the game */
     if (isGameOver()){
         endGame();
@@ -374,7 +412,6 @@ function isGameOver() {
     // TODO: 50 move rule
     // TODO: 3-move repetition
     // TODO: Insufficient Material 
-    
     // Stalemate & Checkmate
     for (let color of [Color.BLACK, Color.WHITE]){
         let hasLegalMoves = false;
@@ -669,7 +706,7 @@ function getFlippedRank(rank) {
     return playerColor == Color.WHITE ? rank : 7 - rank;
 }
 
-/* Rendering and Canvas Functions */
+/* Rendering Functions */
 function resizeCanvas() {
     // Set canvas length to the minimum between the screen width and height
     let body = document.getElementById("body");
@@ -682,12 +719,9 @@ function resizeCanvas() {
     canvas.height = boardLength;
 }
 
-function render(moveToHighlight = null) {
-    // Render in the right order
+function render() {
     renderBoard();
-    if (moveToHighlight != null){
-        highlightMove(moveToHighlight);
-    }
+    renderMoveHighlights();
     renderMoveIndicators();
     renderPieces();
 }
@@ -731,6 +765,7 @@ function renderPieces() {
     }
 }
 
+// TODO: add renderHeldPiece
 function renderPiece(pieceImg, x, y){
     // Render a piece
     ctx.drawImage(pieceImg, x, y, TILE_SIZE, TILE_SIZE);
@@ -740,7 +775,8 @@ function renderMoveIndicators(){
     if (moveIndicators == null || moveIndicators.length === 0) return;
     ctx.fillStyle = MOVE_INDICATOR_COLOR;
     // Draw a circle move indicator for each legal move available
-    for (const [rank, file] of moveIndicators) {
+    for (const move of moveIndicators) {
+        const rank = move.toRank, file = move.toFile;
         ctx.fillRect(
             file * TILE_SIZE - 1,
             getFlippedRank(rank) * TILE_SIZE - 1,
@@ -750,26 +786,30 @@ function renderMoveIndicators(){
     }
 }
 
-function highlightMove(move){
-    // Highlight Color
-    ctx.fillStyle =
-        (Math.sign(move.piece) == Color.WHITE) ? "lightgreen" : "darkgreen";
-    // Previous tile
-    ctx.fillRect(
-        move.fromFile * TILE_SIZE + 5,
-        getFlippedRank(move.fromRank) * TILE_SIZE + 5,
-        TILE_SIZE - 10,
-        TILE_SIZE - 10
-    );
-    // Moved to tile
-    ctx.fillRect(
-        move.toFile * TILE_SIZE + 5,
-        getFlippedRank(move.toRank) * TILE_SIZE + 5,
-        TILE_SIZE - 10,
-        TILE_SIZE - 10
-    );
+function renderMoveHighlights(){
+    for (const move of moveHighlights){
+        // Highlight Color
+        ctx.fillStyle =
+            (Math.sign(move.piece) == Color.WHITE) ? "lightgreen" : "darkgreen";
+        // Previous tile
+        ctx.fillRect(
+            move.fromFile * TILE_SIZE - 1,
+            getFlippedRank(move.fromRank) * TILE_SIZE - 1,
+            TILE_SIZE + 2,
+            TILE_SIZE + 2
+        );
+        // Moved to tile
+        ctx.fillRect(
+            move.toFile * TILE_SIZE - 1,
+            getFlippedRank(move.toRank) * TILE_SIZE - 1,
+            TILE_SIZE + 2,
+            TILE_SIZE + 2
+        );
+    }
+
 }
 
+/* Visual Utilities */
 export function loadImage(src) {
     const img = new Image();
     img.src = src;
