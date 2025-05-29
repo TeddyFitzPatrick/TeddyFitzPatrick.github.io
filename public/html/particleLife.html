@@ -5,29 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Particle Life Demo</title>
     <link rel="stylesheet" href="../css/output.css"/>
-    <script type="module" src="/src/js/particleLife/particleLife.mjs"></script>
-    <script type="module" src="/src/js/particleLife/particle.mjs"></script>
+    <script type="module" src="/js/particleLife/particleLife.js"></script>
+    <script type="module" src="/js/particleLife/particle.js"></script>
 
 </head>
 <body class="w-full h-full m-0 p-0 overflow-hidden">
 
     <div class="absolute top-2 left-2 bg-white rounded-xl w-fit h-fit z-10 text-black p-1 sm:p-4">
         <div class="flex flex-col space-y-2 text-xs sm:text-base md:text-xl ">
-            <h1>Min Radius</h1>
+            <h1>Repulsion Radius</h1>
             <div class="flex flex-row space-x-4">
-                <input class="w-1/2" type="range" min="1" max="100" value="30" class="slider" id="minRadiusSlider">
+                <input class="w-1/2" type="range" min="1" max="80" value="40" class="slider" id="minRadiusSlider">
                 <p id="minRadiusDisplay">40</p>
-            </div>
-
-            <h1>Max Radius Slider</h1>
-            <div class="flex flex-row space-x-4">
-                <input class="w-1/2" type="range" min="101" max="200" value="101" class="slider" id="maxRadiusSlider">
-                <p id="maxRadiusDisplay">101</p>
             </div>
 
             <h1>Particle Size</h1>
             <div class="flex flex-row space-x-4">
-                <input class="w-1/2" type="range" min="1" max="10" value="4" class="slider" id="particleSizeSlider">
+                <input class="w-1/2" type="range" min="1" max="8" value="4" class="slider" id="particleSizeSlider">
                 <p id="particleSizeDisplay">4</p>
             </div>
 
@@ -42,6 +36,13 @@
                 <input class="w-1/2" type="range" min="0.01" max="0.99" step="0.01" value="0.1" class="slider" id="frictionCoefficientSlider">
                 <p id="frictionCoefficientDisplay">0.1</p>
             </div>
+
+            <h1>Opacity</h1>
+            <div class="flex flex-row space-x-4">
+                <input class="w-1/2" type="range" min="0.01" max="0.3" step="0.01" value="0.05" class="slider" id="opacitySlider">
+                <p id="opacityDisplay">0.05</p>
+            </div>
+ 
 
             <!-- Reset Defaults -->
             <button id="applyDefaults" class="bg-slate-500 border-2 border-black rounded-xl hover:scale-105">

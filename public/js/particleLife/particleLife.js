@@ -1,13 +1,13 @@
 import { Particle } from './particle.js';
 // Canvas variables
 export let canvas, ctx;
-const opacity = 0.03;
+let opacity = 0.05;
 
 // Particle life variables
 export const COLORS = ["red", "orange", "yellow", "green", "blue", "purple"];
 export let particleCount = 1_000;
 export let particleSize = 7;
-export let forceMatrix 
+export let forceMatrix;
 
 export let frictionCoefficient = 0.03;
 export let minRadius = 40;
@@ -15,36 +15,24 @@ export let maxRadius = 200;
 export let particles = [];
 
 window.addEventListener("load", () => {
-    // TODO: 
-    particleCount = Math.min(1000, 0.0006 * (window.innerWidth * window.innerHeight));
-    particleCount = Math.max(particleCount, 200);
+    particleCount = Math.max(Math.min(1000, 0.0006 * (window.innerWidth * window.innerHeight)), 200);
     loadSimulation();
-    // setInterval(loadSimulation, 2000);
+});
+
+window.addEventListener("resize", () => {
+    particleCount = Math.max(Math.min(1000, 0.0006 * (window.innerWidth * window.innerHeight)), 200);
+    loadSimulation();
 });
 
 // Add event listeners for keyboard presses, mouse button clicks, and slider inputs
-function addListeners(){
-    // document.onkeypress = function (e) {
-    //     e = e || window.event;
-    //     // use e.keyCode
-    //     generateForceMatrix();
-    // };
-    // document.onkeypress = function (f) {
-    //     f = f || window.event;
-    //     // use f.keyCode
-    //     for (let colorOne of COLORS){
-    //         for (let colorTwo of COLORS){
-    //             forceMatrix[colorOne][colorTwo] *= -1;
-    //         }
-    //     }
-    // };
+function addEventListeners(){
     // Resize the canvas on window resize
     window.addEventListener("resize", function() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     });
     // Apply a force on click
-    window.addEventListener("click", function(){
+    canvas.addEventListener("click", function(){
         let deltaX, deltaY, angle, xDir, yDir
         let forceMagnitude = 20;
         for (let particle of particles){
@@ -58,9 +46,10 @@ function addListeners(){
         }
     });
 
+    // Ignore the slider elements for the home page
     if (document.getElementById("minRadiusSlider") === null) return;
     // Slider inputs
-    const SLIDERS = ["minRadius", "maxRadius", "particleSize", "particleCount", "frictionCoefficient"];
+    const SLIDERS = ["minRadius", "particleSize", "particleCount", "frictionCoefficient", "opacity"];
 
     SLIDERS.forEach((sliderName) => {
         let slider = document.getElementById(sliderName + "Slider");
@@ -79,7 +68,8 @@ function addListeners(){
                     break;
                 case "particleCount":
                     // Add remove particles
-                    let newParticleCount = Number(event.target.value);
+                    const newParticleCount = Number(event.target.value);
+
                     if (newParticleCount >= particleCount){
                         generateParticles(newParticleCount - particleCount);
                     } else{
@@ -91,6 +81,9 @@ function addListeners(){
                     break;
                 case "frictionCoefficient":
                     frictionCoefficient = Number(event.target.value);
+                    break;
+                case "opacity":
+                    opacity = Number(event.target.value);
                     break;
             }
         });
@@ -111,9 +104,10 @@ export function loadSimulation(){
     canvas.height = window.innerHeight;
 
     // Event Listeners
-    addListeners();
+    addEventListeners();
 
     // Generate particles
+    particles = [];
     generateParticles(particleCount);
 
     // Generate a force mapping between colors (attraction/repulsion values between different colored particles)
@@ -121,14 +115,13 @@ export function loadSimulation(){
 
     // Start the particle life rendering
     setInterval(() => {
-        render(opacity);
-    }, 15);
+        render();
+    }, 20);
 
 }
 
 // Generates a specified number of particles, each with their own random position and color
 function generateParticles(particlesToGenerate){
-    particles = [];
     for (let i = 1; i <= particlesToGenerate; i++){
         particles.push(new Particle(
             getRandomPosition(),
@@ -154,7 +147,7 @@ function generateForceMatrix(){
 }
 
 // Clear the screen, apply particle logic, and then render the particles
-function render(opacity){
+function render(){
     // Clear screen
     ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
     ctx.fillRect(0, 0, canvas.width, canvas.height);

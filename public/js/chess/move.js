@@ -1,4 +1,4 @@
-import { board, castlingRights } from "./chess.js";
+import { board, castlingRights, enPassant } from "./chess.js";
 import { Piece } from "./consts.js";
 
 export class Move {
@@ -6,6 +6,10 @@ export class Move {
     constructor(fromRank, fromFile, toRank, toFile) {
         // Piece moved
         this.piece = board[fromRank][fromFile];
+        // Store the prior en passant rights if the pawn is moved up twice
+        if (Math.abs(this.piece) === Piece.WHITE_PAWN && Math.abs(this.fromRank - this.toRank) === 2){
+            this.priorEnPassant = enPassant;
+        }
         // Store the prior castling rights if the king or rook moved
         if (Math.abs(this.piece) === Piece.WHITE_ROOK || Math.abs(this.piece) === Piece.WHITE_KING){
             this.priorCastlingRights = structuredClone(castlingRights);
@@ -15,28 +19,31 @@ export class Move {
         this.fromFile = fromFile;
         this.toRank = toRank;
         this.toFile = toFile;
+        // Algebraic Coordinates
+        this.algebraicNotation = `${String.fromCharCode(97 + toFile)}${8-toRank}`;
         // Piece captured on move
         this.capturedPiece = board[toRank][toFile];
     }
     
     /* Apply the move to the board */
-    play(){            
+    play(){           
+        /* Keep track if a pawn moved up twice for en passant rights */
+        if (Math.abs(this.piece) === Piece.WHITE_PAWN && Math.abs(this.fromRank - this.toRank) === 2){
+            
+        }
+
         /* Keep track if the king or rook moved to update castling rights */
         // King moved
-        if (this.piece == Piece.WHITE_KING) {
-            castlingRights.white.kingMoved = true;
-        } else if (this.piece == Piece.BLACK_KING) {
-            castlingRights.black.kingMoved = true;
-        }
+        castlingRights.white.kingMoved = (this.piece === Piece.WHITE_KING);
+        castlingRights.black.kingMoved = (this.piece === Piece.BLACK_KING);
         // Rook moved
-        else if (this.piece == Piece.WHITE_ROOK) {
+        if (this.piece == Piece.WHITE_ROOK) {
             if (this.fromRank == 7 && this.fromFile  == 7) castlingRights.white.shortRookMoved = true;
             if (this.fromRank == 7 && this.fromFile  == 0) castlingRights.white.longRookMoved = true;
         } else if (this.piece == Piece.BLACK_ROOK) {
             if (this.fromRank == 0 && this.fromFile  == 7) castlingRights.black.shortRookMoved = true;
             if (this.fromRank == 0 && this.fromFile  == 0) castlingRights.black.longRookMoved = true;
         }
-
         /* Move the rook during a castling move*/
         /* Short Castling */
         if (this.fromFile + 2 === this.toFile){
@@ -64,7 +71,6 @@ export class Move {
                 board[0][0] = Piece.EMPTY;
             }
         }
-
         /* Exchange the pieces */
         board[this.toRank][this.toFile] = this.piece;
         board[this.fromRank][this.fromFile] = Piece.EMPTY;        
@@ -99,6 +105,9 @@ export class Move {
                 board[0][3] = Piece.EMPTY;
             }
         }
+        /* Reset en passant rights to its state before the move */
+        Object.assign(enPassant, structuredClone(this.priorEnPassant));
+
         /* Reset castling rights to its state before the move */
         Object.assign(castlingRights, structuredClone(this.priorCastlingRights));
 
