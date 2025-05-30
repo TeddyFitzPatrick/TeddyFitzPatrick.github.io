@@ -12,8 +12,7 @@ const gamemodeSelection = document.getElementById("gamemodeSelection"),
     pages = [gamemodeSelection, multiplayerConfig, chessBoard];
 // Gamemode Selection
 const localGameButton = document.getElementById("localGame"),
-    onlineGameButton = document.getElementById("onlineGame"),
-    botGameButton = document.getElementById("botGame");
+    onlineGameButton = document.getElementById("onlineGame");
 // Join
 const enterRoomCode = document.getElementById("enterRoomCode"),
     enterRoomCodeSubmit = document.getElementById("enterRoomCodeSubmit");
@@ -44,10 +43,7 @@ window.onload = function (){
     onlineGameButton.addEventListener("click", function (){   
         selectPage(multiplayerConfig);  
     });
-    botGameButton.addEventListener("click", function (){
-        selectPage(chessBoard);
-        main(true, "bot");
-    });
+;
     // Multiplayer Game Config
     hostRoomSubmit.addEventListener("click", (event) => {hostRoom()});
     // Join room code

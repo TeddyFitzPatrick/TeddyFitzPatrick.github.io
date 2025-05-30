@@ -9,7 +9,7 @@ export let particleCount = 1_000;
 export let particleSize = 7;
 export let forceMatrix;
 
-export let frictionCoefficient = 0.03;
+export let frictionCoefficient = 0.05;
 export let minRadius = 40;
 export let maxRadius = 200;
 export let particles = [];
@@ -34,7 +34,7 @@ function addEventListeners(){
     // Apply a force on click
     canvas.addEventListener("click", function(){
         let deltaX, deltaY, angle, xDir, yDir
-        let forceMagnitude = 20;
+        let forceMagnitude = 10;
         for (let particle of particles){
             deltaX = Number(event.clientX) - particle.position[0];
             deltaY = Number(event.clientY) - particle.position[1];

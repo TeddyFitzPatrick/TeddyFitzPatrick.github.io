@@ -29,9 +29,6 @@ let moveHistory = [],
 let playerColor,
     turnToMove,
     promotionSelection;
-/* Squares Attacked */
-let whiteAttackSquares = Array.from({ length: 8 }, () => Array(8).fill(false));
-let blackAttackSquares = Array.from({ length: 8 }, () => Array(8).fill(false));
 /* Castling Rights */
 export const castlingRights = {
     white: {
@@ -61,25 +58,16 @@ const heldPiece = {
 };
 /* Multiplayer */
 let roomCode, isMultiplayer;
-/* BOT */
-let isBotGame;
-let calls = 0;
-export default function main(multiplayer = false, code = null, color = Color.BLACK) {
+export default function main(multiplayer = false, code = null, color) {
     /* GAMEMODES */
-    // LOCAL
-    if (!multiplayer){
-        isMultiplayer = false;
-        color = Color.WHITE;
-    }
-    // BOT
-    else if (multiplayer && code == "bot"){
-        isMultiplayer = false;
-        isBotGame = true;
-    }
-    // ONLINE
-    else if (multiplayer && code != "bot"){
-        isMultiplayer = true;
+    isMultiplayer = multiplayer;
+    // MULTIPLAYER
+    if (isMultiplayer){
         roomCode = code;
+    }
+    // LOCAL
+    else {
+        color = Color.WHITE;
     }
     // Rendering
     resizeCanvas();
@@ -87,29 +75,26 @@ export default function main(multiplayer = false, code = null, color = Color.BLA
     addEventListeners();
     // Start game
     startGame(color);
+
+    // Rendering loop
+    setInterval(() => {
+        render();
+    }, 20);
 }
 
 async function startGame(color) {
     // Randomly assign a color if one wasn't selected
-    playerColor = (color != null) ? color : Math.random() >= 0.5 ? 1 : -1;
+    playerColor = (color !== undefined) ? color : Math.random() >= 0.5 ? 1 : -1;
     // Local games start with white
-    if (!isMultiplayer && !isBotGame) playerColor = Color.WHITE;
+    if (!isMultiplayer) playerColor = Color.WHITE;
     turnToMove = Color.WHITE; // White moves first
     // Initial board layout
     resetBoard();
-    // Render the original game board
-    render();
-    // Player is black, wait for response on online & bot games
-    if (playerColor === Color.BLACK){
-        if (isMultiplayer){
-            // Wait for opponent
-            await receiveMove();
-            turnToMove *= -1;
-        } else if (isBotGame){
-            // Bot starts the game
-            playBotMove();
-            turnToMove *= -1;
-        }
+    // Player is black, wait for response on online games
+    if (isMultiplayer && playerColor === Color.BLACK){
+        // Wait for opponent
+        await receiveMove();
+        turnToMove *= -1;
     }
 }
 
@@ -118,124 +103,11 @@ function endGame() {
     toggle(restartWindow);
 }
 
-/* Bot */
-function playBotMove(){
-    const searchDepth = 2;
-    const startTime = Date.now();
-    // Generate a random move
-    const botMove = negamaxMove(searchDepth, -playerColor); 
-    const timeElapsed = (Date.now() - startTime) / 1000;
-    console.log("Generated bot move in " +  timeElapsed + "s");
-    // Play the bot move
-    playMove( botMove );
-}
-
-function negamaxMove(depth, color, alpha=Number.MIN_SAFE_INTEGER, beta=Number.MAX_SAFE_INTEGER){
-    let bestMove;
-    let bestEvaluation = Number.MIN_SAFE_INTEGER;
-    for (const move of getAllLegalMoves(color)){
-        move.play();
-        const evaluation = -negamax(depth-1, -color, alpha, beta);
-        move.undo();
-        // Pruning
-        if (evaluation >= beta){
-            return beta;
-        }
-        if (evaluation > bestEvaluation){
-            bestEvaluation = evaluation;
-            bestMove = move;
-        }
-        alpha = Math.max(alpha, evaluation);
-    }
-    return bestMove;
-}
-
-function negamax(depth, color, alpha=Number.MIN_SAFE_INTEGER, beta=Number.MAX_SAFE_INTEGER){
-    if (depth === 0){
-        return getHeuristicValue(color);        
-    }
-    let bestEvaluation = Number.MIN_SAFE_INTEGER;
-    for (const move of getAllLegalMoves(color)){
-        // Play the move and calculate it's evaluation
-        move.play();
-        const evaluation = -negamax(depth-1, -color, -beta, -alpha);
-        move.undo();
-        // Pruning
-        if (evaluation >= beta){
-            return beta;
-        }
-        // Update the best evaluation 
-        bestEvaluation = Math.max(bestEvaluation, -negamax(depth-1, -color));
-        // Update alpha
-        alpha = Math.max(alpha, evaluation);
-    }
-    return bestEvaluation;
-}
-
-function getHeuristicValue(color){
-    if (getAllLegalMoves(color) === 0) return Number.MIN_SAFE_INTEGER;
-    let heuristicValue = 0;
-    for (let rank = 0; rank <= 7; rank++){
-        for (let file = 0; file <= 7; file++){
-            const piece = board[rank][file];
-            const pieceValue = pieceValues.get(Math.abs(piece));
-            // Calculate the material advantage
-            if (board[rank][file] !== Piece.EMPTY){
-                if (Math.abs(piece) === Piece.WHITE_PAWN && (rank === 0 || rank === 7)){
-                    // Promoted pawns have same material as queens
-                    heuristicValue += (Math.sign(color) === Math.sign(piece)) ? 9 : -9;
-                } else{
-                    // Every other piece has a fixed material value
-                    heuristicValue += (Math.sign(color) === Math.sign(piece)) ? pieceValue : -pieceValue;
-                }
-            }
-            
-        }
-    } 
-    return heuristicValue;
-}
-
 /* User Input Handling Functions */
 function addEventListeners(){
     // Add event listeners
     window.addEventListener("keydown", (event) => {
-        // // TODO: Previous game states
-        // if (moveHistory.length === 0) return;
-        // if (event.key == "ArrowLeft") {
-        //     if (moveHistoryIndex === -1) return;
-        //     console.log("undo");
-        //     // Undo the last move
-        //     const lastMove = moveHistory.pop();
-        //     lastMove.undo();     // // TODO: Previous game states
-        // if (moveHistory.length === 0) return;
-        // if (event.key == "ArrowLeft") {
-        //     if (moveHistoryIndex === -1) return;
-        //     console.log("undo");
-        //     // Undo the last move
-        //     const lastMove = moveHistory.pop();
-        //     lastMove.undo();
-        //     // Switch board if local
-        //     if (!isMultiplayer && !isBotGame) playerColor *= -1;
-        //     // Switch player move
-        //     turnToMove *= -1;
-        //     // Render the new position
-        //     render();
-        // } else if (event.key == "ArrowRight"){
-        //     if (moveHistoryIndex === moveHistory.length) return;
-        //     // Render the new position
-        //     render();
-        // }
-        //     // Switch board if local
-        //     if (!isMultiplayer && !isBotGame) playerColor *= -1;
-        //     // Switch player move
-        //     turnToMove *= -1;
-        //     // Render the new position
-        //     render();
-        // } else if (event.key == "ArrowRight"){
-        //     if (moveHistoryIndex === moveHistory.length) return;
-        //     // Render the new position
-        //     render();
-        // }
+    
     });
     restartButton.addEventListener("click", function () {
         // Restart the game
@@ -245,7 +117,6 @@ function addEventListeners(){
     });
     window.addEventListener("resize", (event) => {
         resizeCanvas();
-        render();
     });
     /* Desktop Piece Manipulation */
     canvas.addEventListener("mousedown", (event) => {
@@ -256,8 +127,6 @@ function addEventListeners(){
         // Update piece held
         heldPiece.x = mouseX - 0.5 * TILE_SIZE;
         heldPiece.y = mouseY - 0.5 * TILE_SIZE;
-        // Render the board
-        render();
     });
     canvas.addEventListener("mousemove", (event) => {
         if (!heldPiece.isHolding) return; 
@@ -267,8 +136,6 @@ function addEventListeners(){
         // Update piece held
         heldPiece.x = mouseX - 0.5 * TILE_SIZE;
         heldPiece.y = mouseY - 0.5 * TILE_SIZE;
-        // Render the board
-        render();
 
     }); 
     canvas.addEventListener("mouseup", (event) => {
@@ -293,9 +160,6 @@ function addEventListeners(){
         // Update piece held
         heldPiece.x = tapX - 0.5 * TILE_SIZE;
         heldPiece.y = tapY - 0.5 * TILE_SIZE;
-        // Render the board
-        render();
-
     });
     canvas.addEventListener("touchmove", (event) => {
         if (!heldPiece.isHolding) return; 
@@ -307,8 +171,6 @@ function addEventListeners(){
         // Update piece held
         heldPiece.x = tapX - 0.5 * TILE_SIZE;
         heldPiece.y = tapY - 0.5 * TILE_SIZE;
-        // Render the board
-        render();
 
     });
     canvas.addEventListener("touchend", (event) => {
@@ -346,7 +208,7 @@ function pickupPiece(rank, file) {
     // Moves can't be played if the game's over
     if (gameOver) return;
     // Player must wait for opponent's move
-    if ((isBotGame || isMultiplayer) && turnToMove != playerColor) return;
+    if (isMultiplayer && turnToMove != playerColor) return;
     // Clicked on a piece of the right color
     if (pieceClicked === Piece.EMPTY || Math.sign(pieceClicked) !== Math.sign(turnToMove)) return;
     // Record the piece being picked up
@@ -378,22 +240,12 @@ async function releasePiece(rank, file){
             await receiveMove();
             turnToMove *= -1;
         } 
-        // Bot
-        else if (isBotGame){
-            // Play the bot's response
-            setTimeout(() => {
-                playBotMove();
-            }, 0);
-            turnToMove *= -1;
-        }
         // Local
         else {
             // Switch the player color to flip the board
             playerColor *= -1;
         }
     }
-    // Render the new position
-    render();
 }
 
 async function playMove(move) {
@@ -404,7 +256,6 @@ async function playMove(move) {
             // Show the pawn being moved up and render before promoting
             move.play();
             moveHighlights.push(move);
-            render();
             // Turn on the promotion window and wait for a selection
             toggle(promotionWindow);
             await new Promise((resolve) => {
@@ -417,8 +268,6 @@ async function playMove(move) {
             });
             toggle(promotionWindow);
         }
-        // Bot selects queen
-        else if (isBotGame) promotionSelection = Math.abs(Piece.WHITE_QUEEN);
         // Apply the promotion by changing the pawn's piece type
         move.piece = Math.sign(move.piece) * promotionSelection;
         // Remove the cached promotion 
@@ -436,8 +285,6 @@ async function playMove(move) {
     if (isGameOver()){
         endGame();
     }
-    // Highlight the move and update the board with the new position
-    render();
 }
 
 /* Chess Implementation Functions */
@@ -516,7 +363,6 @@ function getLegalMoves(fromRank, fromFile) {
 }
 
 function getPseudoLegalMoves(fromRank, fromFile) {
-    calls++;
     // Get the set of all moves of a piece at a given rank and file
     const piece = board[fromRank][fromFile];
     const color = Math.sign(piece);
@@ -700,53 +546,6 @@ async function receiveMove() {
 }
 
 /* Simple Board Utility Functions */
-function loadFEN(FEN = "r1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1"){
-    board = Array.from({ length: 8 }, () => Array(8).fill(0)); // Clear the board
-
-    let rankPointer = 0;
-    for (const line of FEN.split("/")){
-        // Populate each rank 
-        let filePointer = 0;
-        for (let char of line){
-            // Skip a certain number of files
-            if (!isNaN(parseInt(char))){
-                filePointer += parseInt(char);
-                continue;
-            }
-            // Populate the square with a piece
-            const color = (char === char.toLowerCase()) ? -1 : 1;
-            console.log(color);
-            let piece = Piece.EMPTY;
-            switch (char.toLowerCase()){
-                case "p":
-                    piece = Piece.WHITE_PAWN;
-                    break;
-                case "b":
-                    piece = Piece.WHITE_BISHOP;
-                    break;
-                case "n":
-                    piece = Piece.WHITE_KNIGHT;
-                    break;
-                case "r":
-                    piece = Piece.WHITE_ROOK;
-                    break;
-                case "q":
-                    piece = Piece.WHITE_QUEEN;
-                    break;
-                case "k":
-                    piece = Piece.WHITE_KING;
-                    break;
-            }
-            board[rankPointer][filePointer] = color * piece;
-
-            // Move to the next file
-            filePointer++;
-        }
-        // Move to the next rank
-        rankPointer++;
-    }
-}
-
 function resetBoard() {
     board = [
         [-4, -2, -3, -5, -6, -3, -2, -4],
@@ -789,37 +588,15 @@ function getFlippedRank(rank) {
     return playerColor == Color.WHITE ? rank : 7 - rank;
 }
 
-/* Rendering Functions */
-function resizeCanvas() {
-    // Set canvas length to the minimum between the screen width and height
-    let body = document.getElementById("body");
-    boardLength = Math.min(body.offsetWidth, body.offsetHeight) - 36;
-    canvas = document.getElementById("canvas");
-    ctx = canvas.getContext("2d");
-    // Fit the canvas and the chess squares to match the new window dimensions
-    TILE_SIZE = boardLength / 8;
-    canvas.width = boardLength;
-    canvas.height = boardLength;
-}
-
+/* Rendering */
 function render() {
-    renderBoard();
-    renderMoveHighlights();
-    renderMoveIndicators();
-    renderPieces();
-    // Render the held piece (if one is being held)
-    if (heldPiece.isHolding) {
-        renderPiece(pieceImages.get(board[heldPiece.rank][heldPiece.file]), heldPiece.x, heldPiece.y);
-    }
-}
-
-function renderBoard() {
-    // Render the black and white squares
+    console.log("renders");
+    // Render the squares
     let white = playerColor == Piece.WHITE;
     for (let rank = 0; rank <= 7; rank++) {
         white = !white;
         for (let file = 0; file <= 7; file++) {
-            // Fill in the square
+            // Render the square
             ctx.fillStyle = white ? LIGHT_SQUARE_COLOR : DARK_SQUARE_COLOR;
             ctx.fillRect(
                 file * TILE_SIZE,
@@ -830,44 +607,7 @@ function renderBoard() {
             white = !white;
         }
     }
-}
-
-function renderPieces() {
-    // Render the pieces
-    for (let rank = 0; rank <= 7; rank++) {
-        for (let file = 0; file <= 7; file++) {
-            const piece = board[rank][file];
-            // Ignore empty squares
-            if (piece === Piece.EMPTY) continue;
-            // Ignore the held piece
-            if (heldPiece.isHolding && heldPiece.rank == rank && heldPiece.file == file) continue;
-            // Render the piece
-            renderPiece(pieceImages.get(piece), file * TILE_SIZE, getFlippedRank(rank) * TILE_SIZE);
-        }
-    }
-}
-
-function renderPiece(pieceImg, x, y){
-    // Render a piece
-    ctx.drawImage(pieceImg, x, y, TILE_SIZE, TILE_SIZE);
-}
-
-function renderMoveIndicators(){
-    if (moveIndicators == null || moveIndicators.length === 0) return;
-    ctx.fillStyle = MOVE_INDICATOR_COLOR;
-    // Draw a circle move indicator for each legal move available
-    for (const move of moveIndicators) {
-        const rank = move.toRank, file = move.toFile;
-        ctx.fillRect(
-            file * TILE_SIZE - 1,
-            getFlippedRank(rank) * TILE_SIZE - 1,
-            TILE_SIZE + 2,
-            TILE_SIZE + 2);
-        ctx.fill();
-    }
-}
-
-function renderMoveHighlights(){
+    // Render move highlights
     for (const move of moveHighlights){
         // Highlight Color
         ctx.fillStyle =
@@ -887,10 +627,52 @@ function renderMoveHighlights(){
             TILE_SIZE + 2
         );
     }
-
+    // Render move indicators
+    if (moveIndicators !== null && moveIndicators.length !== 0){
+        ctx.fillStyle = MOVE_INDICATOR_COLOR;
+        // Draw a circular move indicator for each legal move available
+        for (const move of moveIndicators) {
+            const rank = move.toRank, file = move.toFile;
+            ctx.fillRect(
+                file * TILE_SIZE - 1,
+                getFlippedRank(rank) * TILE_SIZE - 1,
+                TILE_SIZE + 2,
+                TILE_SIZE + 2);
+            ctx.fill();
+        }
+    }
+    // Render static pieces
+    for (let rank = 0; rank <= 7; rank++) {
+        for (let file = 0; file <= 7; file++) {
+            const piece = board[rank][file];
+            // Ignore empty squares
+            if (piece === Piece.EMPTY) continue;
+            // Ignore the held piece
+            if (heldPiece.isHolding && heldPiece.rank == rank && heldPiece.file == file) continue;
+            // Render the piece
+            ctx.drawImage(pieceImages.get(piece), file * TILE_SIZE, getFlippedRank(rank) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+    }
+    // Render the piece held
+    if (heldPiece.isHolding) {
+        const heldPieceImage = pieceImages.get(board[heldPiece.rank][heldPiece.file]);
+        ctx.drawImage(heldPieceImage, heldPiece.x, heldPiece.y, TILE_SIZE, TILE_SIZE);
+    }
 }
 
-/* Visual Utilities */
+function resizeCanvas() {
+    // Set canvas length to the minimum between the screen width and height
+    let body = document.getElementById("body");
+    boardLength = Math.min(body.offsetWidth, body.offsetHeight) - 36;
+    canvas = document.getElementById("canvas");
+    ctx = canvas.getContext("2d");
+    // Fit the canvas and the chess squares to match the new window dimensions
+    TILE_SIZE = boardLength / 8;
+    canvas.width = boardLength;
+    canvas.height = boardLength;
+}
+
+
 export function loadImage(src) {
     const img = new Image();
     img.src = src;
