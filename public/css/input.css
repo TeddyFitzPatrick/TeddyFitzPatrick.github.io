@@ -26,7 +26,7 @@ npx serve
 
 /* Projects */
 .projectPanel{
-    @apply flex flex-col items-stretch xl:flex-row min-h-[100px] p-4 sm:p-6 w-[98%] sm:w-[95%] border-y-8 shadow-2xl bg-slate-700 border-slate-800 rounded-2xl
+    @apply flex flex-col items-stretch xl:flex-row min-h-[100px] p-4 sm:p-6 w-[98%] sm:w-[95%] shadow-2xl bg-slate-800 rounded-2xl 
 }
 
 .projectText{
@@ -51,23 +51,13 @@ npx serve
 
 /* Classes */
 .semester{
-    @apply flex flex-col my-6 p-6 sm:p-12 w-[95%] h-fit border-y-8 border-white bg-slate-700 rounded-2xl text-xl md:text-3xl
+    @apply rounded-2xl shadow-2xl bg-slate-800 w-fit h-fit p-10 flex-shrink-0
 }
-/* Semester season and year  */
 .semester h1{
-    @apply text-4xl sm:text-5xl font-extrabold no-underline text-center
+    @apply w-auto italic text-4xl font-bold
 }
-/* STEM / Not Stem Header */
-.semester header{
-    @apply text-cyan-400 font-bold    
-}
-/* Course Titles */
-.semester b{
-    @apply font-extrabold not-italic
-}
-/* Course Descriptions */
-.semester li{
-    @apply text-white italic 
+.semester ul{
+    @apply text-lg text-white pt-4 space-y-2
 }
 
 /* Chess */
