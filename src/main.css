@@ -1,0 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+@import "tailwindcss";
+
+/* Classes */
+.semester{
+    @apply rounded-2xl shadow-2xl bg-slate-800 w-fit h-fit p-10 flex-shrink-0
+}
+.semester h1{
+    @apply w-auto italic text-4xl font-bold
+}
+.semester ul{
+    @apply text-lg text-white pt-4 space-y-2
+}

@@ -1,5 +1,5 @@
-Website to showcase programming projects
+Portfolio website
 
-Made with HTML, TailwindCSS, and JS 
+Made with React, TypeScript, and Tailwind CSS.
 
-Redirects from https://teddyfitz.dev
+URL: https://teddyfitz.dev

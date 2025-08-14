@@ -1,7 +1,11 @@
-import{ particleSize, canvas, ctx, particles, forceMatrix, minRadius, maxRadius, frictionCoefficient } from './particleLife.js';
+import { particleSize, canvas, ctx, particles, forceMatrix, minRadius, maxRadius, frictionCoefficient } from './particleLife.ts';
 
 export class Particle{
-    constructor(initialPosition, initialVelocity, color){
+    position: number[];
+    velocity: number[];
+    color: string;
+
+    constructor(initialPosition: number[], initialVelocity: number[], color: string){
         this.position = initialPosition;
         this.velocity = initialVelocity;
         this.color = color;

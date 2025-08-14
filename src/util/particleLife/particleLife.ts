@@ -1,28 +1,17 @@
 import { Particle } from './particle.js';
 // Canvas variables
-export let canvas, ctx;
+export let canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D;
 let opacity = 0.05;
 
 // Particle life variables
-export const COLORS = ["red", "orange", "yellow", "green", "blue", "purple"];
-export let particleCount = 1_000;
-export let particleSize = 7;
-export let forceMatrix;
+export const COLORS: string[] = ["red", "orange", "yellow", "green", "blue", "purple"];
+export let particleSize: number = 7;
+export let forceMatrix: Record<string, Record<string, number>>;
 
 export let frictionCoefficient = 0.05;
-export let minRadius = 40;
-export let maxRadius = 200;
-export let particles = [];
-
-window.addEventListener("load", () => {
-    particleCount = Math.max(Math.min(1000, 0.0006 * (window.innerWidth * window.innerHeight)), 200);
-    loadSimulation();
-});
-
-window.addEventListener("resize", () => {
-    particleCount = Math.max(Math.min(1000, 0.0006 * (window.innerWidth * window.innerHeight)), 200);
-    loadSimulation();
-});
+export let minRadius: number = 40;
+export let maxRadius: number = 200;
+export let particles: Particle[] = [];
 
 // Add event listeners for keyboard presses, mouse button clicks, and slider inputs
 function addEventListeners(){
@@ -32,7 +21,7 @@ function addEventListeners(){
         canvas.height = window.innerHeight;
     });
     // Apply a force on click
-    canvas.addEventListener("click", function(){
+    canvas.addEventListener("click", function(event){
         let deltaX, deltaY, angle, xDir, yDir
         let forceMagnitude = 10;
         for (let particle of particles){
@@ -45,63 +34,13 @@ function addEventListeners(){
             particle.velocity[1] += forceMagnitude * yDir;
         }
     });
-
-    // Ignore the slider elements for the home page
-    if (document.getElementById("minRadiusSlider") === null) return;
-    // Slider inputs
-    const SLIDERS = ["minRadius", "particleSize", "particleCount", "frictionCoefficient", "opacity"];
-
-    SLIDERS.forEach((sliderName) => {
-        let slider = document.getElementById(sliderName + "Slider");
-        let display = document.getElementById(sliderName + "Display");
-        slider.addEventListener("input", (event) => {
-            display.textContent = event.target.value;
-            switch (sliderName){
-                case "minRadius":
-                    minRadius = Number(event.target.value);
-                    break;
-                case "maxRadius":
-                    maxRadius = Number(event.target.value);
-                    break;
-                case "particleSize":
-                    particleSize = Number(event.target.value);
-                    break;
-                case "particleCount":
-                    // Add remove particles
-                    const newParticleCount = Number(event.target.value);
-
-                    if (newParticleCount >= particleCount){
-                        generateParticles(newParticleCount - particleCount);
-                    } else{
-                        for (let i = 0; i < particleCount - newParticleCount; i++){
-                            particles.pop();
-                        }
-                    }
-                    particleCount = newParticleCount;
-                    break;
-                case "frictionCoefficient":
-                    frictionCoefficient = Number(event.target.value);
-                    break;
-                case "opacity":
-                    opacity = Number(event.target.value);
-                    break;
-            }
-        });
-    });
-    // Apply Defaults button
-    let reloadButton = document.getElementById("applyDefaults");
-    reloadButton.addEventListener("click", () => {
-        window.location.reload();
-    });
 }
 
 // Start the simulation 
-export function loadSimulation(){
+export function loadSimulation(canvasElement: HTMLCanvasElement, context: CanvasRenderingContext2D, particleCount: number){
     // Get the canvas and set its size the body
-    canvas = document.getElementById("canvas");
-    ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas = canvasElement;
+    ctx = context;
 
     // Event Listeners
     addEventListeners();
@@ -114,14 +53,15 @@ export function loadSimulation(){
     generateForceMatrix();
 
     // Start the particle life rendering
-    setInterval(() => {
+    const intervalId: number = setInterval(() => {
         render();
     }, 20);
-
+    
+    return intervalId;
 }
 
 // Generates a specified number of particles, each with their own random position and color
-function generateParticles(particlesToGenerate){
+function generateParticles(particlesToGenerate: number){
     for (let i = 1; i <= particlesToGenerate; i++){
         particles.push(new Particle(
             getRandomPosition(),
@@ -162,7 +102,7 @@ function render(){
 }
 
 // Utility
-function getRandomNumber(min, max){
+function getRandomNumber(min: number, max: number){
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
