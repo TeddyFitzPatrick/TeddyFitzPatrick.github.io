@@ -4,11 +4,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Link } from 'react-router-dom';
 import './main.css'
 
-import Landing from './Landing.tsx'
-import Projects from './Projects.tsx'
-import Classes from './Classes.tsx'
-import About from './About.tsx'
-import Thoughts from './Thoughts.tsx'
+import Landing from './pages/Landing.tsx'
+import Projects from './pages/Projects.tsx'
+import Classes from './pages/Classes.tsx'
+import About from './pages/About.tsx'
+import Thoughts from './pages/Thoughts.tsx'
 
 function Nav(){
     return (  

@@ -1,4 +1,4 @@
-import './main.css'
+import '../main.css'
 
 function Projects() {
     return (
@@ -133,16 +133,13 @@ function Projects() {
 function Project({title, desc, mediaElements}: {title: string, desc: React.ReactNode, mediaElements: React.ReactNode}){
     return (
         <div className="flex flex-col items-stretch xl:flex-row min-h-[100px] p-4 sm:p-6 w-[98%] sm:w-[95%] shadow-2xl bg-slate-800 rounded-2xl ">
-            {/* Proj Text */}
+            {/* Proj Description */}
             <div className="flex flex-col w-full xl:w-[calc(100%-500px)] 2xl:w-[calc(100%-1000px)]">
-                {/* title */}
                 <h1 className="font-semibold text-5xl text-cyan-400">{title}</h1>
-                {/* desc */}
                 {desc}
             </div>
-            {/* Proj Media */}
+            {/* Proj Media (misc.) */}
             <div className="flex flex-col lg:flex-row xl:flex-col 2xl:flex-row items-center justify-center w-fit h-fit rounded-xl">
-                {/* ... */}
                 {mediaElements}
             </div>
         </div>

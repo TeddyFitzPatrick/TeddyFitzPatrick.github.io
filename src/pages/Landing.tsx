@@ -1,6 +1,6 @@
-import './main.css'
-import TextAnim from './util/textAnim/TextAnim.tsx';
-import ParticleLife from './util/particleLife/particleLife.tsx';
+import '../main.css'
+import TextAnim from '../util/textAnim/TextAnim.tsx';
+import ParticleLife from '../util/particleLife/particleLife.tsx';
 
 
 function Landing() {
