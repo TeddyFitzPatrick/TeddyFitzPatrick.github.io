@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { initGame, ChessCanvas } from './chessEngine.tsx';
+import { Link } from "react-router-dom";
+import { initGame, ChessBoard } from './chessEngine.tsx';
 import { WaitFor, GET, REMOVE, UPDATE } from "./networking.js";
 
 type PageKey = "SelectGamemode" | "MultiplayerConfiguration" | "ChessBoard";
@@ -32,9 +33,11 @@ function SelectGamemode({setSelected}: {setSelected: React.Dispatch<React.SetSta
     return (
         <div className="flex justify-evenly flex-col space-y-3 text-center items-center p-12 w-4/5 sm:w-1/2 h-3/4 min-h-fit sm:h-1/2 bg-white rounded-2xl shadow-2xl">
             {/* <!-- Back to Home --> */}
-            <a href="../../index.html" className="text-xl sm:text-4xl bg-blue-400 text-white shadow-2xl p-6 rounded-2xl hover:scale-110 absolute left-6 top-4">
-                Back to Home
-            </a>
+            <Link to="/">
+                <button className="text-xl sm:text-4xl bg-blue-400 text-white shadow-2xl p-6 rounded-2xl hover:scale-110 absolute left-6 top-4">
+                    Back to Home
+                </button>
+            </Link>
             <h1 className="text-4xl sm:text-5xl font-bold">Teddy Chess</h1>
             <button onClick={startLocalGame} className="p-4 w-full h-1/2 rounded-2xl shadow-2xl text-3xl bg-black font-bold text-white hover:scale-[102%]">
                 LOCAL
@@ -108,7 +111,7 @@ function MultiplayerConfiguration({setSelected}: {setSelected: React.Dispatch<Re
     }
 
     return (
-        <div className="flex flex-col lg:flex-row space-y-6 lg:space-y-0 bg-white w-[90%] sm:w-3/4 xl:w-3/5 h-fit lg:h-3/5 text-2xl font-bold border-black p-4 sm:p-8 rounded-2xl shadow-2xl">
+        <div className="text-black flex flex-col lg:flex-row space-y-6 lg:space-y-0 bg-white w-[90%] sm:w-3/4 xl:w-3/5 h-fit lg:h-3/5 text-2xl font-bold border-black p-4 sm:p-8 rounded-2xl shadow-2xl">
             {/* <!-- HOST --> */}
             <div className="flex items-center mr-0 lg:mr-6 space-y-4 flex-col w-full lg:w-1/2 h-full border-4 border-black rounded-xl p-4">
                 <h1 className="font-bold text-4xl italic underline">Host Room</h1>
@@ -142,35 +145,6 @@ function MultiplayerConfiguration({setSelected}: {setSelected: React.Dispatch<Re
                         value="Enter"
                         className="w-28 h-12 bg-blue-500 shadow-xl text-white rext-2xl p-2 rounded-xl hover:scale-105"/>
                 </div>
-            </div>
-        </div>
-    );
-}
-
-function ChessBoard(){
-    return (
-        <div className="flex w-full h-full justify-center items-center">
-            {/* <!-- Chess Board --> */}
-            <ChessCanvas/>
-            {/* <!-- Restart Window --> */}
-            <div id="restartWindow" className="hidden flex absolute flex-col justify-center items-center space-y-10  opacity-65
-                bg-slate-500 w-[90%] h-[90%] rounded-2xl border-black border-8">
-                {/* <!-- Game over text --> */}
-                <h1 id="gameOverText" className="text-center text-bold italic text-white text-3xl">
-                    Game Over Text Placeholder
-                </h1>
-                {/* <!-- Restart --> */}
-                <button id="restart" className="text-bold text-3xl p-4 hover:scale-105 rounded-2xl shadow-2xl border-black bg-blue-500 text-white">
-                    Play Again
-                </button>
-            </div>
-            {/* <!-- Pawn Promotion Selection --> */}
-            <div id="promotionWindow" className="hidden flex absolute flex-row justify-around items-center
-            bg-opacity-70 bg-slate-600 w-full sm:w-1/2 h-[20%] top-[40%] left-0 sm:left-1/4 rounded-3xl border-black border-8">
-                <img id="queenPromote"  src="/chess/whiteQueen.png" alt="queen" className="bg-slate-200 rounded-2xl w-1/5 aspect-square hover:scale-110 shadow-2xl invert"/>
-                <img id="rookPromote"   src="/chess/whiteRook.png" alt="rook"  className="bg-slate-200 rounded-2xl w-1/5 aspect-square hover:scale-110 shadow-2xl invert"/>
-                <img id="bishopPromote" src="/chess/whiteBishop.png" alt="bishop" className="bg-slate-200 rounded-2xl w-1/5 aspect-square hover:scale-110 shadow-2xl invert"/>
-                <img id="knightPromote" src="/chess/blackKnight.png" alt="knight" className="bg-slate-200 rounded-2xl w-1/5 aspect-square hover:scale-110 shadow-2xl invert"/>
             </div>
         </div>
     );

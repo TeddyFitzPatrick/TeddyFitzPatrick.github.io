@@ -1,6 +1,6 @@
 // import { StrictMode } from 'react'  <<< Mounts twice on development; not necessarily useful
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Link } from 'react-router-dom';
 import './main.css'
 
@@ -29,9 +29,12 @@ function NavItem({destination, name}: {destination: string, name: string}){
     )
 }
 
-createRoot(document.getElementById('root')!).render(
-    <BrowserRouter>
-        <Nav/>
+function App(){
+    const location = useLocation();
+    // hide the nav bar for special interactive pages
+    const hideNav = ["/chess", "/..."].includes(location.pathname); 
+    return <>
+        {!hideNav && <Nav/>}
         <div className="font-['Montserrat'] min-h-screen bg-gradient-to-br from-orange-500 to-fuchsia-400 text-white flex flex-col items-center">
             {/* Defining the routes; these don't appear in the DOM  */}
             <Routes>
@@ -43,5 +46,11 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/chess" element={<Chess/>}/>
             </Routes>
         </div>
+    </>
+}
+
+createRoot(document.getElementById('root')!).render(
+    <BrowserRouter>
+        <App/>
     </BrowserRouter>
 )

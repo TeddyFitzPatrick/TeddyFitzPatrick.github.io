@@ -1,15 +1,11 @@
 import { WaitFor, REMOVE, UPDATE } from "./networking.js";
-import { pieceImages, pieceValues, pieceMovements, Piece, Color } from "./consts.js";
+import { pieceImages, pieceMovements, Piece, Color } from "./consts.js";
 import { Move } from "./move.js";
+import { useEffect, useRef } from "react";
 
 /* DOM */
-const promotionWindow = document.getElementById("promotionWindow")!,
-    queenPromote = document.getElementById("queenPromote")!,
-    rookPromote = document.getElementById("rookPromote")!,
-    bishopPromote = document.getElementById("bishopPromote")!,
-    knightPromote = document.getElementById("knightPromote")!;
-const restartButton = document.getElementById("restart")!,
-    restartWindow = document.getElementById("restartWindow")!,
+const promotionWindow = document.getElementById("promotionWindow")!;
+const restartWindow = document.getElementById("restartWindow")!,
     gameOverText = document.getElementById("gameOverText")!;
 /* Rendering */
 const LIGHT_SQUARE_COLOR = "rgb(173, 189, 143)";
@@ -17,8 +13,7 @@ const DARK_SQUARE_COLOR = "rgb(111, 143, 114)";
 const MOVE_INDICATOR_COLOR = "rgb(254, 57, 57)";
 // const LIGHT_SQUARE_COLOR = "rgb(227, 193, 111)";
 // const DARK_SQUARE_COLOR = "rgb(184, 139, 74)";
-let canvas: HTMLCanvasElement,
-    ctx: CanvasRenderingContext2D,
+let ctx: CanvasRenderingContext2D,
     boardLength: number,
     TILE_SIZE: number; 
 let moveIndicators: Move[] = [],
@@ -66,35 +61,180 @@ let gameOver: boolean,
     roomCode: string | null,
     isMultiplayer: boolean;
 
-export function ChessCanvas(){
+export function ChessBoard(){
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const restartButtonRef = useRef<HTMLButtonElement | null>(null);
+    // Canvas 
+    useEffect(() => {
+        const resizeCanvas = (): void => {
+            const canvas = canvasRef.current;
+            if (!canvas) throw new Error("chess canvas not found");
+            // Set the 2d context
+            ctx = canvas.getContext("2d")!;
+            // Set canvas length to the minimum between the screen width and height
+            const body = document.getElementById("body")!;
+            boardLength = Math.min(body.offsetWidth, body.offsetHeight) - 36;
+            // Fit the canvas and the chess squares to match the new window dimensions
+            TILE_SIZE = boardLength / 8;
+            canvas.width = boardLength;
+            canvas.height = boardLength;
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+        return () => {
+            window.removeEventListener("resize", resizeCanvas);
+        };
+    }, []);
+    // Click / Tap 
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) throw new Error("chess canvas not found");
+        const getMousePos = (event: MouseEvent): {mouseX: number, mouseY: number} => {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                mouseX: event.clientX - rect.left,
+                mouseY: event.clientY - rect.top,
+            }
+        }
+        const getTouchPos = (event: TouchEvent): {touchX: number, touchY: number} => {
+            const rect = canvas.getBoundingClientRect();
+            const touch = event.touches[0];
+            return {
+                touchX: touch.clientX - rect.left,
+                touchY: touch.clientY - rect.top
+            }
+        }
+        /* Desktop/Mouse */
+        const handleMouseDown = (event: MouseEvent): void => {
+            const { mouseX, mouseY } = getMousePos(event);
+            const file = Math.floor(mouseX / TILE_SIZE);
+            const rank = Math.floor(mouseY / TILE_SIZE);
+            pickupPiece(getFlippedRank(rank), file);
+            // Update piece held
+            heldPiece.x = mouseX - 0.5 * TILE_SIZE;
+            heldPiece.y = mouseY - 0.5 * TILE_SIZE;
+        }
+        const handleMouseMove = (event: MouseEvent): void => {
+            if (!heldPiece.isHolding) return;
+            const { mouseX, mouseY } = getMousePos(event);
+            heldPiece.x = mouseX - 0.5 * TILE_SIZE;
+            heldPiece.y = mouseY - 0.5 * TILE_SIZE;
+        }
+        const handleMouseUp = (event: MouseEvent): void => {
+            if (!heldPiece.isHolding) return;
+            heldPiece.isHolding = false;
+            moveHighlights = [];
+            moveIndicators = [];
+            const { mouseX, mouseY } = getMousePos(event);
+            const file = Math.floor(mouseX / TILE_SIZE);
+            const rank = Math.floor(mouseY / TILE_SIZE);
+            releasePiece(getFlippedRank(rank), file);
+        }
+        /* Mobile/Touch */
+        const handleTouchStart = (event: TouchEvent): void => {
+            event.preventDefault();
+            const { touchX, touchY } = getTouchPos(event)
+            const file = Math.floor(touchX / TILE_SIZE);
+            const rank = Math.floor(touchY / TILE_SIZE);
+            pickupPiece(getFlippedRank(rank), file);
+            heldPiece.x = touchX - 0.5 * TILE_SIZE;
+            heldPiece.y = touchY - 0.5 * TILE_SIZE;
+        }
+        const handleTouchMove = (event: TouchEvent): void => {
+            if (!heldPiece.isHolding) return;
+            event.preventDefault();
+            const { touchX, touchY } = getTouchPos(event)
+            heldPiece.x = touchX - 0.5 * TILE_SIZE;
+            heldPiece.y = touchY - 0.5 * TILE_SIZE;
+        }
+        const handleTouchEnd = (event: TouchEvent): void => {
+            if (!heldPiece.isHolding) return;
+            event.preventDefault();
+            heldPiece.isHolding = false;
+            moveHighlights = []
+            moveIndicators = []
+            const { touchX, touchY } = getTouchPos(event)
+            const file = Math.floor(touchX / TILE_SIZE);
+            const rank = Math.floor(touchY / TILE_SIZE);
+            releasePiece(getFlippedRank(rank), file);
+        }
+        canvas.addEventListener("mousedown", handleMouseDown);
+        canvas.addEventListener("mousemove", handleMouseMove);
+        canvas.addEventListener("mouseup", handleMouseUp);
+
+        canvas.addEventListener("touchstart", handleTouchStart);
+        canvas.addEventListener("touchmove", handleTouchMove);
+        canvas.addEventListener("touchend", handleTouchEnd);
+        return () => {
+            canvas.removeEventListener("mousedown", handleMouseDown);
+            canvas.removeEventListener("mousemove", handleMouseMove);
+            canvas.removeEventListener("mouseup", handleMouseUp);
+
+            canvas.removeEventListener("touchstart", handleTouchStart);
+            canvas.removeEventListener("touchmove", handleTouchMove);
+            canvas.removeEventListener("touchend", handleTouchEnd);
+        }
+    }, []);
+    const restartGame = (): void => {
+        gameOver = false;
+        toggle(restartWindow);
+        runGame(playerColor);
+    }
+    const promoteToQueen = (): void => {
+        promotionSelection = Piece.WHITE_QUEEN;
+    }
+    const promoteToRook = (): void => {
+        promotionSelection = Piece.WHITE_ROOK;
+    }
+    const promoteToBishop = (): void => {
+        promotionSelection = Piece.WHITE_BISHOP;
+    }
+    const promoteToKnight = (): void => {
+        promotionSelection = Piece.WHITE_KING;
+    }
     return <>
-    <div className="border-8 border-amber-950 rounded-xl shadow-2xl">
-        <canvas id="canvas" width="69" height="69"></canvas>
-    </div>
+        <div className="flex w-full h-full justify-center items-center">
+            {/* <!-- Chess Board --> */}
+            <div className="border-8 border-amber-950 rounded-xl shadow-2xl">
+                <canvas ref={canvasRef} width="69" height="69"></canvas>
+            </div>
+            {/* <!-- Restart Window --> */}
+            <div id="restartWindow" className="hidden flex absolute flex-col justify-center items-center space-y-10  opacity-65
+                bg-slate-500 w-[90%] h-[90%] rounded-2xl border-black border-8">
+                {/* <!-- Game over text --> */}
+                <h1 id="gameOverText" className="text-center text-bold italic text-white text-3xl">
+                    Game Over Text Placeholder
+                </h1>
+                {/* <!-- Restart --> */}
+                <button onClick={restartGame} ref={restartButtonRef} className="text-bold text-3xl p-4 hover:scale-105 rounded-2xl shadow-2xl border-black bg-blue-500 text-white">
+                    Play Again
+                </button>
+            </div>
+            {/* <!-- Pawn Promotion Selection --> */}
+            <div id="promotionWindow" className="hidden flex absolute flex-row justify-around items-center
+            bg-opacity-70 bg-slate-600 w-full sm:w-1/2 h-[20%] top-[40%] left-0 sm:left-1/4 rounded-3xl border-black border-8">
+                <img onClick={promoteToQueen}  src="/chess/whiteQueen.png" alt="queen" className="bg-slate-200 rounded-2xl w-1/5 aspect-square hover:scale-110 shadow-2xl invert"/>
+                <img onClick={promoteToRook}   src="/chess/whiteRook.png" alt="rook"  className="bg-slate-200 rounded-2xl w-1/5 aspect-square hover:scale-110 shadow-2xl invert"/>
+                <img onClick={promoteToBishop} src="/chess/whiteBishop.png" alt="bishop" className="bg-slate-200 rounded-2xl w-1/5 aspect-square hover:scale-110 shadow-2xl invert"/>
+                <img onClick={promoteToKnight} src="/chess/blackKnight.png" alt="knight" className="bg-slate-200 rounded-2xl w-1/5 aspect-square hover:scale-110 shadow-2xl invert"/>
+            </div>
+        </div>
     </>
 }
 
 export function initGame(multiplayer: boolean = false, code: string | null = null, color: number = Color.WHITE) {
     /* GAMEMODES */
     isMultiplayer = multiplayer;
-    // MULTIPLAYER
+    // Multiplayer
     if (isMultiplayer){
         roomCode = code;
     }
-    // LOCAL
-    else {
-        color = Color.WHITE;
-    }
-    // Rendering
-    resizeCanvas();
-    // Event Listeners
-    addEventListeners();
     // Start game
     runGame(color);
     // Rendering loop
     setInterval(() => {
         render();
-    }, 20);
+    }, 30);
 }
 
 async function runGame(color: number) {
@@ -116,106 +256,6 @@ async function runGame(color: number) {
 function endGame() {
     gameOver = true;
     toggle(restartWindow);
-}
-
-/* User Input Handling Functions */
-function addEventListeners(){
-    // Add event listeners
-    window.addEventListener("keydown", () => {
-    
-    });
-    restartButton.addEventListener("click", function () {
-        // Restart the game
-        gameOver = false;
-        toggle(restartWindow);
-        runGame(playerColor);
-    });
-    window.addEventListener("resize", () => {
-        resizeCanvas();
-    });
-    
-    /* Desktop Piece Manipulation */
-    canvas.addEventListener("mousedown", (event) => {
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = event.clientX - rect.left;
-        const mouseY = event.clientY - rect.top;
-        pickupPiece(getFlippedRank(Math.floor(mouseY / TILE_SIZE)), Math.floor(mouseX / TILE_SIZE));
-        // Update piece held
-        heldPiece.x = mouseX - 0.5 * TILE_SIZE;
-        heldPiece.y = mouseY - 0.5 * TILE_SIZE;
-    });
-    canvas.addEventListener("mousemove", (event) => {
-        if (!heldPiece.isHolding) return; 
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = event.clientX - rect.left;
-        const mouseY = event.clientY - rect.top;
-        // Update piece held
-        heldPiece.x = mouseX - 0.5 * TILE_SIZE;
-        heldPiece.y = mouseY - 0.5 * TILE_SIZE;
-
-    }); 
-    canvas.addEventListener("mouseup", (event) => {
-        if (!heldPiece.isHolding) return;
-        heldPiece.isHolding = false;
-        moveHighlights = [];
-        moveIndicators = [];
-        const rect = canvas.getBoundingClientRect();
-        const mouseRank = Math.floor((event.clientY - rect.top) / TILE_SIZE);
-        const mouseFile = Math.floor((event.clientX - rect.left) / TILE_SIZE);
-        releasePiece(getFlippedRank(mouseRank), mouseFile);
-    });
-
-    /* Mobile */
-    canvas.addEventListener("touchstart", (event) => {
-        event.preventDefault();
-        const rect = canvas.getBoundingClientRect();
-        const touch = event.touches[0];
-        const tapX = touch.clientX - rect.left;
-        const tapY = touch.clientY - rect.top;
-        pickupPiece(getFlippedRank(Math.floor(tapY / TILE_SIZE)), Math.floor(tapX / TILE_SIZE));
-        // Update piece held
-        heldPiece.x = tapX - 0.5 * TILE_SIZE;
-        heldPiece.y = tapY - 0.5 * TILE_SIZE;
-    });
-    canvas.addEventListener("touchmove", (event) => {
-        if (!heldPiece.isHolding) return; 
-        event.preventDefault();
-        const rect = canvas.getBoundingClientRect();
-        const touch = event.touches[0];
-        const tapX = touch.clientX - rect.left;
-        const tapY = touch.clientY - rect.top;
-        // Update piece held
-        heldPiece.x = tapX - 0.5 * TILE_SIZE;
-        heldPiece.y = tapY - 0.5 * TILE_SIZE;
-
-    });
-    canvas.addEventListener("touchend", (event) => {
-        if (!heldPiece.isHolding) return;
-        event.preventDefault();
-        heldPiece.isHolding = false;
-        // Reset the move indicators and highlights
-        moveHighlights = [];
-        moveIndicators = [];
-        const rect = canvas.getBoundingClientRect();
-        const touch = event.changedTouches[0];
-        const tappedRank = Math.floor((touch.clientY - rect.top) / TILE_SIZE);
-        const tappedFile = Math.floor((touch.clientX - rect.left) / TILE_SIZE);
-        releasePiece(getFlippedRank(tappedRank), tappedFile);
-    });
-
-    /* Pawn Promotion */
-    queenPromote.addEventListener("click", () => {
-        promotionSelection = Piece.WHITE_QUEEN;
-    });
-    rookPromote.addEventListener("click", () => {
-        promotionSelection = Piece.WHITE_ROOK;
-    });
-    bishopPromote.addEventListener("click", () => {
-        promotionSelection = Piece.WHITE_BISHOP;
-    });
-    knightPromote.addEventListener("click", () => {
-        promotionSelection = Piece.WHITE_KNIGHT;
-    });
 }
 
 function pickupPiece(rank: number, file: number) {
@@ -285,7 +325,7 @@ async function playMove(move: Move) {
             });
             toggle(promotionWindow);
         };
-        if (!promotionSelection) throw new Error('Error: Promotion window closed, but no selection was saved')
+        if (!promotionSelection) throw new Error('Promotion window closed, but no selection was saved')
         // Apply the promotion by changing the pawn's piece type
         move.piece = Math.sign(move.piece) * promotionSelection;
         // Remove the cached promotion 
@@ -619,7 +659,6 @@ function getFlippedRank(rank: number) {
 
 /* Rendering */
 function render() {
-    console.log("render");
     // Render the squares
     let isWhite: boolean = (playerColor == Color.WHITE);
     for (let rank = 0; rank <= 7; rank++) {
@@ -687,19 +726,6 @@ function render() {
         const heldPieceImage: HTMLImageElement = pieceImages.get(board[heldPiece.rank][heldPiece.file])!;
         ctx.drawImage(heldPieceImage, heldPiece.x, heldPiece.y, TILE_SIZE, TILE_SIZE);
     }
-}
-
-function resizeCanvas() {
-    // Set canvas length to the minimum between the screen width and height
-    let body = document.getElementById("body")!;
-    boardLength = Math.min(body.offsetWidth, body.offsetHeight) - 36;
-    console.log(document.body);      
-    canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-    // Fit the canvas and the chess squares to match the new window dimensions
-    TILE_SIZE = boardLength / 8;
-    canvas.width = boardLength;
-    canvas.height = boardLength;
 }
 
 function toggle(window: HTMLElement) {
