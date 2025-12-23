@@ -9,6 +9,7 @@ import Projects from './pages/Projects.tsx'
 import Classes from './pages/Classes.tsx'
 import About from './pages/About.tsx'
 import Thoughts from './pages/Thoughts.tsx'
+import Chess from './util/chess/chess.tsx'
 
 function Nav(){
     return (  
@@ -32,12 +33,14 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
         <Nav/>
         <div className="font-['Montserrat'] min-h-screen bg-gradient-to-br from-orange-500 to-fuchsia-400 text-white flex flex-col items-center">
+            {/* Defining the routes; these don't appear in the DOM  */}
             <Routes>
-                <Route path="/" element={<Landing />}/>
-                <Route path="/projects" element={<Projects />}/>
-                <Route path="/classes" element={<Classes />}/>
-                <Route path="/about" element={<About />}/>
-                <Route path="/thoughts" element={<Thoughts />}/>
+                <Route path="/" element={<Landing/>}/>
+                <Route path="/projects" element={<Projects/>}/>
+                <Route path="/classes" element={<Classes/>}/>
+                <Route path="/about" element={<About/>}/>
+                <Route path="/thoughts" element={<Thoughts/>}/>
+                <Route path="/chess" element={<Chess/>}/>
             </Routes>
         </div>
     </BrowserRouter>

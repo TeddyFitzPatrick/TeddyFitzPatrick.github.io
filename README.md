@@ -1,5 +1,3 @@
-Portfolio website
+Portfolio website made with React, TypeScript, and Tailwind CSS.
+https://teddyfitz.dev
 
-Made with React, TypeScript, and Tailwind CSS.
-
-URL: https://teddyfitz.dev

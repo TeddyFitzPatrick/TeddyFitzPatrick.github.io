@@ -1,24 +1,39 @@
 import '../main.css'
+import { Link } from 'react-router-dom'
 
 function Projects() {
     return (
         <div className="flex flex-col text-white text-3xl items-center w-full h-full pt-[calc(10vh+1rem)] md:pt-[calc(10vh+3rem)] space-y-6 pb-12"> 
-            {/* Chess */}
-            <Project title="Multiplayer Chess"
+            
+            {/* MIPS Interpreter */}
+            <Project title="MIPS assembly interpreter"
                 desc={<>
                     <p className="text-xl sm:text-3xl p-2 px-0 sm:p-6">
-                        Multiplayer Chess made with JavaScript and Tailwind. Uses Firebase realtime database for low-latency multiplayer
+                        Web interpreter of the MIPS 32-bit assembly language. 
+                        Supports a core subset of MIPS with a small virtual memory space. <a className="underline text-cyan-400" href="https://teddyfitzpatrick.github.io/mips-interpreter-web" target="_blank">link</a>
+                    </p>
+                </>}
+                mediaElements={<>
+                    <img className="m-2 rounded-xl w-full shadow-2xl" src={"/misc/mips_interpreter.png"} width="500"/>
+                </>}/>
+
+            {/* Chess */}
+            <Project title="Multiplayer Chess Engine"
+                desc={<>
+                    <p className="text-xl sm:text-3xl p-2 px-0 sm:p-6">
+                        Multiplayer Chess made with TypeScript. Uses Firebase realtime database for low-latency multiplayer
                         games with randomized room codes.
                     </p>
-                    <a target="_blank" className="my-2 w-fit text-white text-xl sm:text-3xl rounded-xl p-4 font-bold bg-blue-500  hover:scale-105 shadow-2xl" href="chess.html">
-                        Play Chess
-                    </a>
+                    <Link to="/chess">
+                        <button className="my-2 w-fit text-white text-xl sm:text-3xl rounded-xl p-4 font-bold bg-blue-500  hover:scale-105 shadow-2xl">
+                            Play Chess
+                        </button>
+                    </Link>
                 </>}
                 mediaElements={<>
                     <img className="m-2 rounded-xl w-full lg:w-1/2 shadow-2xl" src={"/projects/greenChessboard.png"} width="500"/>    
                     <img className="m-2 rounded-xl w-full lg:w-1/2 shadow-2xl" src={"/projects/chessPromotionCapture.png"} width="500"/>
                 </>}/>
-
 
             {/* Mandelbrot Generator */}
             <Project title="Mandelbrot Generator"
@@ -49,7 +64,6 @@ function Projects() {
                     </div>
                 </>}/>
 
-
             {/* Particle Life */}
             <Project title="Particle Life"
                 desc={<>
@@ -68,7 +82,6 @@ function Projects() {
                         <source src="/projects/particleLifeCapture.mp4"/>
                     </video>
                 </>}/>
-
 
             {/* PyTetris */}
             <Project title="PyTetris"
@@ -91,7 +104,6 @@ function Projects() {
                     </video>
                 </>}/>
 
-
             {/* PyLife */}
             <Project title="PyLife"
                 desc={
@@ -111,7 +123,6 @@ function Projects() {
                     </video>
                 </>}/>
 
-                
             {/* FitzPatrick Design Inc. */}
             <Project title="FitzPatrick Design Inc."
                 desc={
