@@ -57,7 +57,12 @@ function Classes() {
         <>
             <p className="mt-[10vh] px-4 pt-4 text-xl">GPA: 3.9; Tutoring Analysis of Algorithms & CS Theory </p>
             <div className="flex flex-wrap items-center gap-4 p-4 w-full h-auto">
-                {Object.keys(classes).map((semester) => <Semester title={semester} classList={classes[semester]}/>)}
+                {Object.keys(classes).map((semester, index) =>
+                    // this div makes react happy 
+                    <div key={index}> 
+                        <Semester title={semester} classList={classes[semester]}/>
+                    </div>
+                )}
             </div>
         </>
     )
@@ -68,12 +73,13 @@ function Semester({title, classList}: {title: string, classList: string[]}){
         <div className="rounded-2xl shadow-2xl bg-slate-800 w-fit h-fit p-10 flex-shrink-0">
             <h1 className="w-auto italic text-4xl font-bold">{title}</h1>
             <ul className="text-lg text-white pt-4 space-y-2">
-                {classList.map((className, _index) => (
-                    <li>{className}</li>
+                {classList.map((className, index) => (
+                    <li key={index}>{className}</li>
                 ))}
             </ul>
         </div>
     );
 }
+// 42
 
 export default Classes

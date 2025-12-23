@@ -1,18 +1,19 @@
-import { particleSize, canvas, ctx, particles, forceMatrix, minRadius, maxRadius, frictionCoefficient } from './particleLife.ts';
+import { simulationVariables, canvas, ctx, particles, forceMatrix } from './particleLife.tsx';
 
 export class Particle{
     position: number[];
     velocity: number[];
     color: string;
-
+ 
     constructor(initialPosition: number[], initialVelocity: number[], color: string){
         this.position = initialPosition;
         this.velocity = initialVelocity;
         this.color = color;
     }
-
     applyForces(){
         let deltaX, deltaY, distance, angle, forceMagnitude,xDir, yDir
+        const minRadius = simulationVariables["minRadius"];
+        const maxRadius = simulationVariables["maxRadius"];
         const middleRadius = (minRadius + maxRadius) / 2;
         for (let otherParticle of particles){
             // A particle should not attract or repel itself
@@ -58,7 +59,6 @@ export class Particle{
             this.velocity[1] += forceMagnitude * yDir;
         }
     }
-
     // Add the velocity to the position and bound-check the particle
     applyVelocity(){
         this.position[0] += this.velocity[0];
@@ -83,8 +83,8 @@ export class Particle{
     }
     // Reduce velocity according to a coefficient of friction
     applyFriction(){
-        this.velocity[0] *= (1 - frictionCoefficient);
-        this.velocity[1] *= (1 - frictionCoefficient);
+        this.velocity[0] *= (1 - simulationVariables.frictionCoefficient);
+        this.velocity[1] *= (1 - simulationVariables.frictionCoefficient);
     }
     // Update the state of the particle (position/velocity)
     update(){
@@ -92,12 +92,11 @@ export class Particle{
         this.applyVelocity();
         this.applyFriction();
     }
-
     // Draw the particle on the screen
     render(){
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(this.position[0], this.position[1], particleSize, 0, 2 * Math.PI);
+        ctx.arc(this.position[0], this.position[1], simulationVariables.particleSize, 0, 2 * Math.PI);
         ctx.fill();
     }
 }

@@ -52,7 +52,7 @@ function Projects() {
                         <p className="font-bold text-black text-bold"> Rendering Tools:</p>
                         <div className="w-full flex flex-wrap">
                             <button className="text-black hover:scale-105 text-2xl m-1 p-1 bg-white rounded-xl border-black border-4" id="invert">Invert Colors</button><br/>
-                            <button className="text-black hover:scale-105 text-2xl m-1 p-1 bg-white rounded-xl border-black border-4" id="zInitial">View the z<sub>0</sub> = 1 set</button><br/>
+                            <button className="text-black hover:scale-105 text-2xl m-1 p-1 bg-white rounded-xl border-black border-4" id="zInitial">View the z0 = 1 set</button><br/>
                             <button className="text-black hover:scale-105 text-2xl m-1 p-1 bg-white rounded-xl border-black border-4" id="sharpen">Sharpen</button><br/>
                             <button className="text-black hover:scale-105 text-2xl m-1 p-1 bg-white rounded-xl border-black border-4" id="reset">Reset</button>
                         </div>
@@ -73,9 +73,11 @@ function Projects() {
                     Mohr. Randomly generated rules of attraction & repulsion between particles of different colors
                     compose a lifelike simulation. Built with a menu to adjust each particle's sphere of influence, velocity half-life, and radii.
                 </p>
-                <a target="_blank" className="my-2 w-fit text-white text-xl sm:text-3xl rounded-xl p-4 font-bold bg-blue-500  hover:scale-105 shadow-2xl" href="particleLife.html">
-                    Web Version
-                </a>
+                 <Link to="/plife">
+                    <button className="my-2 w-fit text-white text-xl sm:text-3xl rounded-xl p-4 font-bold bg-blue-500  hover:scale-105 shadow-2xl">
+                        Particle Life (Web)
+                    </button>
+                </Link>
                 </>}
                 mediaElements={<>
                     <video className="rounded-xl shadow-2xl" autoPlay loop muted width="1000">

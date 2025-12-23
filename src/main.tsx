@@ -10,6 +10,7 @@ import Classes from './pages/Classes.tsx'
 import About from './pages/About.tsx'
 import Thoughts from './pages/Thoughts.tsx'
 import Chess from './util/chess/chess.tsx'
+import {Sliders, ParticleLife} from './util/particleLife/particleLife.tsx';
 
 function Nav(){
     return (  
@@ -32,7 +33,7 @@ function NavItem({destination, name}: {destination: string, name: string}){
 function App(){
     const location = useLocation();
     // hide the nav bar for special interactive pages
-    const hideNav = ["/chess", "/..."].includes(location.pathname); 
+    const hideNav = ["/chess", "/plife"].includes(location.pathname); 
     return <>
         {!hideNav && <Nav/>}
         <div className="font-['Montserrat'] min-h-screen bg-gradient-to-br from-orange-500 to-fuchsia-400 text-white flex flex-col items-center">
@@ -44,6 +45,7 @@ function App(){
                 <Route path="/about" element={<About/>}/>
                 <Route path="/thoughts" element={<Thoughts/>}/>
                 <Route path="/chess" element={<Chess/>}/>
+                <Route path="/plife" element={<><Sliders/><ParticleLife/></>}/>
             </Routes>
         </div>
     </>
