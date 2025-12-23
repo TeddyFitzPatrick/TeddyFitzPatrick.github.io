@@ -1,4 +1,4 @@
-import { WaitFor, REMOVE, UPDATE } from "./networking.js";
+import { WaitFor, UPDATE, REMOVE } from "./networking.js";
 import { pieceImages, pieceMovements, Piece, Color } from "./consts.js";
 import { Move } from "./move.js";
 import { useEffect, useRef } from "react";
@@ -57,7 +57,6 @@ const heldPiece: HeldPiece = {
     y: -1
 };
 let gameOver: boolean,
-    winner: number = 0,
     roomCode: string | null,
     isMultiplayer: boolean;
 
@@ -368,7 +367,6 @@ function isGameOver() {
         if (!hasLegalMoves){
             // Checkmate
             if (isChecked(color)){
-                winner = color;
                 gameOverText.textContent = `${color == Color.WHITE ? "Black" : "White"} wins by checkmate`;
             // Stalemate
             } else{
@@ -391,18 +389,18 @@ function isLegalMove(move: Move) {
     return false;
 }
 
-function getAllLegalMoves(color: number): Move[]{
-    let allLegalMoves = [];
-    // Get all legal moves for a given color
-    for (let rank = 0; rank <= 7; rank++){
-        for (let file = 0; file <= 7; file++){
-            if (Math.sign(board[rank][file]) === color){
-                allLegalMoves.push(...getLegalMoves(rank, file));
-            }
-        }
-    }
-    return allLegalMoves;
-}
+// function getAllLegalMoves(color: number): Move[]{
+//     let allLegalMoves = [];
+//     // Get all legal moves for a given color
+//     for (let rank = 0; rank <= 7; rank++){
+//         for (let file = 0; file <= 7; file++){
+//             if (Math.sign(board[rank][file]) === color){
+//                 allLegalMoves.push(...getLegalMoves(rank, file));
+//             }
+//         }
+//     }
+//     return allLegalMoves;
+// }
 
 function getLegalMoves(fromRank: number, fromFile: number) {
     // Get the set of all moves possible for a piece at a given rank and file

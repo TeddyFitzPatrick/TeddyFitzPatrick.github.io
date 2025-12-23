@@ -53,7 +53,7 @@ export function loadSimulation(canvasElement: HTMLCanvasElement, context: Canvas
     generateForceMatrix();
 
     // Start the particle life rendering
-    const intervalId: number = setInterval(() => {
+    const intervalId: NodeJS.Timeout = setInterval(() => {
         render();
     }, 20);
     

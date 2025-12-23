@@ -3,7 +3,7 @@ import { loadSimulation} from './particleLife.ts';
 
 function ParticleLife(){
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const intervalRef = useRef<number | null>(null);
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(()=>{
         const canvas = canvasRef.current;

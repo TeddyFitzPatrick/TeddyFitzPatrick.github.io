@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { initGame, ChessBoard } from './chessEngine.tsx';
-import { WaitFor, GET, REMOVE, UPDATE } from "./networking.js";
+import { WaitFor, GET, UPDATE } from "./networking.js";
 
 type PageKey = "SelectGamemode" | "MultiplayerConfiguration" | "ChessBoard";
 export default function Chess(){
