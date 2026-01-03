@@ -53,23 +53,21 @@ function Classes() {
             "VISL 120 (Intro to Film)"
         ]
     }
-    return (
-        <>
-            <p className="mt-[10vh] px-4 pt-4 text-xl">GPA: 3.9; Tutoring Analysis of Algorithms & CS Theory </p>
-            <div className="flex flex-wrap items-center gap-4 p-4 w-full h-auto">
-                {Object.keys(classes).map((semester, index) =>
-                    // this div makes react happy 
-                    <div key={index}> 
-                        <Semester title={semester} classList={classes[semester]}/>
-                    </div>
-                )}
-            </div>
-        </>
-    )
+    return <>
+        <p className="mt-[10vh] px-4 pt-4 text-xl">GPA: 3.9; Tutoring Analysis of Algorithms & CS Theory </p>
+        <div className="flex flex-wrap items-center gap-4 p-4 w-full h-auto">
+            {Object.keys(classes).map((semester, index) =>
+                // this div makes react happy 
+                <div key={index}> 
+                    <Semester title={semester} classList={classes[semester]}/>
+                </div>
+            )}
+        </div>
+    </>
 }
 
 function Semester({title, classList}: {title: string, classList: string[]}){
-    return (
+    return <>
         <div className="rounded-2xl shadow-2xl bg-slate-800 w-fit h-fit p-10 flex-shrink-0">
             <h1 className="w-auto italic text-4xl font-bold">{title}</h1>
             <ul className="text-lg text-white pt-4 space-y-2">
@@ -78,7 +76,7 @@ function Semester({title, classList}: {title: string, classList: string[]}){
                 ))}
             </ul>
         </div>
-    );
+    </>
 }
 // 42
 
