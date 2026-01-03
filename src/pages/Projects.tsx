@@ -1,10 +1,8 @@
 import '../main.css'
 import { Link } from 'react-router-dom'
-import { Mandelbrot } from '../util/mandelbrot/mandelbrot.tsx'
-import { useRef } from 'react';
+// import { Mandelbrot } from '../util/mandelbrot/mandelbrot.tsx'
 
 function Projects() {
-    const containerRef = useRef<typeof Project | null>(null);
 
     return <div className="flex flex-col text-white text-3xl items-center w-full h-full pt-[calc(10vh+1rem)] md:pt-[calc(10vh+3rem)] space-y-6 pb-12"> 
         {/* MIPS Interpreter */}
@@ -61,7 +59,7 @@ function Projects() {
                 </div> */}
             </>}
             mediaElements={<>
-                <Mandelbrot/>
+                {/* <Mandelbrot/> */}
             </>}/>
 
         {/* Particle Life */}
