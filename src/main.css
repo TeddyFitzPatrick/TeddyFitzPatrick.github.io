@@ -1,2 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 @import "tailwindcss";
+
+.typewriter {
+  text-transform: none!important;
+  overflow: hidden;
+  border-right: .05em solid black;
+  white-space: nowrap;
+  margin: 0; /* Remove auto margin to align left */
+  letter-spacing: .05em;
+  animation: typing 1.5s steps(40, end), blink-caret .75s step-end infinite;
+}
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+@keyframes blink-caret {
+  from, to { border-color: transparent }
+  50% { border-color: black; }
+}

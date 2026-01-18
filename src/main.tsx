@@ -7,19 +7,15 @@ import './main.css'
 import Landing from './pages/Landing.tsx'
 import Projects from './pages/Projects.tsx'
 import Classes from './pages/Classes.tsx'
-import About from './pages/About.tsx'
-import Thoughts from './pages/Thoughts.tsx'
 import Chess from './util/chess/chess.tsx'
 import {Sliders, ParticleLife} from './util/particleLife/particleLife.tsx';
 
 function Nav(){
     return (  
-        <nav className="fixed left-0 top-0 flex flex-row justify-around text-lg sm:text-2xl text-center items-center bg-white w-full h-[10vh]">
+        <nav className="fixed left-0 top-0 flex flex-row justify-around text-lg sm:text-2xl text-center items-center bg-white w-full h-[10vh] z-1">
             <NavItem destination="/" name="home"/>
             <NavItem destination="/projects" name="projects"/>
             <NavItem destination="/classes" name="classes"/>
-            <NavItem destination="/about" name="about"/>
-            <NavItem destination="/thoughts" name="thoughts"/>
         </nav> 
     )
 }
@@ -42,8 +38,6 @@ function App(){
                 <Route path="/" element={<Landing/>}/>
                 <Route path="/projects" element={<Projects/>}/>
                 <Route path="/classes" element={<Classes/>}/>
-                <Route path="/about" element={<About/>}/>
-                <Route path="/thoughts" element={<Thoughts/>}/>
                 <Route path="/chess" element={<Chess/>}/>
                 <Route path="/plife" element={<><Sliders/><ParticleLife/></>}/>
             </Routes>

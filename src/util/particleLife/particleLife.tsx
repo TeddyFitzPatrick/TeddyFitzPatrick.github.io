@@ -163,6 +163,8 @@ export function ParticleLife(){
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
         // Resize the canvas on window resize
         window.addEventListener("resize", function() {
             canvas.width = window.innerWidth;
@@ -195,10 +197,8 @@ export function ParticleLife(){
         };
     }, []);
 
-    return <div className="w-full h-full bg-black">
-        <canvas ref={canvasRef}
-            width={window.innerWidth}
-            height={window.innerHeight}
-            className="w-full h-full"/>
-    </div>
+    return <canvas ref={canvasRef}
+        width={window.innerWidth}
+        height={window.innerHeight}
+        className="w-full h-full bg-black"/>
 }

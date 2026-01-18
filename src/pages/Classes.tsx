@@ -4,10 +4,11 @@ function Classes() {
 
     const classes: Record<string, string[]> = {
         "Spring 2026 (Upcoming)": [
-            "*Studying abroad in Osnabrück, Germany",
+            "*Studying abroad in Osnabrück, Germany (April-August)",
             "German Language - Level B1",
             "Introduction to Computational Linguistics",
-            "Machine Learning"
+            "Machine Learning",
+            "Scientific Programming in Python"
         ],
         "Fall 2025": [
             "CSCI 250 (Concepts of Computer Systems)",
