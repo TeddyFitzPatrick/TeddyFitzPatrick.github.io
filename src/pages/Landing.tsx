@@ -33,8 +33,10 @@ function Landing() {
             <ParticleLife/>
         </div>
         
-        <div className="absolute bottom-2 left-5 font-bold text-2xl animate-bounce">
-            See Below 
+        <div className="absolute bottom-2 left-5 font-bold text-2xl">
+            <Link to="/chat">
+                Chat Testing...
+            </Link>
         </div>
 
         <div className="w-full flex flex-col md:flex-row text-8xl font-bold h-[90vh] bg-gradient-to-br from-cyan-200">
@@ -42,7 +44,7 @@ function Landing() {
                 <img src="/misc/vermont.png" className="object-contain p-4 rounded-xl"/>
             </div>
             <div className="w-full h-full md:w-3/5 flex flex-col justify-center p-2 sm:p-4">
-                <div className="h-full flex items-center justify-center text-xl md:text-4xl font-bond shadow-2xl p-6 rounded-xl">
+                <div className="h-full flex items-center justify-center text-lg md:text-xl xl:text-3xl font-bond shadow-2xl p-6 rounded-xl">
                     <p>
                         I'm Teddy FitzPatrick, a junior year CS major at RIT. <br/><br/>
                         
@@ -55,9 +57,8 @@ function Landing() {
 
                         If you want to get in contact, message me on LinkedIn or send an email.
                     </p>
-                    
                 </div>
-                <ul className="relative bottom-0 flex flex-row justify-around shadow-2xl rounded-xl py-8 items-center">
+                <ul className="relative bottom-0 flex flex-row justify-around shadow-2xl rounded-xl py-4 sm:py-8 items-center">
                     <SocialLink imgPath={"/misc/github-mark.svg"} targetUrl={"https://github.com/TeddyFitzPatrick/"}/>
                     <SocialLink imgPath={"/misc/linkedin-mark.svg"} targetUrl={"https://www.linkedin.com/in/teddyfitzpatrick/"}/>
                 </ul>
@@ -65,6 +66,7 @@ function Landing() {
         </div>  
     </>
 }
+
 function SocialLink({imgPath, targetUrl}: {imgPath: string, targetUrl: string}){
     return (
         <a className="w-24 h-24 flex rounded-xl shadow-2xl bg-white flex-shrink-0 hover:scale-103" 
@@ -74,7 +76,5 @@ function SocialLink({imgPath, targetUrl}: {imgPath: string, targetUrl: string}){
         </a>   
     );
 }
-
-
 
 export default Landing

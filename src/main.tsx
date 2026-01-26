@@ -10,6 +10,8 @@ import Classes from './pages/Classes.tsx'
 import Chess from './util/chess/chess.tsx'
 import {Sliders, ParticleLife} from './util/particleLife/particleLife.tsx';
 
+import Chat from './chat/chat.tsx';
+
 function Nav(){
     return (  
         <nav className="fixed left-0 top-0 flex flex-row justify-around text-lg sm:text-2xl text-center items-center bg-white w-full h-[10vh] z-1">
@@ -29,10 +31,11 @@ function NavItem({destination, name}: {destination: string, name: string}){
 function App(){
     const location = useLocation();
     // hide the nav bar for special interactive pages
-    const hideNav = ["/chess", "/plife"].includes(location.pathname); 
+    const hideNav = ["/chess", "/plife", "/chat"].includes(location.pathname); 
+    const standardLayout = !["/chat"].includes(location.pathname);
     return <>
         {!hideNav && <Nav/>}
-        <div className="font-['Montserrat'] min-h-screen bg-gradient-to-br from-orange-500 to-fuchsia-400 text-white flex flex-col items-center">
+        <div className={`${standardLayout ? "font-['Montserrat'] min-h-screen bg-gradient-to-br from-orange-500 to-fuchsia-400 text-white flex flex-col items-center" : "flex flex-col items-center justify-center w-full min-h-screen"}`}>
             {/* Defining the routes; these don't appear in the DOM  */}
             <Routes>
                 <Route path="/" element={<Landing/>}/>
@@ -40,6 +43,9 @@ function App(){
                 <Route path="/classes" element={<Classes/>}/>
                 <Route path="/chess" element={<Chess/>}/>
                 <Route path="/plife" element={<><Sliders/><ParticleLife/></>}/>
+
+                {/* chat  */}
+                <Route path="/chat" element={<Chat/>}/>
             </Routes>
         </div>
     </>
