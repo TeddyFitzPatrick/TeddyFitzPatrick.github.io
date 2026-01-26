@@ -71,7 +71,7 @@ export default function Chat(){
 
 function Login(){
     const signInWithGoogle = async () => {
-        const { error } = await supabase.auth.signInWithOAuth({
+        const { error } = await supabase.auth.signInWithOAuth({ 
             provider: 'google',
             options: {
                 redirectTo: window.location.origin + "/chat", 
@@ -115,7 +115,7 @@ function SignUp({auth}: {auth: AuthContext}){
         if (!error){
             setProfile(data);  // this automatically updates the UI
         } else{
-            alert("Error creating user profile. Username may already be taken, please try another one.");
+            alert("Error creating user profile. Usernames must be unique and less than 33 characters long.");
             console.log("Error creating user profile: ", error);
         }
     };
@@ -132,10 +132,11 @@ function SignUp({auth}: {auth: AuthContext}){
 }
 
 function ChatApp({auth}: {auth: AuthContext}){
-    const user = auth.user!; const profile = auth.profile!;
-    const email = user.email;
-    const fullName = user.user_metadata.full_name
-    const avatar = user.user_metadata.avatar_url;
+    const profile = auth.profile!;
+    // const user = auth.user!;
+    // const email = user.email;
+    // const fullName = user.user_metadata.full_name
+    // const avatar = user.user_metadata.avatar_url;
 
     const [isPosting, setIsPosting] = useState(false);
 
@@ -149,16 +150,7 @@ function ChatApp({auth}: {auth: AuthContext}){
             // Retrieve all posts from the posts tble
             const { data, error } = await supabase
             .from("posts")
-            .select(`
-                id,
-                user_id,
-                title,
-                content,
-                created_on,
-                profiles (
-                    username
-                )
-            `)
+            .select("id, user_id, title, content, created_on, profiles(username)")
             .order("created_on", { ascending: false })
             if (error){
                 alert("Error retrieving posts " + error);
@@ -223,7 +215,7 @@ function CreatePost({auth, setIsPosting}: {auth: AuthContext, setIsPosting: Reac
         if (!user || !titleRef || !contentRef) return;
 
         auth.setLoading(true)
-        const { data, error } = await supabase
+        const { data: _data, error } = await supabase
             .from("posts")
             .insert({
                 user_id: user.id,
