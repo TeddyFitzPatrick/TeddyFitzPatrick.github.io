@@ -179,11 +179,14 @@ function ChatApp({auth}: {auth: AuthContext}){
         getPosts();
     }, []);
     return <>
-    <div className="w-full min-h-screen h-fit flex flex-col justify-start">
+    {isPosting ? 
+    (<CreatePost auth={auth} setIsPosting={setIsPosting}/>)
+    :
+    (<div className="w-full min-h-screen h-fit flex flex-col justify-start bg-black text-white">
         {/* header  */}
-        <div className=" w-full p-4 bg-gray-300 shadow-2xl text-xl flex flex-row justify-between">
+        <div className=" w-full p-4 bg-gray-400 shadow-2xl text-xl flex flex-row justify-between">
             {/* sign in name  */}
-            <div className="flex flex-row space-x-2">
+            <div className="flex flex-row space-x-2 text-black">
                 <p>Logged in as:</p> <p className="font-bold">{profile!.username}</p>
             </div>
             {/* <nav className="flex flex-row space-x-2 sm:space-x-8">
@@ -202,11 +205,8 @@ function ChatApp({auth}: {auth: AuthContext}){
         </div>
         {/* posts  */}
         <div className="w-full h-full flex flex-col space-y-2 items-center py-4">
-            {isPosting && (
-                <CreatePost auth={auth} setIsPosting={setIsPosting}/>
-            )}
             {posts.map(post => (
-                <div key={post.id} className="border-1 border-gray-500 w-[99%] h-fit h-max-124 hover:bg-gradient-to-br hover:from-gray-200 rounded-lg px-2 py-1">
+                <div key={post.id} className="w-[99%] h-fit h-max-124 rounded-lg px-2 py-1 bg-slate-900">
                     {/* username + date */}
                     <div className="flex flex-row  space-x-1">
                         <p>{post.username}</p>
@@ -214,17 +214,17 @@ function ChatApp({auth}: {auth: AuthContext}){
                     </div>
 
                     <h1 className="font-bold text-xl">{post.title}</h1>
-                    <p>{post.content}</p>
+                    <p className="break-all text-wrap max-h-50 overflow-y-auto">{post.content}</p>
                     <div className="w-full space-x-2 flex flex-row text-xs">
                         {/* likes  */}
-                        <div className={`flex flex-row space-x-1 ${(post.reaction === "like") ? "text-cyan-600" : "hover:animate-pulse hover:font-bold"}`}>
+                        <div className={`flex flex-row space-x-1 ${(post.reaction === "like") ? "text-cyan-600" : "hover:animate-pulse hover:scale-102"}`}>
                             <button onClick={() => reactToPost(post.id, "like")}>
                                 Like
                             </button>
                             <p>{post.like_count}</p>
                         </div>
                         {/* dislikes  */}
-                        <div className={`flex flex-row space-x-1 ${(post.reaction === "dislike") ? "text-cyan-600" : "hover:animate-pulse hover:font-bold"}`} >
+                        <div className={`flex flex-row space-x-1 ${(post.reaction === "dislike") ? "text-cyan-600" : "hover:animate-pulse hover:scale-102"}`} >
                             <button onClick={() => reactToPost(post.id, "dislike")}>
                                 Dislike
                             </button>
@@ -238,14 +238,13 @@ function ChatApp({auth}: {auth: AuthContext}){
             
         </div>
         {/* Buttons  */}
-        <div className="fixed bottom-2 right-2 w-fit h-fit p-4 hover:scale-101 text-xl rounded-2xl bg-gray-300 shadow-xl">
+        <div className="fixed bottom-2 right-2 w-fit h-fit p-4 hover:scale-101 text-xl rounded-2xl bg-gray-400 shadow-2xl text-black">
             <button onClick={() => setIsPosting(true)} className="flex flex-row space-x-2 font-bold text-xl justify-center items-center">
                 <img src="/chat/plus.svg" alt="+" className="w-8 flex-shrink-0"/>
                 <p>Create Post</p>
             </button>
         </div>
-        
-    </div>
+    </div>)}
     </>
 }
 
@@ -256,7 +255,6 @@ function CreatePost({auth, setIsPosting}: {auth: AuthContext, setIsPosting: Reac
 
     const sendPost = async () => {
         if (!user || !titleRef || !contentRef) return;
-
         auth.setLoading(true)
         const { data: _data, error } = await supabase
             .from("posts")
@@ -268,27 +266,31 @@ function CreatePost({auth, setIsPosting}: {auth: AuthContext, setIsPosting: Reac
         if (error){
             alert('Error sending post. Posts are limited to 10,000 ASCII characters.');
             console.log(error)
-            setIsPosting(false);
         } 
         auth.setLoading(false);
         setIsPosting(false);
     };
 
     return <>
-    <div className="p-2 sm:p-4 shadow-2xl absolute w-full min-h-screen h-full bg-gray-100 z-20 flex flex-col space-y-2 text-xl">
-        <h1 className="font-bold text-2xl">Create Post:</h1>
-        {/* title  */}
-        <input ref={titleRef} className="bg-white border-1 border-black p-4 rounded-xl w-128 max-w-full" type="text" placeholder="Title"></input>
-        {/* content  */}
-        <textarea ref={contentRef} className="bg-white border-1 border-black p-4 rounded-xl w-128 max-w-full resizable" placeholder="Type your post here"></textarea>
-        {/* cancel or submit */}
-        <div className="flex flex-row space-x-2">
-            <button onClick={() => setIsPosting(false)} className="bg-red-400 font-bold p-4 shadow-xl rounded-xl text-white hover:scale-101">
-                Cancel
-            </button>
-            <button onClick={sendPost} className="bg-cyan-400 w-fit p-4 rounded-xl text-white font-bold hover:scale-101 text-xl shadow-xl">
-                Submit
-            </button>
+    <div className="w-screen h-screen flex-col text-xl flex justify-center items-center bg-slate-900 text-white">
+        <div className="flex flex-col space-y-2">
+            <h1 className="text-3xl">Create Post:</h1>
+            {/* title  */}
+            <input ref={titleRef} className="bg-white border-1 border-black p-2 rounded-sm w-128 max-w-[98vw] text-black" type="text" placeholder="Title" id="title"></input>
+            {/* content  */}
+            <textarea ref={contentRef} className="bg-white border-1 border-black p-2 rounded-sm w-128 max-w-[98vw] resizable h-64 text-black" placeholder="Your post goes here" id="content"/>
+
+            {/* <input type="file" accept="image/png, image/jpeg" className="bg-gray-400 rounded-sm shadow-xl p-2 hover:scale-101"/> */}
+
+            {/* cancel or submit */}
+            <div className="flex flex-row space-x-2 justify-between">
+                <button onClick={() => setIsPosting(false)} className="bg-red-400 font-bold p-4 shadow-xl rounded-xl text-white hover:scale-101">
+                    Cancel
+                </button>
+                <button onClick={sendPost} className="bg-cyan-400 w-fit p-4 rounded-xl text-white font-bold hover:scale-101 text-xl shadow-xl">
+                    Post
+                </button>
+            </div>
         </div>
     </div>
     </>
