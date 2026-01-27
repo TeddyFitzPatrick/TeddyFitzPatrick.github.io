@@ -13,16 +13,19 @@ type AuthContext = {
     setProfile: Setter<Profile | null>
     setLoading: Setter<boolean>
 };
+
 type Post = {
     id: string,
     user_id: string,
     title: string,
     content: string,
     created_on: string,
-    profiles: {
-        username: string
-    }
+    like_count: string,
+    dislike_count: string,
+    username: string,
+    reaction: string
 }
+
 
 export default function Chat(){
     const [user, setUser] = useState<User | null>(null)
@@ -83,8 +86,7 @@ function Login(){
     }
     return <>
     <div className="flex flex-col space-y-4 items-center border-2 p-12 rounded-xl shadow-xl bg-gray-300">
-        <h1 className="font-bold text-4xl">Teddy's Chat App (Experimental)</h1>
-        <p className="">*Currently only supports Google login</p>
+        <h1 className="font-bold text-4xl">CONGRATULATIONS; YOU ARE NOW ON THE LOG IN PAGE OF TEDDY'S EXPERIMENTAL CHAT APP. YOU CAN USE THIS APP AT YOUR OWN RISK.</h1>
         <button onClick={signInWithGoogle} className="shadow-xl font-bold p-4 rounded-xl text-xl hover:scale-101 text-white bg-cyan-400">
             Sign in with Google
         </button>
@@ -101,7 +103,6 @@ function SignUp({auth}: {auth: AuthContext}){
         // Log the username string put into the textinput element
         const inputtedUsername: string = usernameInputRef.current.value.trim();
         if (inputtedUsername === "") return;
-        console.log("Create acc: ", inputtedUsername);
         // Create a row in the profiles table of the id + username
         const {data, error} = await supabase
             .from("profiles")
@@ -133,59 +134,88 @@ function SignUp({auth}: {auth: AuthContext}){
 
 function ChatApp({auth}: {auth: AuthContext}){
     const profile = auth.profile!;
-    // const user = auth.user!;
-    // const email = user.email;
-    // const fullName = user.user_metadata.full_name
-    // const avatar = user.user_metadata.avatar_url;
-
+    const user = auth.user!;
     const [isPosting, setIsPosting] = useState(false);
-
     const signOut = async() => {
         await supabase.auth.signOut()
     };
-    // Get the posts from the DB
-    const [posts, setPosts] = useState<Post[]>([]);
-    useEffect(() => {
-        const getPosts = async () => {
-            // Retrieve all posts from the posts tble
-            const { data, error } = await supabase
-            .from("posts")
-            .select("id, user_id, title, content, created_on, profiles(username)")
-            .order("created_on", { ascending: false })
-            if (error){
-                alert("Error retrieving posts " + error);
-                return;
-            }
-            // Update the UI state with the posts
-            // @ts-expect-error: suppress error for this line; can't get it to stop complaining, works fine.
-            setPosts(data ?? []);
+    const reactToPost = async (post_id: string, reaction: string) => {
+        
+        const { data: _data, error } = await supabase
+            .from("reactions")
+            .upsert({
+                post_id: post_id,
+                user_id: user.id,
+                reaction: reaction
+            });
+        // Update posts after reacting
+        getPosts();
+        if (error){
+            console.log(error);
         }
+    };
+    const [posts, setPosts] = useState<Post[]>([]);
+    // Function to get post details from the db
+    const getPosts = async () => {
+        const { data, error } = await supabase
+            .rpc("get_posts_with_reaction", { target_user_id: user.id });
+
+        if (error){
+            alert("Error: could not retrieve posts");
+            console.log("Error retrieving posts: ", error);
+            return;
+        }
+        // Update the UI state with the posts
+        setPosts(data ?? []);
+    }
+    // Get posts on start up
+    useEffect(() => {
         getPosts();
     }, []);
-
     return <>
     <div className="w-full min-h-screen flex flex-col justify-start">
-        {/* posts  */}
-        <div className="w-full h-full flex flex-col space-y-2 items-center ">
-            <h1 className="w-full p-4 bg-gray-300 shadow-2xl text-xl flex flex-row space-x-2">
+        {/* header  */}
+        <div className="fixed w-full p-4 bg-gray-300 shadow-2xl text-xl flex flex-row justify-between">
+            {/* sign in name  */}
+            <div className="flex flex-row space-x-2">
                 <p>Logged in as:</p> <p className="font-bold">{profile!.username}</p>
-            </h1>
+            </div>
+            {/* log out */}
+            <button onClick={signOut} className="text-black hover:scale-103 font-bold text-lg">
+                Log Out
+            </button>
+        </div>
+        {/* posts  */}
+        <div className="w-full h-full flex flex-col space-y-2 items-center pt-20 pb-20">
             {isPosting && (
                 <CreatePost auth={auth} setIsPosting={setIsPosting}/>
             )}
             {posts.map(post => (
-                <div key={post.id} className="border-1 border-gray-500 w-[99%] h-fit h-max-124 hover:bg-gray-100 hover:rounded-lg px-2 py-1">
+                <div key={post.id} className="border-1 border-gray-500 w-[99%] h-fit h-max-124 hover:bg-gradient-to-br hover:from-gray-200 rounded-lg px-2 py-1">
                     {/* username + date */}
                     <div className="flex flex-row  space-x-1">
-                        <p className="italic">User:</p><p>{post.profiles.username}</p>
+                        <p>{post.username}</p>
                         <p>-- {new Date(post.created_on).toLocaleString()}</p>
                     </div>
 
                     <h1 className="font-bold text-xl">{post.title}</h1>
                     <p>{post.content}</p>
-                    <div className="w-full space-x-1 flex flex-row text-xs">
-                        <button>Like</button>
-                        <button>Dislike</button>
+                    <div className="w-full space-x-2 flex flex-row text-xs">
+                        {/* likes  */}
+                        <div className={`flex flex-row space-x-1 ${(post.reaction === "like") ? "text-cyan-600" : "hover:animate-pulse hover:font-bold"}`}>
+                            <button onClick={() => reactToPost(post.id, "like")}>
+                                Like
+                            </button>
+                            <p>{post.like_count}</p>
+                        </div>
+                        {/* dislikes  */}
+                        <div className={`flex flex-row space-x-1 ${(post.reaction === "dislike") ? "text-cyan-600" : "hover:animate-pulse hover:font-bold"}`} >
+                            <button onClick={() => reactToPost(post.id, "dislike")}>
+                                Dislike
+                            </button>
+                            <p>{post.dislike_count}</p>
+                        </div>
+                        {/* comments  */}
                         <button className="">Comments</button>
                     </div>
                 </div>
@@ -193,15 +223,13 @@ function ChatApp({auth}: {auth: AuthContext}){
             
         </div>
         {/* Buttons  */}
-        <div className="fixed bottom-5 left-5 w-fit h-fit p-4 hover:scale-101 text-xl rounded-2xl bg-gray-300 shadow-xl">
+        <div className="fixed bottom-2 right-2 w-fit h-fit p-4 hover:scale-101 text-xl rounded-2xl bg-gray-300 shadow-xl">
             <button onClick={() => setIsPosting(true)} className="flex flex-row space-x-2 font-bold text-xl justify-center items-center">
                 <img src="/chat/plus.svg" alt="+" className="w-8 flex-shrink-0"/>
                 <p>Create Post</p>
             </button>
         </div>
-        <button onClick={signOut} className="bg-gray-300 text-black hover:scale-101 fixed bottom-5 right-5 p-4 shadow-xl rounded-xl font-bold text-lg">
-            Log Out
-        </button>
+        
     </div>
     </>
 }
@@ -223,24 +251,30 @@ function CreatePost({auth, setIsPosting}: {auth: AuthContext, setIsPosting: Reac
                 content: contentRef.current!.value
             });
         if (error){
-            alert('Error sending post: ' + error);
-            return
+            alert('Error sending post. Posts are limited to 10,000 ASCII characters.');
+            console.log(error)
+            setIsPosting(false);
         } 
         auth.setLoading(false);
         setIsPosting(false);
     };
 
     return <>
-    <div className="border-2 p-4 shadow-2xl absolute w-full h-screen bg-gray-200 z-20 flex flex-col space-y-2 text-xl">
-        <button onClick={() => setIsPosting(false)} className="bg-red-400 font-bold fixed top-5 right-5 p-4 shadow-xl rounded-xl text-white hover:scale-101">
-            Cancel
-        </button>
+    <div className="p-2 sm:p-4 shadow-2xl absolute w-full min-h-screen h-full bg-gray-100 z-20 flex flex-col space-y-2 text-xl">
         <h1 className="font-bold text-2xl">Create Post:</h1>
-        <input ref={titleRef} className="bg-white border-1 border-black p-4 rounded-xl min-w-128 w-fit" type="text" placeholder="Title"></input>
-        <textarea ref={contentRef} className="bg-white border-1 border-black p-4 rounded-xl min-w-128 w-fit resizable" placeholder="Type your post here"></textarea>
-        <button onClick={sendPost} className="bg-cyan-400 p-4 rounded-xl text-white font-bold hover:scale-101 text-xl shadow-xl">
-            Submit
-        </button>
+        {/* title  */}
+        <input ref={titleRef} className="bg-white border-1 border-black p-4 rounded-xl w-128 max-w-full" type="text" placeholder="Title"></input>
+        {/* content  */}
+        <textarea ref={contentRef} className="bg-white border-1 border-black p-4 rounded-xl w-128 max-w-full resizable" placeholder="Type your post here"></textarea>
+        {/* cancel or submit */}
+        <div className="flex flex-row space-x-2">
+            <button onClick={() => setIsPosting(false)} className="bg-red-400 font-bold p-4 shadow-xl rounded-xl text-white hover:scale-101">
+                Cancel
+            </button>
+            <button onClick={sendPost} className="bg-cyan-400 w-fit p-4 rounded-xl text-white font-bold hover:scale-101 text-xl shadow-xl">
+                Submit
+            </button>
+        </div>
     </div>
     </>
 }
