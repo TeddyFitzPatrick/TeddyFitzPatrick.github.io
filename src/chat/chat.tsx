@@ -3,6 +3,8 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from "./supabase"
 import { type User} from '@supabase/supabase-js'
 
+import { ParticlesBack } from './particles';
+
 type Profile = { username: string } | null;
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>
 type AuthContext = {
@@ -13,7 +15,6 @@ type AuthContext = {
     setProfile: Setter<Profile | null>
     setLoading: Setter<boolean>
 };
-
 type Post = {
     id: string,
     user_id: string,
@@ -25,7 +26,6 @@ type Post = {
     username: string,
     reaction: string
 }
-
 
 export default function Chat(){
     const [user, setUser] = useState<User | null>(null)
@@ -85,9 +85,13 @@ function Login(){
         }
     }
     return <>
-    <div className="flex flex-col space-y-4 items-center border-2 p-12 rounded-xl shadow-xl bg-gray-300">
-        <h1 className="font-bold text-4xl">CONGRATULATIONS; YOU ARE NOW ON THE LOG IN PAGE OF TEDDY'S EXPERIMENTAL CHAT APP. YOU CAN USE THIS APP AT YOUR OWN RISK.</h1>
-        <button onClick={signInWithGoogle} className="shadow-xl font-bold p-4 rounded-xl text-xl hover:scale-101 text-white bg-cyan-400">
+    <ParticlesBack/>
+    <div className="flex flex-col space-y-4 p-8 rounded-xl shadow-2xl text-white bg-transparent">
+        <div className="items-start space-y-2">
+            <h1 className="font-bold text-4xl">Anonymous RIT Chat</h1>
+            <p>your name and email will remain anonymous to other users</p>
+        </div>
+        <button onClick={signInWithGoogle} className="shadow-xl font-bold p-4 rounded-xl text-xl hover:scale-103 text-white bg-cyan-400">
             Sign in with Google
         </button>
     </div>
@@ -122,10 +126,12 @@ function SignUp({auth}: {auth: AuthContext}){
     };
 
     return <>
-    <div className="w-fit h-fit bg-gray-200 shadow-2xl border-1 border-black rounded-xl flex flex-col p-4 space-y-4">
+    <button className="fixed text-white p-3 hover:scale-103 left-5 top-5 font-bold bg-cyan-400 rounded-xl shadow-2xl" onClick={() => auth.setUser(null)}>Back to Log In</button>
+    <ParticlesBack/>
+    <div className=" text-white rounded-xl flex flex-col p-4 space-y-4">
         <h1 className="font-bold text-3xl">Create an account:</h1>
-        <input ref={usernameInputRef} type="text" placeholder="Enter a username (8-32 characters)" className="bg-white border-1 border-black p-4 rounded-xl min-w-128 w-fit"></input>
-        <button onClick={createAccount} className="bg-cyan-400 p-4 rounded-xl text-white font-bold hover:scale-101 text-xl shadow-xl">
+        <input ref={usernameInputRef} type="text" placeholder="Enter a username (8-32 characters)" className="bg-white p-3 rounded-xl min-w-128 w-fit text-black"></input>
+        <button onClick={createAccount} className="bg-cyan-400 p-4 rounded-xl text-white font-bold hover:scale-102 text-xl shadow-xl">
             Submit
         </button>
     </div>
@@ -173,20 +179,29 @@ function ChatApp({auth}: {auth: AuthContext}){
         getPosts();
     }, []);
     return <>
-    <div className="w-full min-h-screen flex flex-col justify-start">
+    <div className="w-full min-h-screen h-fit flex flex-col justify-start">
         {/* header  */}
-        <div className="fixed w-full p-4 bg-gray-300 shadow-2xl text-xl flex flex-row justify-between">
+        <div className=" w-full p-4 bg-gray-300 shadow-2xl text-xl flex flex-row justify-between">
             {/* sign in name  */}
             <div className="flex flex-row space-x-2">
                 <p>Logged in as:</p> <p className="font-bold">{profile!.username}</p>
             </div>
+            {/* <nav className="flex flex-row space-x-2 sm:space-x-8">
+                <button className="border-x-2 px-4 rounded-sm text-cyan-600 hover:scale-102">
+                    All Users Chat
+                </button>
+                <button className="border-x-2 px-4 rounded-sm hover:text-cyan-600 hover:scale-102">
+                    RIT Only Chat
+                </button>
+            </nav>
+             */}
             {/* log out */}
             <button onClick={signOut} className="text-black hover:scale-103 font-bold text-lg">
                 Log Out
             </button>
         </div>
         {/* posts  */}
-        <div className="w-full h-full flex flex-col space-y-2 items-center pt-20 pb-20">
+        <div className="w-full h-full flex flex-col space-y-2 items-center py-4">
             {isPosting && (
                 <CreatePost auth={auth} setIsPosting={setIsPosting}/>
             )}
