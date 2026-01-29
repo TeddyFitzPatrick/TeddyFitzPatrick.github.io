@@ -1,9 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
-
 import { supabase } from "./supabase"
 import { type User} from '@supabase/supabase-js'
-
 import { ParticlesBack } from './particles';
+import { v4 as uuidv4 } from 'uuid'; 
 
 type Profile = { username: string } | null;
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>
@@ -25,7 +24,12 @@ type Post = {
     dislike_count: string,
     username: string,
     reaction: string
+    attachment_location: string,
+    mime_type: string,
+    imageUrl: string
 }
+
+const imageFileTypes = ["image/png", "image/jpeg", "image/svg", "image/webp", "image/gif"];
 
 export default function Chat(){
     const [user, setUser] = useState<User | null>(null)
@@ -88,8 +92,8 @@ function Login(){
     <ParticlesBack/>
     <div className="flex flex-col space-y-4 p-8 rounded-xl shadow-2xl text-white bg-transparent">
         <div className="items-start space-y-2">
-            <h1 className="font-bold text-4xl">Anonymous RIT Chat</h1>
-            <p>your name and email will remain anonymous to other users</p>
+            <h1 className="font-bold text-4xl"> RIT Chat</h1>
+            <p>you are anonymous to other users</p>
         </div>
         <button onClick={signInWithGoogle} className="shadow-xl font-bold p-4 rounded-xl text-xl hover:scale-103 text-white bg-cyan-400">
             Sign in with Google
@@ -146,7 +150,6 @@ function ChatApp({auth}: {auth: AuthContext}){
         await supabase.auth.signOut()
     };
     const reactToPost = async (post_id: string, reaction: string) => {
-        
         const { data: _data, error } = await supabase
             .from("reactions")
             .upsert({
@@ -154,23 +157,44 @@ function ChatApp({auth}: {auth: AuthContext}){
                 user_id: user.id,
                 reaction: reaction
             });
-        // Update posts after reacting
-        getPosts();
         if (error){
             console.log(error);
         }
+        // Update posts after reacting
+        // TODO: make it UI-side
+        getPosts();
+    };
+    const deletePost = async (post_id: string) => {
+        const { error } = await supabase
+            .rpc("delete_post", {delete_post_id: post_id})
+        if (error){
+            console.log("Error deleting post", error);
+            alert("Error deleting post");
+        }
+        // Update posts after deleting
+        setPosts(posts => posts.filter(post => post.id !== post_id));
     };
     const [posts, setPosts] = useState<Post[]>([]);
     // Function to get post details from the db
     const getPosts = async () => {
         const { data, error } = await supabase
-            .rpc("get_posts_with_reaction", { target_user_id: user.id });
+            .rpc("get_posts", { target_user_id: user.id });
 
         if (error){
             alert("Error: could not retrieve posts");
             console.log("Error retrieving posts: ", error);
             return;
         }
+        for (const post of data){
+            if (post.attachment_location){
+                const { data: attachmentData } = supabase
+                    .storage
+                    .from("attachments")
+                    .getPublicUrl(post.attachment_location);
+                post.imageUrl = attachmentData.publicUrl;
+            }
+        }
+
         // Update the UI state with the posts
         setPosts(data ?? []);
     }
@@ -208,13 +232,26 @@ function ChatApp({auth}: {auth: AuthContext}){
             {posts.map(post => (
                 <div key={post.id} className="w-[99%] h-fit h-max-124 rounded-lg px-2 py-1 bg-slate-900">
                     {/* username + date */}
-                    <div className="flex flex-row  space-x-1">
-                        <p>{post.username}</p>
-                        <p>-- {new Date(post.created_on).toLocaleString()}</p>
+                    <div className="flex flex-row justify-between">
+                        <div className="flex flex-row space-x-1">
+                            <p>{post.username}</p>
+                            <p>-- {new Date(post.created_on).toLocaleString()}</p>
+                        </div>
+                        {(post.user_id === user.id) && 
+                        <button onClick={() => deletePost(post.id)} className="hover:text-red-700">
+                            Delete Post
+                        </button>}
                     </div>
 
+                    {/* text  */}
                     <h1 className="font-bold text-xl">{post.title}</h1>
-                    <p className="break-all text-wrap max-h-50 overflow-y-auto">{post.content}</p>
+                    <p className="break-all text-wrap max-h-48 overflow-y-auto">{post.content}</p>
+                    {/* attachment */}
+                    {post.imageUrl && 
+                    <div className="bg-black flex justify-center">
+                        <img src={post.imageUrl} className="w-1/2 h-1/2 object-contan transition-"/>
+                    </div>}
+
                     <div className="w-full space-x-2 flex flex-row text-xs">
                         {/* likes  */}
                         <div className={`flex flex-row space-x-1 ${(post.reaction === "like") ? "text-cyan-600" : "hover:animate-pulse hover:scale-102"}`}>
@@ -252,21 +289,70 @@ function CreatePost({auth, setIsPosting}: {auth: AuthContext, setIsPosting: Reac
     const user = auth.user;
     const titleRef = useRef<HTMLInputElement | null>(null);
     const contentRef = useRef<HTMLTextAreaElement | null>(null);
+    const attachmentsRef = useRef<HTMLInputElement | null>(null);
 
     const sendPost = async () => {
-        if (!user || !titleRef || !contentRef) return;
+        if (!user || !titleRef.current || !contentRef.current || !attachmentsRef.current) return;
+        // set the UI to loading while sending the post
         auth.setLoading(true)
-        const { data: _data, error } = await supabase
+        // Retrieve the attachment before sending the post (this fixes a react unmount issue)
+        const files = attachmentsRef.current?.files;
+        // push the post to the database
+        const { data: postData, error } = await supabase
             .from("posts")
             .insert({
                 user_id: user.id,
-                title: titleRef.current!.value,
-                content: contentRef.current!.value
-            });
+                title: titleRef.current.value,
+                content: contentRef.current.value
+            })
+            .select("id")
+            .single();
+        // alert the user if the post failed to send
         if (error){
             alert('Error sending post. Posts are limited to 10,000 ASCII characters.');
             console.log(error)
         } 
+        const post_id = postData!.id;
+        // Push attachments to database if there are any
+        console.log(attachmentsRef.current)
+        console.log(files)
+        if (files && files.length > 0){
+            for (const file of files){
+                // Detect unsupported file attachments
+                if (!imageFileTypes.includes(file.type)){
+                    alert(`File attachment ${file.type} not supported.`);
+                    break;
+                }
+                // Send the attachment(s) to the DB's bucket
+                const fileExtension = file.name.split('.').pop();
+                const storagePath = `${uuidv4()}.${fileExtension}`;
+                const { error: attachmentError } = await supabase
+                    .storage
+                    .from("attachments")
+                    .upload(storagePath, file, {
+                        upsert: false,
+                        contentType: file.type
+                    });
+                // Notify user if DB rejects the attachment
+                if (attachmentError){
+                    console.log("Error attaching attachment: ", attachmentError);
+                    alert('Error attaching attachment to post. Files must be supported image files less than 20MB.');
+                }
+                // Push a log of the attachment to the DB
+                const {error: attachmentLogError} = await supabase
+                    .from("attachments")
+                    .insert({
+                        post_id: post_id,
+                        sender_id: user.id,
+                        img_path: storagePath,
+                        mime_type: fileExtension
+                    });
+                if (attachmentLogError){
+                    console.log("Error attaching attachment: ", attachmentLogError);
+                    alert('Error attaching attachment to post. Files must be supported image files less than 20MB.');
+                }
+            }
+        }
         auth.setLoading(false);
         setIsPosting(false);
     };
@@ -279,9 +365,10 @@ function CreatePost({auth, setIsPosting}: {auth: AuthContext, setIsPosting: Reac
             <input ref={titleRef} className="bg-white border-1 border-black p-2 rounded-sm w-128 max-w-[98vw] text-black" type="text" placeholder="Title" id="title"></input>
             {/* content  */}
             <textarea ref={contentRef} className="bg-white border-1 border-black p-2 rounded-sm w-128 max-w-[98vw] resizable h-64 text-black" placeholder="Your post goes here" id="content"/>
-
-            {/* <input type="file" accept="image/png, image/jpeg" className="bg-gray-400 rounded-sm shadow-xl p-2 hover:scale-101"/> */}
-
+            {/* Add attachments */}
+            <div className="flex flex-col">
+                <input ref={attachmentsRef} type="file" accept="image/png, image/jpeg, image/jpg" className="bg-gray-400 rounded-sm shadow-xl p-2 hover:scale-101"/>
+            </div>
             {/* cancel or submit */}
             <div className="flex flex-row space-x-2 justify-between">
                 <button onClick={() => setIsPosting(false)} className="bg-red-400 font-bold p-4 shadow-xl rounded-xl text-white hover:scale-101">
