@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from "./supabase"
 import { type User} from '@supabase/supabase-js'
 import { ParticlesBack } from './particles';
-import { v4 as uuidv4 } from 'uuid'; 
+import { validate as isUUID } from "uuid";
 
 type Profile = { username: string } | null;
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>
@@ -24,12 +24,9 @@ type Post = {
     dislike_count: string,
     username: string,
     reaction: string
-    attachment_location: string,
-    mime_type: string,
+    img_path: string,
     imageUrl: string
 }
-
-const imageFileTypes = ["image/png", "image/jpeg", "image/svg", "image/webp", "image/gif"];
 
 export default function Chat(){
     const [user, setUser] = useState<User | null>(null)
@@ -87,7 +84,8 @@ function Login(){
         if (error) {
             console.error(error.message)
         }
-    }
+    };
+
     return <>
     <ParticlesBack/>
     <div className="flex flex-col space-y-4 p-8 rounded-xl shadow-2xl text-white bg-transparent">
@@ -149,20 +147,29 @@ function ChatApp({auth}: {auth: AuthContext}){
     const signOut = async() => {
         await supabase.auth.signOut()
     };
-    const reactToPost = async (post_id: string, reaction: string) => {
+    const reactToPost = async (post_id: string, oldReaction: string, newReaction: string) => {
+        if (oldReaction === newReaction) return;
         const { data: _data, error } = await supabase
             .from("reactions")
             .upsert({
                 post_id: post_id,
                 user_id: user.id,
-                reaction: reaction
+                reaction: newReaction
             });
         if (error){
             console.log(error);
         }
-        // Update posts after reacting
-        // TODO: make it UI-side
-        getPosts();
+        // Update the UI with the new reaction
+        setPosts(posts => posts.map(post => {
+            if (post.id !== post_id) return post;
+            let newLikeCount: number = +post.like_count!;
+            let newDislikeCount: number = +post.dislike_count!;
+            if (newReaction === "like") newLikeCount += 1;
+            if (newReaction === "dislike") newDislikeCount += 1;
+            if (oldReaction === "like") newLikeCount -= 1;
+            if (oldReaction === "dislike") newDislikeCount -= 1;
+            return {...post, like_count: newLikeCount.toString(), dislike_count: newDislikeCount.toString(), reaction: newReaction}
+        }));
     };
     const deletePost = async (post_id: string) => {
         const { error } = await supabase
@@ -174,123 +181,16 @@ function ChatApp({auth}: {auth: AuthContext}){
         // Update posts after deleting
         setPosts(posts => posts.filter(post => post.id !== post_id));
     };
-    const [posts, setPosts] = useState<Post[]>([]);
-    // Function to get post details from the db
-    const getPosts = async () => {
-        const { data, error } = await supabase
-            .rpc("get_posts", { target_user_id: user.id });
 
-        if (error){
-            alert("Error: could not retrieve posts");
-            console.log("Error retrieving posts: ", error);
-            return;
-        }
-        for (const post of data){
-            if (post.attachment_location){
-                const { data: attachmentData } = supabase
-                    .storage
-                    .from("attachments")
-                    .getPublicUrl(post.attachment_location);
-                post.imageUrl = attachmentData.publicUrl;
-            }
-        }
-
-        // Update the UI state with the posts
-        setPosts(data ?? []);
-    }
-    // Get posts on start up
-    useEffect(() => {
-        getPosts();
-    }, []);
-    return <>
-    {isPosting ? 
-    (<CreatePost auth={auth} setIsPosting={setIsPosting}/>)
-    :
-    (<div className="w-full min-h-screen h-fit flex flex-col justify-start bg-black text-white">
-        {/* header  */}
-        <div className=" w-full p-4 bg-gray-400 shadow-2xl text-xl flex flex-row justify-between">
-            {/* sign in name  */}
-            <div className="flex flex-row space-x-2 text-black">
-                <p>Logged in as:</p> <p className="font-bold">{profile!.username}</p>
-            </div>
-            {/* <nav className="flex flex-row space-x-2 sm:space-x-8">
-                <button className="border-x-2 px-4 rounded-sm text-cyan-600 hover:scale-102">
-                    All Users Chat
-                </button>
-                <button className="border-x-2 px-4 rounded-sm hover:text-cyan-600 hover:scale-102">
-                    RIT Only Chat
-                </button>
-            </nav>
-             */}
-            {/* log out */}
-            <button onClick={signOut} className="text-black hover:scale-103 font-bold text-lg">
-                Log Out
-            </button>
-        </div>
-        {/* posts  */}
-        <div className="w-full h-full flex flex-col space-y-2 items-center py-4">
-            {posts.map(post => (
-                <div key={post.id} className="w-[99%] h-fit h-max-124 rounded-lg px-2 py-1 bg-slate-900">
-                    {/* username + date */}
-                    <div className="flex flex-row justify-between">
-                        <div className="flex flex-row space-x-1">
-                            <p>{post.username}</p>
-                            <p>-- {new Date(post.created_on).toLocaleString()}</p>
-                        </div>
-                        {(post.user_id === user.id) && 
-                        <button onClick={() => deletePost(post.id)} className="hover:text-red-700">
-                            Delete Post
-                        </button>}
-                    </div>
-
-                    {/* text  */}
-                    <h1 className="font-bold text-xl">{post.title}</h1>
-                    <p className="break-all text-wrap max-h-48 overflow-y-auto">{post.content}</p>
-                    {/* attachment */}
-                    {post.imageUrl && 
-                    <div className="bg-black flex justify-center">
-                        <img src={post.imageUrl} className="w-1/2 h-1/2 object-contan transition-"/>
-                    </div>}
-
-                    <div className="w-full space-x-2 flex flex-row text-xs">
-                        {/* likes  */}
-                        <div className={`flex flex-row space-x-1 ${(post.reaction === "like") ? "text-cyan-600" : "hover:animate-pulse hover:scale-102"}`}>
-                            <button onClick={() => reactToPost(post.id, "like")}>
-                                Like
-                            </button>
-                            <p>{post.like_count}</p>
-                        </div>
-                        {/* dislikes  */}
-                        <div className={`flex flex-row space-x-1 ${(post.reaction === "dislike") ? "text-cyan-600" : "hover:animate-pulse hover:scale-102"}`} >
-                            <button onClick={() => reactToPost(post.id, "dislike")}>
-                                Dislike
-                            </button>
-                            <p>{post.dislike_count}</p>
-                        </div>
-                        {/* comments  */}
-                        <button className="">Comments</button>
-                    </div>
-                </div>
-            ))}
-            
-        </div>
-        {/* Buttons  */}
-        <div className="fixed bottom-2 right-2 w-fit h-fit p-4 hover:scale-101 text-xl rounded-2xl bg-gray-400 shadow-2xl text-black">
-            <button onClick={() => setIsPosting(true)} className="flex flex-row space-x-2 font-bold text-xl justify-center items-center">
-                <img src="/chat/plus.svg" alt="+" className="w-8 flex-shrink-0"/>
-                <p>Create Post</p>
-            </button>
-        </div>
-    </div>)}
-    </>
-}
-
-function CreatePost({auth, setIsPosting}: {auth: AuthContext, setIsPosting: React.Dispatch<React.SetStateAction<boolean>>}){
-    const user = auth.user;
+    // new post - input fields
     const titleRef = useRef<HTMLInputElement | null>(null);
     const contentRef = useRef<HTMLTextAreaElement | null>(null);
     const attachmentsRef = useRef<HTMLInputElement | null>(null);
 
+    const createPost = async() => {
+        setIsPosting(true);
+        window.scrollTo({top:0, left:0, behavior: 'smooth'});
+    }
     const sendPost = async () => {
         if (!user || !titleRef.current || !contentRef.current || !attachmentsRef.current) return;
         // set the UI to loading while sending the post
@@ -311,73 +211,157 @@ function CreatePost({auth, setIsPosting}: {auth: AuthContext, setIsPosting: Reac
         if (error){
             alert('Error sending post. Posts are limited to 10,000 ASCII characters.');
             console.log(error)
+            return;  // do not proceed to add attachments if the post failed
         } 
-        const post_id = postData!.id;
+        const post_id = postData.id;
         // Push attachments to database if there are any
-        console.log(attachmentsRef.current)
-        console.log(files)
-        if (files && files.length > 0){
-            for (const file of files){
-                // Detect unsupported file attachments
-                if (!imageFileTypes.includes(file.type)){
-                    alert(`File attachment ${file.type} not supported.`);
-                    break;
-                }
-                // Send the attachment(s) to the DB's bucket
-                const fileExtension = file.name.split('.').pop();
-                const storagePath = `${uuidv4()}.${fileExtension}`;
-                const { error: attachmentError } = await supabase
-                    .storage
-                    .from("attachments")
-                    .upload(storagePath, file, {
-                        upsert: false,
-                        contentType: file.type
-                    });
-                // Notify user if DB rejects the attachment
-                if (attachmentError){
-                    console.log("Error attaching attachment: ", attachmentError);
-                    alert('Error attaching attachment to post. Files must be supported image files less than 20MB.');
-                }
-                // Push a log of the attachment to the DB
-                const {error: attachmentLogError} = await supabase
-                    .from("attachments")
-                    .insert({
-                        post_id: post_id,
-                        sender_id: user.id,
-                        img_path: storagePath,
-                        mime_type: fileExtension
-                    });
-                if (attachmentLogError){
-                    console.log("Error attaching attachment: ", attachmentLogError);
-                    alert('Error attaching attachment to post. Files must be supported image files less than 20MB.');
-                }
+        if (files && files.length === 1){
+            const file = files[0];
+            console.log(isUUID(post_id));
+            // Send the attachment to the DB's bucket
+            const { error: attachmentError } = await supabase
+                .storage
+                .from("attachments")
+                .upload(file.name, file, {
+                    contentType: file.type,
+                    upsert: false,
+                    metadata: {
+                        user_id: user.id,
+                        post_id: post_id
+                    }
+                });
+            // Notify user if DB rejects the attachment
+            if (attachmentError){
+                console.log("Error attaching attachment: ", attachmentError);
+                alert('Error attaching attachment to post. Files must be supported image files less than 20MB.');
             }
         }
         auth.setLoading(false);
         setIsPosting(false);
     };
+    
+    // Function to get post details from the db
+    const [posts, setPosts] = useState<Post[]>([]);
+    const getPosts = async () => {
+        const { data, error } = await supabase
+            .rpc("get_posts", { target_user_id: user.id });
+        if (error){
+            alert("Error: could not retrieve posts");
+            console.log("Error retrieving posts: ", error);
+            return;
+        }
+        for (const post of data){
+            if (post.img_path){
+                const { data: attachmentData } = supabase
+                    .storage
+                    .from("attachments")
+                    .getPublicUrl(post.img_path);
+                post.imageUrl = attachmentData.publicUrl;
+            }
+        }
+        // Update the UI state with the posts
+        setPosts(data ?? []);
+    }
+    // Get posts on start up
+    useEffect(() => {
+        getPosts();
+    }, []);
 
     return <>
-    <div className="w-screen h-screen flex-col text-xl flex justify-center items-center bg-slate-900 text-white">
-        <div className="flex flex-col space-y-2">
-            <h1 className="text-3xl">Create Post:</h1>
-            {/* title  */}
-            <input ref={titleRef} className="bg-white border-1 border-black p-2 rounded-sm w-128 max-w-[98vw] text-black" type="text" placeholder="Title" id="title"></input>
-            {/* content  */}
-            <textarea ref={contentRef} className="bg-white border-1 border-black p-2 rounded-sm w-128 max-w-[98vw] resizable h-64 text-black" placeholder="Your post goes here" id="content"/>
-            {/* Add attachments */}
-            <div className="flex flex-col">
-                <input ref={attachmentsRef} type="file" accept="image/png, image/jpeg, image/jpg" className="bg-gray-400 rounded-sm shadow-xl p-2 hover:scale-101"/>
+    <div className="w-full min-h-screen h-fit flex flex-col justify-start bg-slate-800 text-white">
+        {/* header  */}
+        <div className=" w-full p-4 bg-slate-900 shadow-2xl text-xl flex flex-row justify-between">
+            {/* sign in name  */}
+            <div className="flex flex-row space-x-2 text-white">
+                <p>Logged in as:</p> <p className="font-bold">{profile!.username}</p>
             </div>
-            {/* cancel or submit */}
-            <div className="flex flex-row space-x-2 justify-between">
-                <button onClick={() => setIsPosting(false)} className="bg-red-400 font-bold p-4 shadow-xl rounded-xl text-white hover:scale-101">
-                    Cancel
-                </button>
-                <button onClick={sendPost} className="bg-cyan-400 w-fit p-4 rounded-xl text-white font-bold hover:scale-101 text-xl shadow-xl">
+            {/* log out */}
+            <button onClick={signOut} className=" hover:scale-103 font-bold text-lg">
+                Log Out
+            </button>
+        </div>
+        {/* posts */}
+        <div className="w-full h-full flex flex-col space-y-2 items-center py-4">
+            
+            {/* new post  */}
+            {isPosting && 
+            <div className="w-[99%] h-fit h-max-124 rounded-lg p-2 bg-slate-700 flex flex-col border border-dashed shadow-2xl space-y-2">
+                {/* title  */}
+                <div className="w-full flex flex-row justify-between space-x-2">
+                    <input ref={titleRef} className="w-full sm:w-1/2 bg-slate-100 font-bold text-black rounded-sm p-1" type="text" placeholder="Post Title" id="title"/>
+                    <button onClick={() => setIsPosting(false)} className="text-white hover:text-red-700">
+                        Cancel
+                    </button>
+                </div>
+                {/* content  */}
+                <textarea ref={contentRef} className="bg-slate-100 rounded-sm text-black px-2 py-1" placeholder="What would you like to say?" id="content"/>
+                {/* Add attachments */}
+                <div className="flex flex-col">
+                    <input ref={attachmentsRef} type="file" accept="image/png, image/jpeg, image/jpg" className="bg-gray-400 rounded-sm shadow-xl p-2 hover:scale-101"/>
+                </div>
+                {/* send post  */}
+                <button onClick={sendPost} className="bg-cyan-600 rounded-lg py-2 px-4 w-fit h-fit hover:scale-104 hover:font-bold">
                     Post
                 </button>
-            </div>
+            </div>}
+
+            {/* existing posts */}
+            {posts.map(post => (
+                <div className='w-full items-center flex flex-col'>
+                {/* post */}
+                <div key={post.id} className="w-[99%] h-fit h-max-124 rounded-lg px-2 py-1 bg-slate-700">
+                    {/* username + date */}
+                    <div className="flex flex-row justify-between">
+                        <div className="flex flex-row space-x-1">
+                            <p>{post.username}</p>
+                            <p>-- {new Date(post.created_on).toLocaleString()}</p>
+                        </div>
+                        {(post.user_id === user.id) && 
+                        <button onClick={() => deletePost(post.id)} className="hover:text-red-700">
+                            Delete Post
+                        </button>}
+                    </div>
+                    {/* text */}
+                    <h1 className="font-bold text-xl">{post.title}</h1>
+                    <p className="break-all text-wrap max-h-48 overflow-y-auto">{post.content}</p>
+                    {/* attachment */}
+                    {post.imageUrl && 
+                    <div className="">
+                        <img src={post.imageUrl} className="max-h-96 object-contan aspect-square"/>
+                    </div>}
+                    <div className="w-full space-x-2 flex flex-row text-xs pt-1">
+                        {/* likes  */}
+                        <div className={`flex flex-row space-x-1 ${(post.reaction === "like") ? "text-cyan-600" : "hover:scale-104"}`}>
+                            <button onClick={() => reactToPost(post.id, post.reaction, "like")}>
+                                Like
+                            </button>
+                            <p>{post.like_count}</p>
+                        </div>
+                        {/* dislikes  */}
+                        <div className={`flex flex-row space-x-1 ${(post.reaction === "dislike") ? "text-cyan-600" : "hover:scale-104"}`} >
+                            <button onClick={() => reactToPost(post.id, post.reaction, "dislike")}>
+                                Dislike
+                            </button>
+                            <p>{post.dislike_count}</p>
+                        </div>
+                        {/* replies */}
+                        <button className="">Replies</button>
+                    </div>
+                </div>
+                {/* post replies */}
+                <div>
+                    
+                </div>
+                </div>
+            ))}
+            
+        </div>
+        {/* Buttons  */}
+        <div className="fixed bottom-2 right-2 w-fit h-fit p-4 hover:scale-101 text-xl rounded-2xl bg-slate-900 shadow-2xl text-white">
+            <button onClick={() => createPost()} className="flex flex-row space-x-2 font-bold text-xl justify-center items-center">
+                <img src="/chat/plus.svg" alt="+" className="w-8 invert"/>
+                <p>Create Post</p>
+            </button>
         </div>
     </div>
     </>
