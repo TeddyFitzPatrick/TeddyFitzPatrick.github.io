@@ -28,8 +28,8 @@ type Post = {
     img_path: string,
     // fields not from the DB table
     imageUrl: string,
-    show_replies: boolean,
-    replies: Post[]
+    add_reply: boolean,
+    reply_ids: string[]
 }
 
 const DEFAULT_POST_QUANTITY = 500;
@@ -147,6 +147,22 @@ function SignUp({auth}: {auth: AuthContext}){
     </>
 }
 
+function formatDate(timestamp: string){
+    const date = new Date(timestamp);
+    const today = new Date();
+    const deltaMilliseconds = (Date.now() - date.getTime());
+    // today
+    if (date.getFullYear() === today.getFullYear() &&
+        date.getMonth() === today.getMonth() &&
+        date.getDate() === today.getDate()){
+        const deltaHours = deltaMilliseconds / (1000 * 60 * 60);
+        const deltaMinutes = deltaMilliseconds / (1000 * 60);
+        return (deltaHours < 1) ? `${deltaMinutes.toFixed(0)}m ago` : `${deltaHours.toFixed(0)}hr ago`;
+    }
+    const deltaDays = deltaMilliseconds / (1000 * 60 * 60 * 24);
+    return `${deltaDays.toFixed(0)} days ago`;
+}
+
 function ChatApp({auth}: {auth: AuthContext}){
     const profile = auth.profile!;
     const user = auth.user!;
@@ -190,9 +206,9 @@ function ChatApp({auth}: {auth: AuthContext}){
     };
     const toggleReplies = async (post_id: string) => {
         setPosts(posts.map(post => {
-            return {...post, show_replies: (post.id === post_id) ? !post.show_replies : post.show_replies}
+            return {...post, add_reply: (post.id === post_id) ? !post.add_reply : post.add_reply}
         }));
-    }
+    };
     // new post - input fields
     const titleRef = useRef<HTMLInputElement | null>(null);
     const contentRef = useRef<HTMLTextAreaElement | null>(null);
@@ -201,9 +217,9 @@ function ChatApp({auth}: {auth: AuthContext}){
         setIsPosting(true);
         window.scrollTo({top:0, left:0, behavior: 'smooth'});
     };
-    const replyRef = useRef<HTMLInputElement | null>(null);
-    const sendPost = async (title?: string, content?: string, attachmentFile?: File, parent_id?: string) => {
-        if (!user || !content) return;
+    // sending a post or reply
+    const sendPost = async (title: string, content: string, attachmentFile: File) => {
+        if (!user || !title || !content) return;
         // set the UI to loading while sending the post
         auth.setLoading(true)
         // push the post to the database
@@ -211,7 +227,6 @@ function ChatApp({auth}: {auth: AuthContext}){
             .from("posts")
             .insert({
                 user_id: user.id,
-                parent_id,
                 title,
                 content
             })
@@ -219,8 +234,10 @@ function ChatApp({auth}: {auth: AuthContext}){
             .single();
         // alert the user if the post failed to send
         if (error){
-            alert('Error sending post. Posts are limited to 10,000 ASCII characters.');
+            alert("Error sending post. Posts are limited to 10,000 ASCII characters.");
             console.log(error)
+            auth.setLoading(false);
+            setIsPosting(false);
             return;  // do not proceed to add attachments if the post failed
         };
         const post_id = postData.id;
@@ -247,12 +264,9 @@ function ChatApp({auth}: {auth: AuthContext}){
         auth.setLoading(false);
         setIsPosting(false);
     };
-    
     // Function to get post details from the db
     const [posts, setPosts] = useState<Post[]>([]);
-    const [postsWithComments, setPostsWithComments] = useState<Post[]>([]);
-    const [idToPost, setIdToPost] = useState<Map<string, Post>>(new Map<string, Post>);
-
+    const idToPost = new Map<string, Post>([]);
     const getPosts = async () => {
         // Retrieving a fixed quantity of posts + replies
         const { data, error } = await supabase
@@ -275,23 +289,21 @@ function ChatApp({auth}: {auth: AuthContext}){
         for (const post of data){
             // create a mapping of post id's => posts for post tree traversal
             idToPost.set(post.id, post);
-            post.replies = [];
+            post.reply_ids = [];
         }
         for (const post of data){
             if (!post.parent_id) continue;
             // add replies to their parent post
             const parentPost = idToPost.get(post.parent_id)!;
-            parentPost.replies.push(post)
+            parentPost.reply_ids.push(post.id);
         }
         // Update the UI state with the posts
-        setPostsWithComments(data ?? []);
-        setPosts(data.filter((post: Post) => (post.parent_id === null)) ?? []);
-    }
+        setPosts(data ?? []);
+    };
     // Load posts on app start up
     useEffect(() => {
         getPosts();
     }, []);
-
     return <>
     <div className="w-full min-h-screen h-fit flex flex-col justify-start bg-slate-800 text-white">
         {/* header  */}
@@ -306,7 +318,7 @@ function ChatApp({auth}: {auth: AuthContext}){
             </button>
         </div>
         {/* posts */}
-        <div className="w-full h-full flex flex-col space-y-2 items-center py-4">
+        <div className="w-full h-full flex flex-col space-y-1 items-center py-4">
             {/* new post  */}
             {isPosting && 
             <div className="w-[99%] h-fit h-max-124 rounded-lg p-2 bg-slate-700 flex flex-col border border-dashed shadow-2xl space-y-2">
@@ -325,13 +337,13 @@ function ChatApp({auth}: {auth: AuthContext}){
                 </div>
                 {/* send post  */}
                 <button 
-                    onClick={() => sendPost(titleRef.current?.value, contentRef.current?.value, attachmentsRef.current?.files![0])}
+                    onClick={() => sendPost(titleRef.current!.value, contentRef.current!.value, attachmentsRef.current!.files![0])}
                     className="bg-cyan-600 rounded-lg py-2 px-4 w-fit h-fit hover:scale-104 hover:font-bold">
                     Post
                 </button>
             </div>}
             {/* existing posts */}
-            {posts.map(post => (
+            {posts.filter((post: Post) => (post.parent_id === null)).map(post => (
             <div key={post.id} className="items-end flex flex-col w-[99%] space-y-1">
                 {/* post */}
                 <div key={post.id} className="w-full h-max-124 rounded-lg px-2 py-1 bg-slate-700">
@@ -339,11 +351,11 @@ function ChatApp({auth}: {auth: AuthContext}){
                     <div className="flex flex-row justify-between">
                         <div className="flex flex-row space-x-1">
                             <p>{post.username}</p>
-                            <p>-- {new Date(post.created_on).toLocaleString()}</p>
+                            <p className="opacity-60 text-sm">∘ {formatDate(post.created_on)}</p>
                         </div>
                         {(post.user_id === user.id) && 
                         <button onClick={() => deletePost(post.id)} className="hover:text-red-700">
-                            Delete Post
+                            Delete
                         </button>}
                     </div>
                     {/* text */}
@@ -370,39 +382,16 @@ function ChatApp({auth}: {auth: AuthContext}){
                             <p>{post.dislike_count}</p>
                         </div>
                         {/* replies */}
-                        <button className="" onClick={() => toggleReplies(post.id)}>Replies</button>
+                        <div className="flex flex-row space-x-1">
+                            <button className="" onClick={() => toggleReplies(post.id)}>
+                                Reply
+                            </button>
+                            <p>{post.reply_ids.length}</p>
+                        </div>
                     </div>
                 </div>
                 {/* replies */}
-                { post.show_replies && 
-                <div className="w-[95%] space-y-1">
-                    {/* existing replies */}
-                    { post.replies.map(reply => (
-                        <div key={reply.id} className="w-full bg-slate-700 rounded-lg space-y-1 px-2 py-1">
-                            <div className="w-full flex flex-row justify-between">
-                                <div className="flex flex-row space-x-1">
-                                    <p className="">{reply.username}</p>
-                                    <p>-- {new Date(reply.created_on).toLocaleString()}</p>
-                                </div>
-                                <button onClick={() => deletePost(reply.id)} className="text-white hover:text-red-700">
-                                    Delete Post
-                                </button>
-                            </div>
-                            <p className="break-all text-wrap max-h-48 overflow-y-auto">{reply.content}</p>
-                        </div>
-                    ))}
-                    {/* add a reply window */}
-                    <div className="w-full bg-slate-700 px-2 py-1 rounded-lg space-y-1">
-                        <h1 className="font-bold ">Add a reply</h1>
-                        <input ref={replyRef} type="text" placeholder="Your reply" className="w-full bg-slate-100 rounded-lg px-2 py-1 text-black"/>
-                        <button 
-                            onClick={() => sendPost(undefined, replyRef.current?.value, undefined, post.id)}
-                            className="bg-cyan-600 rounded-lg py-1 px-3 w-fit h-fit hover:scale-104 hover:font-bold">
-                            Post
-                        </button>
-                    </div>
-                </div>
-                }
+                <Replies auth={auth} parent_post={post} posts={posts} setPosts={setPosts}/>
             </div>
             ))}
             
@@ -418,3 +407,141 @@ function ChatApp({auth}: {auth: AuthContext}){
     </>
 }
 
+function Replies({auth, parent_post, posts, setPosts}:
+                 {auth: AuthContext,
+                  parent_post: Post,
+                  posts: Post[],
+                  setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
+                }){
+    const user = auth.user!;
+    const replyRef = useRef<HTMLInputElement | null>(null);
+    const sendReply = async (content: string, parent_id: string) => {
+        if (!user || !content || !parent_id) return;
+        auth.setLoading(true);
+        const { data: _data, error } = await supabase
+            .from("posts")
+            .insert({
+                user_id: user.id,
+                parent_id,
+                content
+            })
+            .select("id")
+            .single();
+        if (error){
+            alert("Error sending reply");
+            console.log(error);
+        }
+        auth.setLoading(false);
+    };
+    const toggleReplies = async (post_id: string) => {
+        setPosts(posts.map(post => {
+            return {...post, add_reply: (post.id === post_id) ? !post.add_reply : post.add_reply}
+        }));
+    };
+    const deletePost = async (post_id: string) => {
+        const { error } = await supabase
+            .rpc("delete_post", {delete_post_id: post_id})
+        if (error){
+            console.log("Error deleting post", error);
+            alert("Error deleting post");
+        }
+        // Update posts after deleting
+        setPosts(posts => posts.filter(post => post.id !== post_id));
+    };
+    const reactToPost = async (post_id: string, oldReaction: string, newReaction: string) => {
+        console.log("old", oldReaction);
+        console.log("new", newReaction);
+        if (oldReaction === newReaction) return;
+        const { data: _data, error } = await supabase
+            .from("reactions")
+            .upsert({
+                post_id: post_id,
+                user_id: user.id,
+                reaction: newReaction
+            });
+        if (error){
+            console.log(error);
+        }
+
+        console.log("REPLY REACTION")
+        // Update the UI with the new reaction
+        setPosts(posts => posts.map(post => {
+            if (post.id !== post_id) return post;
+            let newLikeCount: number = +post.like_count!;
+            let newDislikeCount: number = +post.dislike_count!;
+            if (newReaction === "like") newLikeCount += 1;
+            if (newReaction === "dislike") newDislikeCount += 1;
+            if (oldReaction === "like") newLikeCount -= 1;
+            if (oldReaction === "dislike") newDislikeCount -= 1;
+            console.log("setting: ", newReaction);
+            console.log(post.id);
+            return {...post, like_count: newLikeCount.toString(), dislike_count: newDislikeCount.toString(), reaction: newReaction}
+        }));
+    }; 
+    const idToPost = new Map<string, Post>([]);
+    for (const post of posts){
+        // create a mapping of post id's => posts for post tree traversal
+        idToPost.set(post.id, post);
+    }
+    const replies = parent_post.reply_ids.map(reply_id => idToPost.get(reply_id)!).filter(reply => reply !== undefined && reply !== null);
+    return <>
+    <div className="w-[95%] sm:w-[98%] space-y-1">
+        {/* existing replies */}
+        {parent_post.reply_ids.length > 0 && replies.map((reply: Post) => (
+        <div key={reply.id} className="w-full flex items-end flex-col space-y-1">
+            {/* reply */}
+            <div key={reply.id} className="w-full bg-slate-700 rounded-lg space-y-1 px-2 py-1">
+                {/* username, date, delete button */}
+                <div className="w-full flex flex-row justify-between">
+                    <div className="flex flex-row space-x-1">
+                        <p className="">{reply.username}</p>
+                        <p className="opacity-60 text-sm">∘ {formatDate(reply.created_on)}</p>
+                    </div>
+                    <button onClick={() => deletePost(reply.id)} className="text-white hover:text-red-700">
+                        Delete
+                    </button>
+                </div>
+                {/* reply text */}
+                <p className="break-all text-wrap max-h-48 overflow-y-auto">{reply.content}</p>
+                <div className="w-full space-x-2 flex flex-row text-xs pt-1">
+                    {/* likes  */}
+                    <div className={`flex flex-row space-x-1 ${(reply.reaction === "like") ? "text-cyan-600" : "hover:scale-104"}`}>
+                        <button onClick={() => reactToPost(reply.id, reply.reaction, "like")}>
+                            Like
+                        </button>
+                        <p>{reply.like_count}</p>
+                    </div>
+                    {/* dislikes  */}
+                    <div className={`flex flex-row space-x-1 ${(reply.reaction === "dislike") ? "text-cyan-600" : "hover:scale-104"}`} >
+                    <button onClick={() => reactToPost(reply.id, reply.reaction, "dislike")}>
+                        Dislike
+                    </button>
+                    <p>{reply.dislike_count}</p>
+                    </div>
+                    {/* replies */}
+                    <div className="flex flex-row space-x-1">
+                        <button className="" onClick={() => toggleReplies(reply.id)}>
+                            Reply
+                        </button>
+                        <p>{reply.reply_ids.length}</p>
+                    </div>
+                </div>
+            </div>
+            {/* replies to the reply */}
+            <Replies auth={auth} parent_post={reply} posts={posts} setPosts={setPosts}/>
+        </div>
+        ))}
+        {/* add a reply window */}
+        {parent_post.add_reply && 
+        <div className="w-full bg-slate-700 px-2 py-1 rounded-lg space-y-1">
+            <h1 className="font-bold ">Add a reply</h1>
+            <input ref={replyRef} type="text" placeholder="Your reply" className="w-full bg-slate-100 rounded-lg px-2 py-1 text-black"/>
+            <button 
+                onClick={() => sendReply(replyRef.current!.value, parent_post.id)}
+                className="bg-cyan-600 rounded-lg py-1 px-3 w-fit h-fit hover:scale-104 hover:font-bold">
+                Post
+            </button>
+        </div>}
+    </div>
+    </>
+}
