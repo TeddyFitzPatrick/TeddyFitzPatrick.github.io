@@ -243,17 +243,30 @@ function ChatApp({auth}: {auth: AuthContext}){
         const post_id = postData.id;
         // Push attachments to database if there are any
         if (attachmentFile){
+            console.log("atfile.name",attachmentFile.name)
+            // add extension log
+            const { data: logData, error: logError } = await supabase
+                .from("attachments")
+                .insert({
+                    post_id: post_id,
+                    sender_id: user.id,
+                    img_path: attachmentFile.name,
+                })
+                .select()
+                .single();
+            if (logError){
+                console.log("Error sending attachment log: ", logError)
+                alert("Error attaching attachment log");
+                auth.setLoading(false);
+                setIsPosting(false);
+                return
+            }
             // Send the attachment to the DB's bucket
             const { error: attachmentError } = await supabase
                 .storage
                 .from("attachments")
                 .upload(attachmentFile.name, attachmentFile, {
-                    contentType: attachmentFile.type,
                     upsert: false,
-                    metadata: {
-                        user_id: user.id,
-                        post_id: post_id
-                    }
                 });
             // Notify user if DB rejects the attachment
             if (attachmentError){
@@ -364,7 +377,7 @@ function ChatApp({auth}: {auth: AuthContext}){
                     {/* attachment */}
                     {post.imageUrl && 
                     <div className="">
-                        <img src={post.imageUrl} className="max-h-96 object-contan aspect-square"/>
+                        <img src={post.imageUrl} className="max-h-96 object-contan aspect-auto"/>
                     </div>}
                     <div className="w-full space-x-2 flex flex-row text-xs pt-1">
                         {/* likes  */}
@@ -386,7 +399,7 @@ function ChatApp({auth}: {auth: AuthContext}){
                             <button className="" onClick={() => toggleReplies(post.id)}>
                                 Reply
                             </button>
-                            <p>{post.reply_ids.length}</p>
+                            <p></p>
                         </div>
                     </div>
                 </div>
@@ -485,7 +498,7 @@ function Replies({auth, parent_post, posts, setPosts}:
     }
     const replies = parent_post.reply_ids.map(reply_id => idToPost.get(reply_id)!).filter(reply => reply !== undefined && reply !== null);
     return <>
-    <div className="w-[95%] sm:w-[98%] space-y-1">
+    <div className="w-[95%] sm:w-[98%]">
         {/* existing replies */}
         {parent_post.reply_ids.length > 0 && replies.map((reply: Post) => (
         <div key={reply.id} className="w-full flex items-end flex-col space-y-1">
