@@ -2,8 +2,8 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from "./supabase"
 import { type User} from '@supabase/supabase-js'
 import { ParticlesBack } from './particles';
-import { validate as isUUID } from "uuid";
 
+// Type Definitions
 type Profile = { username: string } | null;
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>
 type AuthContext = {
@@ -17,6 +17,7 @@ type AuthContext = {
 type Post = {
     id: string,
     user_id: string,
+    parent_id: string,
     title: string,
     content: string,
     created_on: string,
@@ -25,8 +26,14 @@ type Post = {
     username: string,
     reaction: string
     img_path: string,
-    imageUrl: string
+    // fields not from the DB table
+    imageUrl: string,
+    show_replies: boolean,
+    replies: Post[]
 }
+
+const DEFAULT_POST_QUANTITY = 500;
+
 
 export default function Chat(){
     const [user, setUser] = useState<User | null>(null)
@@ -181,29 +188,32 @@ function ChatApp({auth}: {auth: AuthContext}){
         // Update posts after deleting
         setPosts(posts => posts.filter(post => post.id !== post_id));
     };
-
+    const toggleReplies = async (post_id: string) => {
+        setPosts(posts.map(post => {
+            return {...post, show_replies: (post.id === post_id) ? !post.show_replies : post.show_replies}
+        }));
+    }
     // new post - input fields
     const titleRef = useRef<HTMLInputElement | null>(null);
     const contentRef = useRef<HTMLTextAreaElement | null>(null);
     const attachmentsRef = useRef<HTMLInputElement | null>(null);
-
-    const createPost = async() => {
+    const toggleCreatePost = async() => {
         setIsPosting(true);
         window.scrollTo({top:0, left:0, behavior: 'smooth'});
-    }
-    const sendPost = async () => {
-        if (!user || !titleRef.current || !contentRef.current || !attachmentsRef.current) return;
+    };
+    const replyRef = useRef<HTMLInputElement | null>(null);
+    const sendPost = async (title?: string, content?: string, attachmentFile?: File, parent_id?: string) => {
+        if (!user || !content) return;
         // set the UI to loading while sending the post
         auth.setLoading(true)
-        // Retrieve the attachment before sending the post (this fixes a react unmount issue)
-        const files = attachmentsRef.current?.files;
         // push the post to the database
         const { data: postData, error } = await supabase
             .from("posts")
             .insert({
                 user_id: user.id,
-                title: titleRef.current.value,
-                content: contentRef.current.value
+                parent_id,
+                title,
+                content
             })
             .select("id")
             .single();
@@ -212,18 +222,16 @@ function ChatApp({auth}: {auth: AuthContext}){
             alert('Error sending post. Posts are limited to 10,000 ASCII characters.');
             console.log(error)
             return;  // do not proceed to add attachments if the post failed
-        } 
+        };
         const post_id = postData.id;
         // Push attachments to database if there are any
-        if (files && files.length === 1){
-            const file = files[0];
-            console.log(isUUID(post_id));
+        if (attachmentFile){
             // Send the attachment to the DB's bucket
             const { error: attachmentError } = await supabase
                 .storage
                 .from("attachments")
-                .upload(file.name, file, {
-                    contentType: file.type,
+                .upload(attachmentFile.name, attachmentFile, {
+                    contentType: attachmentFile.type,
                     upsert: false,
                     metadata: {
                         user_id: user.id,
@@ -235,21 +243,26 @@ function ChatApp({auth}: {auth: AuthContext}){
                 console.log("Error attaching attachment: ", attachmentError);
                 alert('Error attaching attachment to post. Files must be supported image files less than 20MB.');
             }
-        }
+        };
         auth.setLoading(false);
         setIsPosting(false);
     };
     
     // Function to get post details from the db
     const [posts, setPosts] = useState<Post[]>([]);
+    const [postsWithComments, setPostsWithComments] = useState<Post[]>([]);
+    const [idToPost, setIdToPost] = useState<Map<string, Post>>(new Map<string, Post>);
+
     const getPosts = async () => {
+        // Retrieving a fixed quantity of posts + replies
         const { data, error } = await supabase
-            .rpc("get_posts", { target_user_id: user.id });
+            .rpc("get_posts", { target_user_id: user.id, quantity: DEFAULT_POST_QUANTITY});
         if (error){
             alert("Error: could not retrieve posts");
             console.log("Error retrieving posts: ", error);
             return;
         }
+        // Retrieving the post attachments
         for (const post of data){
             if (post.img_path){
                 const { data: attachmentData } = supabase
@@ -259,10 +272,22 @@ function ChatApp({auth}: {auth: AuthContext}){
                 post.imageUrl = attachmentData.publicUrl;
             }
         }
+        for (const post of data){
+            // create a mapping of post id's => posts for post tree traversal
+            idToPost.set(post.id, post);
+            post.replies = [];
+        }
+        for (const post of data){
+            if (!post.parent_id) continue;
+            // add replies to their parent post
+            const parentPost = idToPost.get(post.parent_id)!;
+            parentPost.replies.push(post)
+        }
         // Update the UI state with the posts
-        setPosts(data ?? []);
+        setPostsWithComments(data ?? []);
+        setPosts(data.filter((post: Post) => (post.parent_id === null)) ?? []);
     }
-    // Get posts on start up
+    // Load posts on app start up
     useEffect(() => {
         getPosts();
     }, []);
@@ -282,7 +307,6 @@ function ChatApp({auth}: {auth: AuthContext}){
         </div>
         {/* posts */}
         <div className="w-full h-full flex flex-col space-y-2 items-center py-4">
-            
             {/* new post  */}
             {isPosting && 
             <div className="w-[99%] h-fit h-max-124 rounded-lg p-2 bg-slate-700 flex flex-col border border-dashed shadow-2xl space-y-2">
@@ -300,16 +324,17 @@ function ChatApp({auth}: {auth: AuthContext}){
                     <input ref={attachmentsRef} type="file" accept="image/png, image/jpeg, image/jpg" className="bg-gray-400 rounded-sm shadow-xl p-2 hover:scale-101"/>
                 </div>
                 {/* send post  */}
-                <button onClick={sendPost} className="bg-cyan-600 rounded-lg py-2 px-4 w-fit h-fit hover:scale-104 hover:font-bold">
+                <button 
+                    onClick={() => sendPost(titleRef.current?.value, contentRef.current?.value, attachmentsRef.current?.files![0])}
+                    className="bg-cyan-600 rounded-lg py-2 px-4 w-fit h-fit hover:scale-104 hover:font-bold">
                     Post
                 </button>
             </div>}
-
             {/* existing posts */}
             {posts.map(post => (
-                <div className='w-full items-center flex flex-col'>
+            <div key={post.id} className="items-end flex flex-col w-[99%] space-y-1">
                 {/* post */}
-                <div key={post.id} className="w-[99%] h-fit h-max-124 rounded-lg px-2 py-1 bg-slate-700">
+                <div key={post.id} className="w-full h-max-124 rounded-lg px-2 py-1 bg-slate-700">
                     {/* username + date */}
                     <div className="flex flex-row justify-between">
                         <div className="flex flex-row space-x-1">
@@ -345,20 +370,46 @@ function ChatApp({auth}: {auth: AuthContext}){
                             <p>{post.dislike_count}</p>
                         </div>
                         {/* replies */}
-                        <button className="">Replies</button>
+                        <button className="" onClick={() => toggleReplies(post.id)}>Replies</button>
                     </div>
                 </div>
-                {/* post replies */}
-                <div>
-                    
+                {/* replies */}
+                { post.show_replies && 
+                <div className="w-[95%] space-y-1">
+                    {/* existing replies */}
+                    { post.replies.map(reply => (
+                        <div key={reply.id} className="w-full bg-slate-700 rounded-lg space-y-1 px-2 py-1">
+                            <div className="w-full flex flex-row justify-between">
+                                <div className="flex flex-row space-x-1">
+                                    <p className="">{reply.username}</p>
+                                    <p>-- {new Date(reply.created_on).toLocaleString()}</p>
+                                </div>
+                                <button onClick={() => deletePost(reply.id)} className="text-white hover:text-red-700">
+                                    Delete Post
+                                </button>
+                            </div>
+                            <p className="break-all text-wrap max-h-48 overflow-y-auto">{reply.content}</p>
+                        </div>
+                    ))}
+                    {/* add a reply window */}
+                    <div className="w-full bg-slate-700 px-2 py-1 rounded-lg space-y-1">
+                        <h1 className="font-bold ">Add a reply</h1>
+                        <input ref={replyRef} type="text" placeholder="Your reply" className="w-full bg-slate-100 rounded-lg px-2 py-1 text-black"/>
+                        <button 
+                            onClick={() => sendPost(undefined, replyRef.current?.value, undefined, post.id)}
+                            className="bg-cyan-600 rounded-lg py-1 px-3 w-fit h-fit hover:scale-104 hover:font-bold">
+                            Post
+                        </button>
+                    </div>
                 </div>
-                </div>
+                }
+            </div>
             ))}
             
         </div>
         {/* Buttons  */}
         <div className="fixed bottom-2 right-2 w-fit h-fit p-4 hover:scale-101 text-xl rounded-2xl bg-slate-900 shadow-2xl text-white">
-            <button onClick={() => createPost()} className="flex flex-row space-x-2 font-bold text-xl justify-center items-center">
+            <button onClick={() => toggleCreatePost()} className="flex flex-row space-x-2 font-bold text-xl justify-center items-center">
                 <img src="/chat/plus.svg" alt="+" className="w-8 invert"/>
                 <p>Create Post</p>
             </button>
