@@ -14,8 +14,8 @@ function Landing() {
             </div>
             
             <div className="flex flex-col lg:flex-row space-x-0 lg:space-x-8 space-y-8 lg:space-y-0 w-fit h-fit items-center">
-                <Link to="/plife">
-                    <TextAnim text="{ Particle Simulation }" cooldown={60}
+                <Link to="/chat">
+                    <TextAnim text="{ Reddit Clone }" cooldown={60}
                         className="w-fittext-xl md:text-3xl hover:scale-105 font-bold bg-slate-800 text-cyan-700 italic border-cyan-500 border-8 p-2 rounded-xl shadow-2xl"/>
                 </Link>
                 {/* <Link to="/chess">
@@ -33,11 +33,11 @@ function Landing() {
             <ParticleLife/>
         </div>
         
-        <div className="absolute bottom-2 left-5 font-bold text-2xl">
+        {/* <div className="absolute bottom-2 left-5 font-bold text-2xl">
             <Link to="/chat">
                 Chat Testing...
             </Link>
-        </div>
+        </div> */}
 
         <div className="w-full flex flex-col md:flex-row text-8xl font-bold h-[90vh] bg-gradient-to-br from-cyan-200">
             <div className="w-0 md:w-2/5 flex justify-center shadow-2xl">

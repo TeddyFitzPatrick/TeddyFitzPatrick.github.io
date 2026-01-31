@@ -245,7 +245,7 @@ function ChatApp({auth}: {auth: AuthContext}){
         if (attachmentFile){
             console.log("atfile.name",attachmentFile.name)
             // add extension log
-            const { data: logData, error: logError } = await supabase
+            const { data: _logData, error: logError } = await supabase
                 .from("attachments")
                 .insert({
                     post_id: post_id,
