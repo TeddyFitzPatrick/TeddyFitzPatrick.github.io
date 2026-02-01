@@ -146,109 +146,6 @@ function SignUp({auth}: {auth: AuthContext}){
     </>
 }
 
-function formatDate(timestamp: string){
-    const date = new Date(timestamp);
-    const today = new Date();
-    const deltaMilliseconds = (Date.now() - date.getTime());
-    // today
-    if (date.getFullYear() === today.getFullYear() &&
-        date.getMonth() === today.getMonth() &&
-        date.getDate() === today.getDate()){
-        const deltaHours = deltaMilliseconds / (1000 * 60 * 60);
-        const deltaMinutes = deltaMilliseconds / (1000 * 60);
-        return (deltaHours < 1) ? `${deltaMinutes.toFixed(0)}m ago` : `${deltaHours.toFixed(0)}hr ago`;
-    }
-    const deltaDays = deltaMilliseconds / (1000 * 60 * 60 * 24);
-    return `${deltaDays.toFixed(0)} days ago`;
-}
-
-const reactToPost = async (auth: AuthContext,
-                           posts: Post[],
-                           setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
-                           post_id: string, 
-                           oldReaction: string, 
-                           newReaction: string) => {
-    if (oldReaction === newReaction) return;
-    const { data: _data, error } = await supabase
-        .from("reactions")
-        .upsert({
-            post_id: post_id,
-            user_id: auth.user!.id,
-            reaction: newReaction
-        });
-    if (error){
-        console.log(error);
-    }
-    // Update the UI with the new reaction
-    setPosts(posts.map(post => {
-        if (post.id !== post_id) return post;
-        let newLikeCount: number = +post.like_count!;
-        let newDislikeCount: number = +post.dislike_count!;
-        if (newReaction === "like") newLikeCount += 1;
-        if (newReaction === "dislike") newDislikeCount += 1;
-        if (oldReaction === "like") newLikeCount -= 1;
-        if (oldReaction === "dislike") newDislikeCount -= 1;
-        return {...post, like_count: newLikeCount.toString(), dislike_count: newDislikeCount.toString(), reaction: newReaction}
-    }));
-}
-
-const deletePost = async (posts: Post[],
-                          setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
-                          post_id: string) => {
-    const { error } = await supabase
-        .rpc("delete_post", {delete_post_id: post_id});
-    if (error){
-        console.log("Error deleting post", error);
-        alert("Error deleting post");
-    }
-    // Update posts after deleting
-    setPosts(posts.filter(post => post.id !== post_id));
-}
-
-const toggleCreateReply = async (posts: Post[], setPosts: React.Dispatch<React.SetStateAction<Post[]>>, post_id: string) => {
-    setPosts(posts.map(post => {
-        return {...post, add_reply: (post.id === post_id) ? !post.add_reply : post.add_reply}
-    }));
-}
-
-function Upvote({styles}: {styles: string}){
-    return <>
-        <svg className={`w-6 h-6 ${styles}`} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4 14h4v7a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-7h4a1.001 1.001 0 0 0 .781-1.625l-8-10c-.381-.475-1.181-.475-1.562 0l-8 10A1.001 1.001 0 0 0 4 14z"/>
-        </svg>
-    </>
-}
-
-function MessageOptions({auth, post, posts, setPosts}:
-                        {auth: AuthContext,
-                         post: Post,
-                         posts: Post[],
-                         setPosts: React.Dispatch<React.SetStateAction<Post[]>>}){
-    return <div className="w-full space-x-2 flex flex-row text-lg pt-1">
-        {/* likes  */}
-        <div className={`flex flex-row items-center ${(post.reaction === "like") ? "text-cyan-600" : "hover:scale-104"}`}>
-            <button onClick={() => reactToPost(auth, posts, setPosts, post.id, post.reaction, "like")}>
-                <Upvote styles={(post.reaction === "like") ? "fill-cyan-600" : "fill-white"}/>
-            </button>
-            <p>{post.like_count}</p>
-        </div>
-        {/* dislikes  */}
-        <div className={`flex flex-row items-center ${(post.reaction === "dislike") ? "text-cyan-600" : "hover:scale-104"}`} >
-            <button onClick={() => reactToPost(auth, posts, setPosts, post.id, post.reaction, "dislike")}>
-                <Upvote styles={`scale-y-[-1] ${(post.reaction === "dislike") ? "fill-cyan-600" : "fill-white"}`}/>
-            </button>
-            <p>{post.dislike_count}</p>
-        </div>
-        {/* replies */}
-        <div className="flex flex-row space-x-1">
-            <button className="" onClick={() => toggleCreateReply(posts, setPosts, post.id)}>
-                Reply
-            </button>
-            <p></p>
-        </div>
-    </div>
-}
-
 function ChatApp({auth}: {auth: AuthContext}){
     const profile = auth.profile!;
     const user = auth.user!;
@@ -365,7 +262,7 @@ function ChatApp({auth}: {auth: AuthContext}){
     return <>
     <div className="w-full min-h-screen h-fit flex flex-col justify-start bg-slate-800 text-white">
         {/* header  */}
-        <div className=" w-full p-4 bg-slate-900 shadow-2xl text-xl flex flex-row justify-between">
+        <div className="w-full p-4 bg-slate-900 shadow-2xl text-xl flex flex-row justify-between">
             {/* sign in name  */}
             <div className="flex flex-row space-x-2 text-white">
                 <p>Logged in as:</p> <p className="font-bold">{profile!.username}</p>
@@ -376,10 +273,10 @@ function ChatApp({auth}: {auth: AuthContext}){
             </button>
         </div>
         {/* posts */}
-        <div className="w-full h-full flex flex-col space-y-1 items-center py-4">
+        <div className="w-full h-full flex flex-col space-y-1 items-center pt-2 pb-6">
             {/* new post  */}
             {isPosting && 
-            <div className="w-[99%] h-fit h-max-124 rounded-lg p-2 bg-slate-700 flex flex-col border border-dashed shadow-2xl space-y-2">
+            <div className="w-[99%] h-fit h-max-124 rounded-lg p-2 bg-slate-700 flex flex-col border border-dashed shadow-2xl space-y-2 my-2">
                 {/* title  */}
                 <div className="w-full flex flex-row justify-between space-x-2">
                     <input ref={titleRef} className="w-full sm:w-1/2 bg-slate-100 font-bold text-black rounded-sm p-1" type="text" placeholder="Post Title" id="title"/>
@@ -421,7 +318,7 @@ function ChatApp({auth}: {auth: AuthContext}){
                     <p className="break-all text-wrap max-h-48 overflow-y-auto text-base sm:text-lg">{post.content}</p>
                     {/* attachment */}
                     {post.imageUrl && 
-                    <div className="mt-1">
+                    <div className="my-1">
                         <img src={post.imageUrl} className="max-h-96 object-contan aspect-auto"/>
                     </div>}
                     {/* buttons  */}
@@ -499,7 +396,7 @@ function Replies({auth, parent_post, posts, setPosts}:
         ))}
         {/* add a reply window */}
         {parent_post.add_reply && 
-        <div className="w-full bg-slate-700 px-2 py-1 rounded-lg space-y-1">
+        <div className="w-full bg-slate-700 px-2 py-1 rounded-lg space-y-1 mb-1">
             <h1 className="font-bold ">Add a reply</h1>
             <input ref={replyRef} type="text" placeholder="Your reply" className="w-full bg-slate-100 rounded-lg px-2 py-1 text-black"/>
             <button 
@@ -510,4 +407,129 @@ function Replies({auth, parent_post, posts, setPosts}:
         </div>}
     </div>
     </>
+}
+
+function MessageOptions({auth, post, posts, setPosts}:
+                        {auth: AuthContext,
+                         post: Post,
+                         posts: Post[],
+                         setPosts: React.Dispatch<React.SetStateAction<Post[]>>}){
+    return <div className="w-full space-x-2 flex flex-row text-lg pt-1">
+        {/* likes  */}
+        <div className={`flex flex-row items-center ${(post.reaction === "like") ? "text-cyan-600" : "hover:scale-104"}`}>
+            <button onClick={() => reactToPost(auth, posts, setPosts, post.id, post.reaction, "like")}>
+                <Upvote styles={(post.reaction === "like") ? "fill-cyan-600" : "fill-white"}/>
+            </button>
+            <p>{post.like_count}</p>
+        </div>
+        {/* dislikes  */}
+        <div className={`flex flex-row items-center ${(post.reaction === "dislike") ? "text-cyan-600" : "hover:scale-104"}`} >
+            <button onClick={() => reactToPost(auth, posts, setPosts, post.id, post.reaction, "dislike")}>
+                <Upvote styles={`scale-y-[-1] ${(post.reaction === "dislike") ? "fill-cyan-600" : "fill-white"}`}/>
+            </button>
+            <p>{post.dislike_count}</p>
+        </div>
+        {/* replies */}
+        <div className="flex flex-row space-x-1">
+            <button className="" onClick={() => toggleCreateReply(posts, setPosts, post.id)}>
+                Reply
+            </button>
+            <p></p>
+        </div>
+    </div>
+}
+
+function Upvote({styles}: {styles: string}){
+    return <>
+        <svg className={`w-6 h-6 ${styles}`} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 14h4v7a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-7h4a1.001 1.001 0 0 0 .781-1.625l-8-10c-.381-.475-1.181-.475-1.562 0l-8 10A1.001 1.001 0 0 0 4 14z"/>
+        </svg>
+    </>
+}
+
+const reactToPost = async (auth: AuthContext,
+                           posts: Post[],
+                           setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
+                           post_id: string, 
+                           oldReaction: string, 
+                           newReaction: string) => {
+    // delete existing reaction
+    if (oldReaction === newReaction){
+        const { error: deleteReactionError } = await supabase
+            .from("reactions")
+            .delete()
+            .eq("post_id", post_id)
+            .eq("user_id", auth.user!.id);
+        if (deleteReactionError){
+            console.log("Error deleting reaction: ", deleteReactionError);
+        }
+        // Update the UI
+        setPosts(posts.map(post => {
+            if (post.id !== post_id) return post;
+            post.reaction = "";
+            let newLikeCount: number = +post.like_count!;
+            let newDislikeCount: number = +post.dislike_count!;
+            if (newReaction === "like") newLikeCount--;
+            else if (newReaction === "dislike") newDislikeCount--; 
+            return {...post, like_count: newLikeCount.toString(), dislike_count: newDislikeCount.toString()};
+        }));
+        return;
+    }
+    const { data: _data, error } = await supabase
+        .from("reactions")
+        .upsert({
+            post_id: post_id,
+            user_id: auth.user!.id,
+            reaction: newReaction
+        });
+    if (error){
+        console.log(error);
+    }
+    // Update the UI with the new reaction
+    setPosts(posts.map(post => {
+        if (post.id !== post_id) return post;
+        let newLikeCount: number = +post.like_count!;
+        let newDislikeCount: number = +post.dislike_count!;
+        if (newReaction === "like") newLikeCount += 1;
+        if (newReaction === "dislike") newDislikeCount += 1;
+        if (oldReaction === "like") newLikeCount -= 1;
+        if (oldReaction === "dislike") newDislikeCount -= 1;
+        return {...post, like_count: newLikeCount.toString(), dislike_count: newDislikeCount.toString(), reaction: newReaction}
+    }));
+}
+
+const deletePost = async (posts: Post[],
+                          setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
+                          post_id: string) => {
+    const { error } = await supabase
+        .rpc("delete_post", {delete_post_id: post_id});
+    if (error){
+        console.log("Error deleting post", error);
+        alert("Error deleting post");
+    }
+    // Update posts after deleting
+    setPosts(posts.filter(post => post.id !== post_id));
+}
+
+const formatDate = (timestamp: string) =>{
+    const date = new Date(timestamp);
+    const today = new Date();
+    const deltaMilliseconds = (Date.now() - date.getTime());
+    // today
+    if (date.getFullYear() === today.getFullYear() &&
+        date.getMonth() === today.getMonth() &&
+        date.getDate() === today.getDate()){
+        const deltaHours = deltaMilliseconds / (1000 * 60 * 60);
+        const deltaMinutes = deltaMilliseconds / (1000 * 60);
+        return (deltaHours < 1) ? `${deltaMinutes.toFixed(0)}m ago` : `${deltaHours.toFixed(0)}hr ago`;
+    }
+    const deltaDays = deltaMilliseconds / (1000 * 60 * 60 * 24);
+    return `${deltaDays.toFixed(0)} days ago`;
+}
+
+const toggleCreateReply = async (posts: Post[], setPosts: React.Dispatch<React.SetStateAction<Post[]>>, post_id: string) => {
+    setPosts(posts.map(post => {
+        if (post.id !== post_id) return {...post, add_reply: false};
+        return {...post, add_reply: (post.id === post_id) ? !post.add_reply : post.add_reply}
+    }));
 }
