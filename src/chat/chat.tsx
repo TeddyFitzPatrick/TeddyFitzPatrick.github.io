@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabase"
-import { type User} from '@supabase/supabase-js'
-import { ParticlesBack } from './particles';
+import { type User} from "@supabase/supabase-js";
+import { ParticlesBack } from "./particles";
 
 // Type Definitions
 type Profile = { username: string } | null;
@@ -33,7 +33,6 @@ type Post = {
 }
 
 const DEFAULT_POST_QUANTITY = 500;
-
 
 export default function Chat(){
     const [user, setUser] = useState<User | null>(null)
@@ -163,51 +162,99 @@ function formatDate(timestamp: string){
     return `${deltaDays.toFixed(0)} days ago`;
 }
 
+const reactToPost = async (auth: AuthContext,
+                           posts: Post[],
+                           setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
+                           post_id: string, 
+                           oldReaction: string, 
+                           newReaction: string) => {
+    if (oldReaction === newReaction) return;
+    const { data: _data, error } = await supabase
+        .from("reactions")
+        .upsert({
+            post_id: post_id,
+            user_id: auth.user!.id,
+            reaction: newReaction
+        });
+    if (error){
+        console.log(error);
+    }
+    // Update the UI with the new reaction
+    setPosts(posts.map(post => {
+        if (post.id !== post_id) return post;
+        let newLikeCount: number = +post.like_count!;
+        let newDislikeCount: number = +post.dislike_count!;
+        if (newReaction === "like") newLikeCount += 1;
+        if (newReaction === "dislike") newDislikeCount += 1;
+        if (oldReaction === "like") newLikeCount -= 1;
+        if (oldReaction === "dislike") newDislikeCount -= 1;
+        return {...post, like_count: newLikeCount.toString(), dislike_count: newDislikeCount.toString(), reaction: newReaction}
+    }));
+}
+
+const deletePost = async (posts: Post[],
+                          setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
+                          post_id: string) => {
+    const { error } = await supabase
+        .rpc("delete_post", {delete_post_id: post_id});
+    if (error){
+        console.log("Error deleting post", error);
+        alert("Error deleting post");
+    }
+    // Update posts after deleting
+    setPosts(posts.filter(post => post.id !== post_id));
+}
+
+const toggleCreateReply = async (posts: Post[], setPosts: React.Dispatch<React.SetStateAction<Post[]>>, post_id: string) => {
+    setPosts(posts.map(post => {
+        return {...post, add_reply: (post.id === post_id) ? !post.add_reply : post.add_reply}
+    }));
+}
+
+function Upvote({styles}: {styles: string}){
+    return <>
+        <svg className={`w-6 h-6 ${styles}`} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 14h4v7a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-7h4a1.001 1.001 0 0 0 .781-1.625l-8-10c-.381-.475-1.181-.475-1.562 0l-8 10A1.001 1.001 0 0 0 4 14z"/>
+        </svg>
+    </>
+}
+
+function MessageOptions({auth, post, posts, setPosts}:
+                        {auth: AuthContext,
+                         post: Post,
+                         posts: Post[],
+                         setPosts: React.Dispatch<React.SetStateAction<Post[]>>}){
+    return <div className="w-full space-x-2 flex flex-row text-lg pt-1">
+        {/* likes  */}
+        <div className={`flex flex-row items-center ${(post.reaction === "like") ? "text-cyan-600" : "hover:scale-104"}`}>
+            <button onClick={() => reactToPost(auth, posts, setPosts, post.id, post.reaction, "like")}>
+                <Upvote styles={(post.reaction === "like") ? "fill-cyan-600" : "fill-white"}/>
+            </button>
+            <p>{post.like_count}</p>
+        </div>
+        {/* dislikes  */}
+        <div className={`flex flex-row items-center ${(post.reaction === "dislike") ? "text-cyan-600" : "hover:scale-104"}`} >
+            <button onClick={() => reactToPost(auth, posts, setPosts, post.id, post.reaction, "dislike")}>
+                <Upvote styles={`scale-y-[-1] ${(post.reaction === "dislike") ? "fill-cyan-600" : "fill-white"}`}/>
+            </button>
+            <p>{post.dislike_count}</p>
+        </div>
+        {/* replies */}
+        <div className="flex flex-row space-x-1">
+            <button className="" onClick={() => toggleCreateReply(posts, setPosts, post.id)}>
+                Reply
+            </button>
+            <p></p>
+        </div>
+    </div>
+}
+
 function ChatApp({auth}: {auth: AuthContext}){
     const profile = auth.profile!;
     const user = auth.user!;
     const [isPosting, setIsPosting] = useState(false);
     const signOut = async() => {
         await supabase.auth.signOut()
-    };
-    const reactToPost = async (post_id: string, oldReaction: string, newReaction: string) => {
-        if (oldReaction === newReaction) return;
-        const { data: _data, error } = await supabase
-            .from("reactions")
-            .upsert({
-                post_id: post_id,
-                user_id: user.id,
-                reaction: newReaction
-            });
-        if (error){
-            console.log(error);
-        }
-        // Update the UI with the new reaction
-        setPosts(posts => posts.map(post => {
-            if (post.id !== post_id) return post;
-            let newLikeCount: number = +post.like_count!;
-            let newDislikeCount: number = +post.dislike_count!;
-            if (newReaction === "like") newLikeCount += 1;
-            if (newReaction === "dislike") newDislikeCount += 1;
-            if (oldReaction === "like") newLikeCount -= 1;
-            if (oldReaction === "dislike") newDislikeCount -= 1;
-            return {...post, like_count: newLikeCount.toString(), dislike_count: newDislikeCount.toString(), reaction: newReaction}
-        }));
-    };
-    const deletePost = async (post_id: string) => {
-        const { error } = await supabase
-            .rpc("delete_post", {delete_post_id: post_id})
-        if (error){
-            console.log("Error deleting post", error);
-            alert("Error deleting post");
-        }
-        // Update posts after deleting
-        setPosts(posts => posts.filter(post => post.id !== post_id));
-    };
-    const toggleReplies = async (post_id: string) => {
-        setPosts(posts.map(post => {
-            return {...post, add_reply: (post.id === post_id) ? !post.add_reply : post.add_reply}
-        }));
     };
     // new post - input fields
     const titleRef = useRef<HTMLInputElement | null>(null);
@@ -279,7 +326,6 @@ function ChatApp({auth}: {auth: AuthContext}){
     };
     // Function to get post details from the db
     const [posts, setPosts] = useState<Post[]>([]);
-    const idToPost = new Map<string, Post>([]);
     const getPosts = async () => {
         // Retrieving a fixed quantity of posts + replies
         const { data, error } = await supabase
@@ -300,10 +346,9 @@ function ChatApp({auth}: {auth: AuthContext}){
             }
         }
         for (const post of data){
-            // create a mapping of post id's => posts for post tree traversal
-            idToPost.set(post.id, post);
             post.reply_ids = [];
         }
+        const idToPost = new Map<string, Post>(data.map((post: Post) => [post.id, post]));
         for (const post of data){
             if (!post.parent_id) continue;
             // add replies to their parent post
@@ -367,41 +412,20 @@ function ChatApp({auth}: {auth: AuthContext}){
                             <p className="opacity-60 text-sm">∘ {formatDate(post.created_on)}</p>
                         </div>
                         {(post.user_id === user.id) && 
-                        <button onClick={() => deletePost(post.id)} className="hover:text-red-700">
+                        <button onClick={() => deletePost(posts, setPosts, post.id)} className="hover:text-red-700">
                             Delete
                         </button>}
                     </div>
                     {/* text */}
-                    <h1 className="font-bold text-xl">{post.title}</h1>
-                    <p className="break-all text-wrap max-h-48 overflow-y-auto">{post.content}</p>
+                    <h1 className="font-bold text-xl sm:text-2xl">{post.title}</h1>
+                    <p className="break-all text-wrap max-h-48 overflow-y-auto text-base sm:text-lg">{post.content}</p>
                     {/* attachment */}
                     {post.imageUrl && 
-                    <div className="">
+                    <div className="mt-1">
                         <img src={post.imageUrl} className="max-h-96 object-contan aspect-auto"/>
                     </div>}
-                    <div className="w-full space-x-2 flex flex-row text-xs pt-1">
-                        {/* likes  */}
-                        <div className={`flex flex-row space-x-1 ${(post.reaction === "like") ? "text-cyan-600" : "hover:scale-104"}`}>
-                            <button onClick={() => reactToPost(post.id, post.reaction, "like")}>
-                                Like
-                            </button>
-                            <p>{post.like_count}</p>
-                        </div>
-                        {/* dislikes  */}
-                        <div className={`flex flex-row space-x-1 ${(post.reaction === "dislike") ? "text-cyan-600" : "hover:scale-104"}`} >
-                            <button onClick={() => reactToPost(post.id, post.reaction, "dislike")}>
-                                Dislike
-                            </button>
-                            <p>{post.dislike_count}</p>
-                        </div>
-                        {/* replies */}
-                        <div className="flex flex-row space-x-1">
-                            <button className="" onClick={() => toggleReplies(post.id)}>
-                                Reply
-                            </button>
-                            <p></p>
-                        </div>
-                    </div>
+                    {/* buttons  */}
+                    <MessageOptions auth={auth} post={post} posts={posts} setPosts={setPosts}/>
                 </div>
                 {/* replies */}
                 <Replies auth={auth} parent_post={post} posts={posts} setPosts={setPosts}/>
@@ -424,8 +448,7 @@ function Replies({auth, parent_post, posts, setPosts}:
                  {auth: AuthContext,
                   parent_post: Post,
                   posts: Post[],
-                  setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
-                }){
+                  setPosts: React.Dispatch<React.SetStateAction<Post[]>>}){
     const user = auth.user!;
     const replyRef = useRef<HTMLInputElement | null>(null);
     const sendReply = async (content: string, parent_id: string) => {
@@ -446,58 +469,9 @@ function Replies({auth, parent_post, posts, setPosts}:
         }
         auth.setLoading(false);
     };
-    const toggleReplies = async (post_id: string) => {
-        setPosts(posts.map(post => {
-            return {...post, add_reply: (post.id === post_id) ? !post.add_reply : post.add_reply}
-        }));
-    };
-    const deletePost = async (post_id: string) => {
-        const { error } = await supabase
-            .rpc("delete_post", {delete_post_id: post_id})
-        if (error){
-            console.log("Error deleting post", error);
-            alert("Error deleting post");
-        }
-        // Update posts after deleting
-        setPosts(posts => posts.filter(post => post.id !== post_id));
-    };
-    const reactToPost = async (post_id: string, oldReaction: string, newReaction: string) => {
-        console.log("old", oldReaction);
-        console.log("new", newReaction);
-        if (oldReaction === newReaction) return;
-        const { data: _data, error } = await supabase
-            .from("reactions")
-            .upsert({
-                post_id: post_id,
-                user_id: user.id,
-                reaction: newReaction
-            });
-        if (error){
-            console.log(error);
-        }
-
-        console.log("REPLY REACTION")
-        // Update the UI with the new reaction
-        setPosts(posts => posts.map(post => {
-            if (post.id !== post_id) return post;
-            let newLikeCount: number = +post.like_count!;
-            let newDislikeCount: number = +post.dislike_count!;
-            if (newReaction === "like") newLikeCount += 1;
-            if (newReaction === "dislike") newDislikeCount += 1;
-            if (oldReaction === "like") newLikeCount -= 1;
-            if (oldReaction === "dislike") newDislikeCount -= 1;
-            console.log("setting: ", newReaction);
-            console.log(post.id);
-            return {...post, like_count: newLikeCount.toString(), dislike_count: newDislikeCount.toString(), reaction: newReaction}
-        }));
-    }; 
-    const idToPost = new Map<string, Post>([]);
-    for (const post of posts){
-        // create a mapping of post id's => posts for post tree traversal
-        idToPost.set(post.id, post);
-    }
+    const idToPost = new Map<string, Post>(posts.map(post => [post.id, post]));
     const replies = parent_post.reply_ids.map(reply_id => idToPost.get(reply_id)!).filter(reply => reply !== undefined && reply !== null);
-    return <>
+    return <>   
     <div className="w-[95%] sm:w-[98%]">
         {/* existing replies */}
         {parent_post.reply_ids.length > 0 && replies.map((reply: Post) => (
@@ -510,35 +484,14 @@ function Replies({auth, parent_post, posts, setPosts}:
                         <p className="">{reply.username}</p>
                         <p className="opacity-60 text-sm">∘ {formatDate(reply.created_on)}</p>
                     </div>
-                    <button onClick={() => deletePost(reply.id)} className="text-white hover:text-red-700">
+                    <button onClick={() => deletePost(posts, setPosts, reply.id)} className="text-white hover:text-red-700">
                         Delete
                     </button>
                 </div>
                 {/* reply text */}
-                <p className="break-all text-wrap max-h-48 overflow-y-auto">{reply.content}</p>
-                <div className="w-full space-x-2 flex flex-row text-xs pt-1">
-                    {/* likes  */}
-                    <div className={`flex flex-row space-x-1 ${(reply.reaction === "like") ? "text-cyan-600" : "hover:scale-104"}`}>
-                        <button onClick={() => reactToPost(reply.id, reply.reaction, "like")}>
-                            Like
-                        </button>
-                        <p>{reply.like_count}</p>
-                    </div>
-                    {/* dislikes  */}
-                    <div className={`flex flex-row space-x-1 ${(reply.reaction === "dislike") ? "text-cyan-600" : "hover:scale-104"}`} >
-                    <button onClick={() => reactToPost(reply.id, reply.reaction, "dislike")}>
-                        Dislike
-                    </button>
-                    <p>{reply.dislike_count}</p>
-                    </div>
-                    {/* replies */}
-                    <div className="flex flex-row space-x-1">
-                        <button className="" onClick={() => toggleReplies(reply.id)}>
-                            Reply
-                        </button>
-                        <p>{reply.reply_ids.length}</p>
-                    </div>
-                </div>
+                <p className="break-all text-wrap max-h-48 overflow-y-auto text-base sm:text-lg">{reply.content}</p>
+                {/* buttons  */}
+                <MessageOptions auth={auth} post={reply} posts={posts} setPosts={setPosts}/>
             </div>
             {/* replies to the reply */}
             <Replies auth={auth} parent_post={reply} posts={posts} setPosts={setPosts}/>
