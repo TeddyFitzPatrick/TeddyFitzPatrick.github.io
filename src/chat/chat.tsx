@@ -1,7 +1,24 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "./supabase"
 import { type User} from "@supabase/supabase-js";
 import { ParticlesBack } from "./particles";
+
+// Component 
+import {
+  FileUpload,
+  FileUploadDropzone,
+  FileUploadItem,
+  FileUploadItemDelete,
+  FileUploadItemMetadata,
+  FileUploadItemPreview,
+  FileUploadItemProgress,
+  FileUploadList,
+  type FileUploadProps,
+  FileUploadTrigger,
+} from "@/components/ui/file-upload";
+import { Upload, X } from "lucide-react";
+import * as React from "react";
+import { Button } from "@/components/ui/button";
 
 // Type Definitions
 type Profile = { username: string } | null;
@@ -146,6 +163,67 @@ function SignUp({auth}: {auth: AuthContext}){
     </>
 }
 
+export function ImageUpload({setAttachment}: {setAttachment: React.Dispatch<React.SetStateAction<File | null>>}) {
+  const [isUploading, setIsUploading] = React.useState(false);
+  const [files, setFiles] = React.useState<File[]>([]);
+  const onUpload: NonNullable<FileUploadProps["onUpload"]> = React.useCallback(
+    async (files, {  }) => {
+        setIsUploading(true);
+        if (files && files[0]){
+            setAttachment(files[0]);
+        }
+        setIsUploading(false);
+    },
+    [],
+  );
+  const onFileReject = React.useCallback((file: File, message: string) => {
+    console.log(message, {
+      description: `"${file.name.length > 20 ? `${file.name.slice(0, 20)}...` : file.name}" has been rejected`,
+    });
+  }, []);
+  return (
+    <FileUpload
+      accept="image/*"
+      maxFiles={2}
+      maxSize={4 * 1024 * 1024}
+      className="w-full max-w-md"
+      onAccept={(files) => setFiles(files)}
+      onUpload={onUpload}
+      onFileReject={onFileReject}
+      multiple
+      disabled={isUploading}
+    >
+      <FileUploadDropzone>
+        <div className="flex flex-col items-center gap-1 text-center">
+          <div className="flex items-center justify-center rounded-full border p-2.5 mb-2">
+            <Upload className="size-6 text-muted-foreground" />
+          </div>
+          <p className="font-medium text-sm">Drag & drop images here (optional)</p>
+          <p className="text-muted-foreground text-xs">
+            Or click to browse (max 1 file, up to 20MB)
+          </p>
+        </div>
+      </FileUploadDropzone>
+      <FileUploadList>
+        {files.map((file, index) => (
+          <FileUploadItem key={index} value={file}>
+            <div className="flex w-full items-center gap-2">
+              <FileUploadItemPreview />
+              <FileUploadItemMetadata />
+              <FileUploadItemDelete asChild>
+                <Button variant="ghost" size="icon" className="size-7">
+                  <X />
+                </Button>
+              </FileUploadItemDelete>
+            </div>
+            <FileUploadItemProgress />
+          </FileUploadItem>
+        ))}
+      </FileUploadList>
+    </FileUpload>
+  );
+}
+
 function ChatApp({auth}: {auth: AuthContext}){
     const profile = auth.profile!;
     const user = auth.user!;
@@ -156,12 +234,12 @@ function ChatApp({auth}: {auth: AuthContext}){
     // new post - input fields
     const titleRef = useRef<HTMLInputElement | null>(null);
     const contentRef = useRef<HTMLTextAreaElement | null>(null);
-    const attachmentsRef = useRef<HTMLInputElement | null>(null);
     const toggleCreatePost = async() => {
         setIsPosting(true);
         window.scrollTo({top:0, left:0, behavior: 'smooth'});
     };
     // sending a post or reply
+    const [attachment, setAttachment] = useState<File | null>(null);
     const sendPost = async (title: string, content: string, attachmentFile: File) => {
         if (!user || !title || !content) return;
         // set the UI to loading while sending the post
@@ -276,24 +354,26 @@ function ChatApp({auth}: {auth: AuthContext}){
         <div className="w-full h-full flex flex-col space-y-1 items-center pt-2 pb-6">
             {/* new post  */}
             {isPosting && 
-            <div className="w-[99%] h-fit h-max-124 rounded-lg p-2 bg-slate-700 flex flex-col border border-dashed shadow-2xl space-y-2 my-2">
-                {/* title  */}
-                <div className="w-full flex flex-row justify-between space-x-2">
-                    <input ref={titleRef} className="w-full sm:w-1/2 bg-slate-100 font-bold text-black rounded-sm p-1" type="text" placeholder="Post Title" id="title"/>
+            <div className="w-[99%] h-fit h-max-124 rounded-lg py-2 px-2 sm:px-6 bg-slate-700 flex flex-col shadow-2xl space-y-2 my-2">
+                <div className="w-full flex flex-row justify-between space-x-2 items-center py-1">
+                    <h1 className="text-xl sm:text-2xl font-bold">Create Post</h1>
                     <button onClick={() => setIsPosting(false)} className="text-white hover:text-red-700">
                         Cancel
                     </button>
                 </div>
+                {/* title  */}
+                <input ref={titleRef} className="w-full rounded-xl bg-transparent border border-gray-200 text-white p-3 font-bold tracking-wider" type="text" placeholder="Title*" id="title"/>
                 {/* content  */}
-                <textarea ref={contentRef} className="bg-slate-100 rounded-sm text-black px-2 py-1" placeholder="What would you like to say?" id="content"/>
+                <textarea ref={contentRef} className="bg-transparent text-white border border-gray-200 rounded-xl p-4" placeholder="Post Text" id="content"/>
                 {/* Add attachments */}
-                <div className="flex flex-col">
+                {/* <div className="flex flex-col">
                     <input ref={attachmentsRef} type="file" accept="image/png, image/jpeg, image/jpg" className="bg-gray-400 rounded-sm shadow-xl p-2 hover:scale-101"/>
-                </div>
+                </div> */}
+                <ImageUpload setAttachment={setAttachment}/>
                 {/* send post  */}
                 <button 
-                    onClick={() => sendPost(titleRef.current!.value, contentRef.current!.value, attachmentsRef.current!.files![0])}
-                    className="bg-cyan-600 rounded-lg py-2 px-4 w-fit h-fit hover:scale-104 hover:font-bold">
+                    onClick={() => sendPost(titleRef.current!.value, contentRef.current!.value, attachment!)}
+                    className="bg-cyan-600 rounded-2xl shadow-xl py-2 px-6 w-fit h-fit hover:scale-102 text-lg font-semibold">
                     Post
                 </button>
             </div>}
@@ -381,9 +461,10 @@ function Replies({auth, parent_post, posts, setPosts}:
                         <p className="">{reply.username}</p>
                         <p className="opacity-60 text-sm">∘ {formatDate(reply.created_on)}</p>
                     </div>
-                    <button onClick={() => deletePost(posts, setPosts, reply.id)} className="text-white hover:text-red-700">
+                    {(reply.user_id === user.id) && 
+                    <button onClick={() => deletePost(posts, setPosts, reply.id)} className="hover:text-red-700">
                         Delete
-                    </button>
+                    </button>}
                 </div>
                 {/* reply text */}
                 <p className="break-all text-wrap max-h-48 overflow-y-auto text-base sm:text-lg">{reply.content}</p>
