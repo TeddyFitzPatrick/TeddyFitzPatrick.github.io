@@ -20,7 +20,11 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 
 // Type Definitions
-type Profile = { username: string } | null;
+type Profile = { 
+    username: string,
+    pfp_path?: string
+    pfpUrl?: string
+};
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>
 type AuthContext = {
     user: User | null,
@@ -40,10 +44,12 @@ type Post = {
     like_count: string,
     dislike_count: string,
     username: string,
-    reaction: string
+    pfp_path: string,
+    reaction: string,
     img_path: string,
     // fields not from the DB table
     imageUrl: string,
+    pfpUrl: string,
     add_reply: boolean,
     reply_ids: string[]
 }
@@ -52,7 +58,7 @@ const DEFAULT_POST_QUANTITY = 500;
 
 export default function Chat(){
     const [user, setUser] = useState<User | null>(null)
-    const [profile, setProfile] = useState<{ username: string } | null>(null)
+    const [profile, setProfile] = useState<Profile | null>(null)
     const [loading, setLoading] = useState(true)
     const auth: AuthContext = {
         user,
@@ -68,16 +74,24 @@ export default function Chat(){
             const {data: { user },} = await supabase.auth.getUser()
             setUser(user)
             if (user) {
-                const { data, error } = await supabase
+                const { data: profileData, error: profileRetrievalError } = await supabase
                     .from('profiles')
-                    .select('username')
+                    .select('username, pfp_path')
                     .eq('id', user.id)
                     .single();
-                if (!error) {
-                    setProfile(data)
-                } else {
-                    setProfile(null) // google acc not linked to a profile
+                if (profileRetrievalError){
+                    console.log("Error retrieving user profile::", profileRetrievalError);
+                    return;
                 }
+                let profileWithPFP: Profile = profileData;
+                if (profileData.pfp_path){
+                    const { data: pfpData } = supabase
+                        .storage
+                        .from("profile_pics")
+                        .getPublicUrl(profileData.pfp_path);
+                    profileWithPFP = {...profileWithPFP, pfpUrl: pfpData.publicUrl};
+                }
+                setProfile(profileWithPFP);
             }
             setLoading(false)
         }
@@ -125,44 +139,74 @@ function Login(){
 function SignUp({auth}: {auth: AuthContext}){
     const user = auth.user!; const setProfile = auth.setProfile;
     const usernameInputRef = useRef<HTMLInputElement | null>(null);
+    const [profilePic, setProfilePic] = useState<File | null>(null);
 
     const createAccount = async() => {
-        if (!usernameInputRef.current) return;
+        if (!usernameInputRef.current){
+            alert('Please enter a username (required)')
+            return;
+        }
         // Log the username string put into the textinput element
         const inputtedUsername: string = usernameInputRef.current.value.trim();
-        if (inputtedUsername === "") return;
+        if (inputtedUsername.trim() === "") return;
+        let userProfile: {
+            id: string,
+            username: string,
+            pfp_path?: string
+        } = {
+            id: user?.id,
+            username: inputtedUsername,
+        };
+        if (profilePic) userProfile = {...userProfile, pfp_path: profilePic.name};
         // Create a row in the profiles table of the id + username
         const {data, error} = await supabase
             .from("profiles")
-            .insert({
-                id: user?.id,
-                username: inputtedUsername,
-            })
+            .insert(userProfile)
             .select()
             .single();
         // Account creation error handling
         if (!error){
-            setProfile(data);  // this automatically updates the UI
+            setProfile(data);  
         } else{
-            alert("Error creating user profile. Usernames must be unique and less than 33 characters long.");
+            alert("Error creating user profile. Usernames must be unique and between 4-32 characters.");
             console.log("Error creating user profile: ", error);
         }
+        // Upload the profile pic if one was provided
+        if (!profilePic) return;
+        const {error: uploadPFPError} = await supabase
+            .storage
+            .from("profile_pics")
+            .upload(profilePic.name, profilePic, {
+                upsert: false,
+            });
+        if (uploadPFPError){
+            console.log("Error logging PFP: ", uploadPFPError);
+            alert('Error uploading profile picture ');
+        }
+            
     };
 
-    return <>
-    <button className="fixed text-white p-3 hover:scale-103 left-5 top-5 font-bold bg-cyan-400 rounded-xl shadow-2xl" onClick={() => auth.setUser(null)}>Back to Log In</button>
-    <ParticlesBack/>
-    <div className=" text-white rounded-xl flex flex-col p-4 space-y-4">
-        <h1 className="font-bold text-3xl">Create an account:</h1>
-        <input ref={usernameInputRef} type="text" placeholder="Enter a username (8-32 characters)" className="bg-white p-3 rounded-xl min-w-128 w-fit text-black"></input>
-        <button onClick={createAccount} className="bg-cyan-400 p-4 rounded-xl text-white font-bold hover:scale-102 text-xl shadow-xl">
-            Submit
-        </button>
+    return <div className="w-full h-full flex flex-col items-center">
+        <button className="fixed text-white p-3 hover:scale-103 left-3 top-3 font-bold bg-cyan-600 rounded-xl shadow-2xl" onClick={() => auth.setUser(null)}>Back to Log In</button>
+        <ParticlesBack/>
+        <div className=" text-white rounded-xl flex flex-col p-4 space-y-4 w-lg max-w-full">
+            <h1 className="font-bold text-3xl">Create an account:</h1>
+            {/* username input */}
+            <input ref={usernameInputRef} type="text" placeholder="Enter a username (4-32 characters)" className="bg-white p-3 rounded-xl w-lg max-w-full text-black"></input>
+            {/* profile pic selection */}
+            <h1 className="font-bold text-3xl">Add a profile picture (optional)</h1>
+            <div className="flex w-full justify-center">
+                <ImageUpload setAttachment={setProfilePic}/>    
+            </div>
+
+            <button onClick={createAccount} className="bg-cyan-600 p-4 rounded-xl text-white font-bold hover:scale-101 text-xl shadow-xl">
+                Submit
+            </button>
+        </div>
     </div>
-    </>
 }
 
-export function ImageUpload({setAttachment}: {setAttachment: React.Dispatch<React.SetStateAction<File | null>>}) {
+function ImageUpload({setAttachment}: {setAttachment: React.Dispatch<React.SetStateAction<File | null>>}) {
   const [isUploading, setIsUploading] = React.useState(false);
   const [files, setFiles] = React.useState<File[]>([]);
   const onUpload: NonNullable<FileUploadProps["onUpload"]> = React.useCallback(
@@ -183,7 +227,7 @@ export function ImageUpload({setAttachment}: {setAttachment: React.Dispatch<Reac
   return (
     <FileUpload
       accept="image/*"
-      maxFiles={2}
+      maxFiles={1}
       maxSize={4 * 1024 * 1024}
       className="w-full max-w-md"
       onAccept={(files) => setFiles(files)}
@@ -221,6 +265,58 @@ export function ImageUpload({setAttachment}: {setAttachment: React.Dispatch<Reac
       </FileUploadList>
     </FileUpload>
   );
+}
+
+function SortBySelect({getPosts}: {getPosts: (sortBy: string) => Promise<void>}){
+    type SortBySetting = {
+        name: string,
+        sql_clause: string,
+        image: string
+    }
+    const sortSettings: SortBySetting[] = [
+        {name: "New", sql_clause: "created_on like_count", image: "/chat/new_star.svg"},
+        {name: "Hot", sql_clause: "like_count created_on", image: "/chat/fire.svg"},
+    ];
+    const [isOpen, setIsOpen] = React.useState<boolean>(false);
+    const [selectedSetting, setSelectedSetting] = React.useState<SortBySetting>(sortSettings[0]);
+    // update the sort by ordering of the post feed
+    const updateSortBy = (newSetting: SortBySetting) => {
+        setIsOpen(false);
+        if (selectedSetting.name === newSetting.name) return;
+        console.log("updated")
+        setSelectedSetting(newSetting);
+        getPosts(newSetting.sql_clause);
+    };
+    // Load posts on app start up
+    useEffect(() => {
+        getPosts(sortSettings[0].sql_clause);
+    }, []);
+    return <div className="flex flex-row w-[99%] items-center justify-start pt-2 font-bold text-white shadow-xl">
+    <div className="flex flex-col w-32 text-sm relative">
+        <button type="button" onClick={() => setIsOpen(!isOpen)} className="group flex items-center justify-between w-full text-left px-2 py-2  rounded-lg bg-slate-900 shadow-sm focus:outline-none border border-black">
+            <div className="flex items-center gap-2">
+                <img className="w-6 h-6 rounded-full invert" src={selectedSetting.image} alt={selectedSetting.name} />
+                <span>{selectedSetting.name}</span>
+            </div>
+            <svg className="invert" width="11" height="17" viewBox="0 0 11 17" fill="none" xmlns="http://www.w3.org/2000/svg" >
+                <path d="M9.92546 6L5.68538 1L1.44531 6" stroke="#6B7280" strokeOpacity="0.7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M1.44564 11L5.68571 16L9.92578 11" stroke="#6B7280" strokeOpacity="0.7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+        </button>
+
+        {isOpen && (
+            <ul className="w-32 bg-slate-900 rounded shadow-md mt-1 right-0">
+                {sortSettings.map((setting) => (
+                    <li key={setting.name} className={`px-2 py-2 flex items-center gap-2 cursor-pointer ${setting.name === selectedSetting.name ? "bg-indigo-500 text-white" : "hover:bg-indigo-500 hover:text-white"}`}
+                        onClick={() => updateSortBy(setting)} >
+                        <img className="w-6 h-6 rounded-full invert" src={setting.image} alt={setting.name} />
+                        <span>{setting.name}</span>
+                    </li>
+                ))}
+            </ul>
+        )}
+    </div>
+    </div>
 }
 
 function ChatApp({auth}: {auth: AuthContext}){
@@ -298,14 +394,6 @@ function ChatApp({auth}: {auth: AuthContext}){
         auth.setLoading(false);
         setIsPosting(false);
     };
-    // change the sort by ordering of the post feed
-    const sortByRef = useRef<HTMLSelectElement | null>(null);
-    const [sortBy, setSortBy] = useState<string>("created_on like_count");
-    // useEffect(() => {
-
-    //     getPosts();
-    // }, [sortBy])
-
     // Function to get post details from the db
     const [posts, setPosts] = useState<Post[]>([]);
     const getPosts = async (sort_by: string) => {
@@ -319,7 +407,7 @@ function ChatApp({auth}: {auth: AuthContext}){
             console.log("Error retrieving posts: ", error);
             return;
         }
-        // Retrieving the post attachments
+        // Retrieving the post attachment and/or sender's profile picture
         for (const post of data){
             if (post.img_path){
                 const { data: attachmentData } = supabase
@@ -327,6 +415,13 @@ function ChatApp({auth}: {auth: AuthContext}){
                     .from("attachments")
                     .getPublicUrl(post.img_path);
                 post.imageUrl = attachmentData.publicUrl;
+            }
+            if (post.pfp_path){
+                const { data: pfpData } = supabase
+                    .storage
+                    .from("profile_pics")
+                    .getPublicUrl(post.pfp_path);
+                post.pfpUrl = pfpData.publicUrl;
             }
         }
         for (const post of data){
@@ -342,17 +437,16 @@ function ChatApp({auth}: {auth: AuthContext}){
         // Update the UI state with the posts
         setPosts(data ?? []);
     };
-    // Load posts on app start up
-    useEffect(() => {
-        getPosts(sortBy);
-    }, []);
+    
     return <>
     <div className="w-full min-h-screen h-fit flex flex-col items-center bg-slate-800 text-white space-y-1">
         {/* header  */}
         <div className="w-full p-4 bg-slate-900 shadow-2xl text-xl flex flex-row justify-between ">
             {/* sign in name  */}
-            <div className="flex flex-row space-x-2 text-white">
-                <p>Login</p> <p className="font-bold">{profile!.username}</p>
+            <div className="flex flex-row space-x-2 text-white items-center">
+                <p className="font-bold">Welcome</p> 
+                {profile.pfpUrl && <img src={profile.pfpUrl} className="w-10 h-10 rounded-full shadow-2xl"/>}
+                <p>{profile!.username}</p>
             </div>
             {/* log out */}
             <button onClick={signOut} className=" hover:scale-103 font-bold text-lg">
@@ -360,12 +454,7 @@ function ChatApp({auth}: {auth: AuthContext}){
             </button>
         </div>
         {/* posts sort by  */}
-        <div className="w-[99%] mt-2 items-start flex flex-col">
-            <select ref={sortByRef} onChange={() => getPosts(sortByRef.current!.value)} className="border-2 border-white p-2 rounded-xl bg-slate-900 backdrop-opacity-50 text-white font-bold hover:scale-102">
-                <option value="created_on like_count" className="border border-white font-bold">New</option>
-                <option value="like_count created_on" className="font-bold">Hot</option>
-            </select> 
-        </div>
+        <SortBySelect getPosts={getPosts}/>
 
         {/* posts */}
         <div className="w-full h-full flex flex-col space-y-1 items-center pt-2 pb-6">
@@ -395,10 +484,11 @@ function ChatApp({auth}: {auth: AuthContext}){
             {posts.filter((post: Post) => (post.parent_id === null)).map(post => (
             <div key={post.id} className="items-end flex flex-col w-[99%] space-y-1">
                 {/* post */}
-                <div key={post.id} className="w-full h-max-124 rounded-lg px-2 py-1 bg-slate-700">
-                    {/* username + date */}
+                <div key={post.id} className="w-full h-max-124 rounded-lg px-2 py-2 bg-slate-700">
+                    {/* user + date */}
                     <div className="flex flex-row justify-between">
-                        <div className="flex flex-row space-x-1">
+                        <div className="flex flex-row space-x-1 items-center">
+                            {post.pfpUrl && <img src={post.pfpUrl} className="mr-2 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-transparent shadow-2xl"/>}
                             <p>{post.username}</p>
                             <p className="opacity-60 text-sm">∘ {formatDate(post.created_on)}</p>
                         </div>
