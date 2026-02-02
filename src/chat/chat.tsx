@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabase"
 import { type User} from "@supabase/supabase-js";
 import { ParticlesBack } from "./particles";
@@ -14,7 +14,6 @@ import {
   FileUploadItemProgress,
   FileUploadList,
   type FileUploadProps,
-  FileUploadTrigger,
 } from "@/components/ui/file-upload";
 import { Upload, X } from "lucide-react";
 import * as React from "react";
@@ -239,7 +238,7 @@ function ChatApp({auth}: {auth: AuthContext}){
         window.scrollTo({top:0, left:0, behavior: 'smooth'});
     };
     // sending a post or reply
-    const [attachment, setAttachment] = useState<File | null>(null);
+    const [attachment, setAttachment] = useState<File | null>(null); 
     const sendPost = async (title: string, content: string, attachmentFile: File) => {
         if (!user || !title || !content) return;
         // set the UI to loading while sending the post
@@ -299,12 +298,22 @@ function ChatApp({auth}: {auth: AuthContext}){
         auth.setLoading(false);
         setIsPosting(false);
     };
+    // change the sort by ordering of the post feed
+    const sortByRef = useRef<HTMLSelectElement | null>(null);
+    const [sortBy, setSortBy] = useState<string>("created_on like_count");
+    // useEffect(() => {
+
+    //     getPosts();
+    // }, [sortBy])
+
     // Function to get post details from the db
     const [posts, setPosts] = useState<Post[]>([]);
-    const getPosts = async () => {
+    const getPosts = async (sort_by: string) => {
         // Retrieving a fixed quantity of posts + replies
         const { data, error } = await supabase
-            .rpc("get_posts", { target_user_id: user.id, quantity: DEFAULT_POST_QUANTITY});
+            .rpc("get_posts", { target_user_id: user.id, quantity: DEFAULT_POST_QUANTITY})
+            .order(sort_by.split(" ")[0], {ascending: false})
+            .order(sort_by.split(" ")[1], {ascending: false});
         if (error){
             alert("Error: could not retrieve posts");
             console.log("Error retrieving posts: ", error);
@@ -335,21 +344,29 @@ function ChatApp({auth}: {auth: AuthContext}){
     };
     // Load posts on app start up
     useEffect(() => {
-        getPosts();
+        getPosts(sortBy);
     }, []);
     return <>
-    <div className="w-full min-h-screen h-fit flex flex-col justify-start bg-slate-800 text-white">
+    <div className="w-full min-h-screen h-fit flex flex-col items-center bg-slate-800 text-white space-y-1">
         {/* header  */}
-        <div className="w-full p-4 bg-slate-900 shadow-2xl text-xl flex flex-row justify-between">
+        <div className="w-full p-4 bg-slate-900 shadow-2xl text-xl flex flex-row justify-between ">
             {/* sign in name  */}
             <div className="flex flex-row space-x-2 text-white">
-                <p>Logged in as:</p> <p className="font-bold">{profile!.username}</p>
+                <p>Login</p> <p className="font-bold">{profile!.username}</p>
             </div>
             {/* log out */}
             <button onClick={signOut} className=" hover:scale-103 font-bold text-lg">
                 Log Out
             </button>
         </div>
+        {/* posts sort by  */}
+        <div className="w-[99%] mt-2 items-start flex flex-col">
+            <select ref={sortByRef} onChange={() => getPosts(sortByRef.current!.value)} className="border-2 border-white p-2 rounded-xl bg-slate-900 backdrop-opacity-50 text-white font-bold hover:scale-102">
+                <option value="created_on like_count" className="border border-white font-bold">New</option>
+                <option value="like_count created_on" className="font-bold">Hot</option>
+            </select> 
+        </div>
+
         {/* posts */}
         <div className="w-full h-full flex flex-col space-y-1 items-center pt-2 pb-6">
             {/* new post  */}
@@ -366,9 +383,6 @@ function ChatApp({auth}: {auth: AuthContext}){
                 {/* content  */}
                 <textarea ref={contentRef} className="bg-transparent text-white border border-gray-200 rounded-xl p-4" placeholder="Post Text" id="content"/>
                 {/* Add attachments */}
-                {/* <div className="flex flex-col">
-                    <input ref={attachmentsRef} type="file" accept="image/png, image/jpeg, image/jpg" className="bg-gray-400 rounded-sm shadow-xl p-2 hover:scale-101"/>
-                </div> */}
                 <ImageUpload setAttachment={setAttachment}/>
                 {/* send post  */}
                 <button 
@@ -605,6 +619,8 @@ const formatDate = (timestamp: string) =>{
         return (deltaHours < 1) ? `${deltaMinutes.toFixed(0)}m ago` : `${deltaHours.toFixed(0)}hr ago`;
     }
     const deltaDays = deltaMilliseconds / (1000 * 60 * 60 * 24);
+    const deltaDaysTruncated = deltaDays.toFixed(0);
+    if (deltaDaysTruncated === "1") return "1 day ago";
     return `${deltaDays.toFixed(0)} days ago`;
 }
 
