@@ -81,17 +81,17 @@ export default function Chat(){
                     .single();
                 if (profileRetrievalError){
                     console.log("Error retrieving user profile::", profileRetrievalError);
-                    return;
+                } else{
+                    let profileWithPFP: Profile = profileData;
+                    if (profileData.pfp_path){
+                        const { data: pfpData } = supabase
+                            .storage
+                            .from("profile_pics")
+                            .getPublicUrl(profileData.pfp_path);
+                        profileWithPFP = {...profileWithPFP, pfpUrl: pfpData.publicUrl};
+                    }
+                    setProfile(profileWithPFP);
                 }
-                let profileWithPFP: Profile = profileData;
-                if (profileData.pfp_path){
-                    const { data: pfpData } = supabase
-                        .storage
-                        .from("profile_pics")
-                        .getPublicUrl(profileData.pfp_path);
-                    profileWithPFP = {...profileWithPFP, pfpUrl: pfpData.publicUrl};
-                }
-                setProfile(profileWithPFP);
             }
             setLoading(false)
         }
@@ -561,7 +561,8 @@ function Replies({auth, parent_post, posts, setPosts}:
             <div key={reply.id} className="w-full bg-slate-700 rounded-lg space-y-1 px-2 py-1">
                 {/* username, date, delete button */}
                 <div className="w-full flex flex-row justify-between">
-                    <div className="flex flex-row space-x-1">
+                    <div className="flex flex-row space-x-1 items-center">
+                        {reply.pfpUrl && <img src={reply.pfpUrl} className="mr-2 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-transparent shadow-2xl"/>}
                         <p className="">{reply.username}</p>
                         <p className="opacity-60 text-sm">∘ {formatDate(reply.created_on)}</p>
                     </div>
