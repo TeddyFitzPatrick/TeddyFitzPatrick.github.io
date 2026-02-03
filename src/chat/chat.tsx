@@ -4,7 +4,7 @@ import { type User} from "@supabase/supabase-js";
 import { ParticlesBack } from "./particles";
 
 // DiceUI components
-import { Upload, X, Loader2 } from "lucide-react";
+import { Upload, X} from "lucide-react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,8 +28,6 @@ import {
   ResponsiveDialogTitle,
   ResponsiveDialogTrigger,
 } from "@/components/ui/responsive-dialog";
-
-
 
 // Type Definitions
 type Profile = { 
@@ -86,24 +84,8 @@ export default function Chat(){
             const {data: { user },} = await supabase.auth.getUser()
             setUser(user)
             if (user) {
-                const { data: profileData, error: profileRetrievalError } = await supabase
-                    .from('profiles')
-                    .select('username, pfp_path')
-                    .eq('id', user.id)
-                    .single();
-                if (profileRetrievalError){
-                    console.log("Error retrieving user profile::", profileRetrievalError);
-                } else{
-                    let profileWithPFP: Profile = profileData;
-                    if (profileData.pfp_path){
-                        const { data: pfpData } = supabase
-                            .storage
-                            .from("profile_pics")
-                            .getPublicUrl(profileData.pfp_path);
-                        profileWithPFP = {...profileWithPFP, pfpUrl: pfpData.publicUrl};
-                    }
-                    setProfile(profileWithPFP);
-                }
+                const profile: Profile | null = await retrieveProfile(user.id);
+                if (profile) setProfile(profile);
             }
             setLoading(false)
         }
@@ -119,6 +101,28 @@ export default function Chat(){
     if (!profile) return <SignUp auth={auth}/>
     // Main App
     return <ChatApp auth={auth}/>
+}
+
+const retrieveProfile = async (user_id: string) => {
+    const { data: profileData, error: profileRetrievalError } = await supabase
+        .from('profiles')
+        .select('username, pfp_path')
+        .eq('id', user_id)
+        .single();
+    if (profileRetrievalError){
+        console.log("Error retrieving user profile::", profileRetrievalError);
+        alert('Error retrieving profile')
+        return null;
+    }
+    let profileWithPFP: Profile = profileData;
+    if (profileData.pfp_path){
+        const { data: pfpData } = await supabase
+            .storage
+            .from("profile_pics")
+            .getPublicUrl(profileData.pfp_path);
+        profileWithPFP = {...profileWithPFP, pfpUrl: pfpData.publicUrl};
+    }
+    return profileWithPFP;
 }
 
 function Login(){
@@ -376,7 +380,11 @@ export function AddProfilePic({auth}: {auth: AuthContext}) {
         if (updatePFPPathError){
             console.log("Error logging PFP path: ", updatePFPPathError)
             alert("Error updating profile picture path.");
+            return;
         }
+        // update the profile with the new pfp
+        const profile: Profile | null = await retrieveProfile(user_id);
+        if (profile) auth.setProfile(profile);
     }
 
     return <>
