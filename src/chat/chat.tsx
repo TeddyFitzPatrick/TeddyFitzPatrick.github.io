@@ -3,7 +3,10 @@ import { supabase } from "./supabase"
 import { type User} from "@supabase/supabase-js";
 import { ParticlesBack } from "./particles";
 
-// Component 
+// DiceUI components
+import { Upload, X, Loader2 } from "lucide-react";
+import * as React from "react";
+import { Button } from "@/components/ui/button";
 import {
   FileUpload,
   FileUploadDropzone,
@@ -15,9 +18,18 @@ import {
   FileUploadList,
   type FileUploadProps,
 } from "@/components/ui/file-upload";
-import { Upload, X } from "lucide-react";
-import * as React from "react";
-import { Button } from "@/components/ui/button";
+import {
+  ResponsiveDialog,
+  ResponsiveDialogClose,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogTrigger,
+} from "@/components/ui/responsive-dialog";
+
+
 
 // Type Definitions
 type Profile = { 
@@ -126,12 +138,29 @@ function Login(){
     <ParticlesBack/>
     <div className="flex flex-col space-y-4 p-8 rounded-xl shadow-2xl text-white bg-transparent">
         <div className="items-start space-y-2">
-            <h1 className="font-bold text-4xl"> RIT Chat</h1>
-            <p>you are anonymous to other users</p>
+            <h1 className="font-extrabold text-5xl"> RIT Chat</h1>
+            <ul className="appearance-auto list-disc">
+                <li>you are anonymous to other users</li>
+                <li>some posts are restricted to @rit.edu emails</li>
+                <li>content provided on an 'as-is' basis + use at your own risk</li>
+            </ul>
         </div>
-        <button onClick={signInWithGoogle} className="shadow-xl font-bold p-4 rounded-xl text-xl hover:scale-103 text-white bg-cyan-400">
-            Sign in with Google
+        <button onClick={signInWithGoogle} className="flex items-center justify-center rounded-full border border-gray-200 py-2.5 hover:bg-gray-50 focus:border-gray-300 cursor-pointer">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g clip-path="url(#clip0_8755_1278)">
+                    <path d="M12 9.81836V14.4656H18.4582C18.1746 15.9602 17.3236 17.2257 16.0472 18.0766L19.9417 21.0984C22.2108 19.0039 23.5199 15.9276 23.5199 12.273C23.5199 11.4221 23.4436 10.6039 23.3017 9.81849L12 9.81836Z" fill="#4285F4" />
+                    <path d="M5.27657 14.2842L4.3982 14.9566L1.28906 17.3783C3.2636 21.2947 7.31058 24.0002 12.0014 24.0002C15.2414 24.0002 17.9577 22.9311 19.9432 21.0984L16.0487 18.0765C14.9796 18.7965 13.6159 19.2329 12.0014 19.2329C8.88146 19.2329 6.23063 17.1275 5.28147 14.2911L5.27657 14.2842Z" fill="#34A853" />
+                    <path d="M1.28718 6.62207C0.469042 8.23655 0 10.0584 0 12.0002C0 13.942 0.469042 15.7638 1.28718 17.3783C1.28718 17.3891 5.27997 14.2801 5.27997 14.2801C5.03998 13.5601 4.89812 12.7965 4.89812 12.0001C4.89812 11.2036 5.03998 10.44 5.27997 9.72L1.28718 6.62207Z" fill="#FBBC05" />
+                    <path d="M12.0017 4.77818C13.769 4.77818 15.3399 5.38907 16.5944 6.56727L20.0307 3.13095C17.9471 1.18917 15.2417 0 12.0017 0C7.31082 0 3.2636 2.69454 1.28906 6.62183L5.28174 9.72001C6.23077 6.88362 8.88171 4.77818 12.0017 4.77818Z" fill="#EA4335" />
+                </g>
+                <defs>
+                    <clipPath id="clip0_8755_1278">
+                        <rect width="24" height="24" fill="white" />
+                    </clipPath>
+                </defs>
+            </svg>
         </button>
+    
     </div>
     </>
 }
@@ -183,7 +212,6 @@ function SignUp({auth}: {auth: AuthContext}){
             console.log("Error logging PFP: ", uploadPFPError);
             alert('Error uploading profile picture ');
         }
-            
     };
 
     return <div className="w-full h-full flex flex-col items-center">
@@ -241,7 +269,7 @@ function ImageUpload({setAttachment}: {setAttachment: React.Dispatch<React.SetSt
           <div className="flex items-center justify-center rounded-full border p-2.5 mb-2">
             <Upload className="size-6 text-muted-foreground" />
           </div>
-          <p className="font-medium text-sm">Drag & drop images here (optional)</p>
+          <p className="font-medium text-sm">Drag & drop an image here</p>
           <p className="text-muted-foreground text-xs">
             Or click to browse (max 1 file, up to 20MB)
           </p>
@@ -291,7 +319,7 @@ function SortBySelect({getPosts}: {getPosts: (sortBy: string) => Promise<void>})
     useEffect(() => {
         getPosts(sortSettings[0].sql_clause);
     }, []);
-    return <div className="flex flex-row w-[99%] items-center justify-start pt-2 font-bold text-white shadow-xl">
+    return <div className="flex flex-row w-[99%] items-center justify-start pt-2 font-bold text-white">
     <div className="flex flex-col w-32 text-sm relative">
         <button type="button" onClick={() => setIsOpen(!isOpen)} className="group flex items-center justify-between w-full text-left px-2 py-2  rounded-lg bg-slate-900 shadow-sm focus:outline-none border border-black">
             <div className="flex items-center gap-2">
@@ -319,22 +347,82 @@ function SortBySelect({getPosts}: {getPosts: (sortBy: string) => Promise<void>})
     </div>
 }
 
+export function AddProfilePic({auth}: {auth: AuthContext}) {
+    const user_id = auth.user!.id;
+    const [profilePic, setProfilePic] = useState<File | null>(null);
+
+    const updateProfilePic = async() => {
+        if (!profilePic) return;
+        // upload the profile photo
+        const {error: uploadPFPError} = await supabase
+            .storage
+            .from("profile_pics")
+            .upload(profilePic.name, profilePic, {
+                upsert: false,
+            });
+        if (uploadPFPError){
+            console.log("Error uploading PFP: ", uploadPFPError);
+            alert("Error uploading profile photo.")
+            return;
+        }
+        // update the pfp path in the user profile
+        const { data: _updatePFPPathData, error: updatePFPPathError } = await supabase
+            .from('profiles')
+            .update({
+                pfp_path: profilePic.name
+            })
+            .eq('id', user_id)
+            .select();
+        if (updatePFPPathError){
+            console.log("Error logging PFP path: ", updatePFPPathError)
+            alert("Error updating profile picture path.");
+        }
+    }
+
+    return <>
+    <ResponsiveDialog>
+        <ResponsiveDialogTrigger asChild>
+        <button className="text-white bg-slate-800 rounded-lg px-4 py-2 shadow-2xl hover:animate-pulse text-base normal:text-lg">Add Profile Pic</button>
+        </ResponsiveDialogTrigger>
+        <ResponsiveDialogContent >
+        <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Add a profile picture</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
+            Upload an image file (5MB max).
+            </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
+        <div className="grid gap-4 py-4">
+            <ImageUpload setAttachment={setProfilePic}/>
+        </div>
+        <ResponsiveDialogFooter>
+            <ResponsiveDialogClose type="submit" className="bg-black text-white rounded-lg shadow-xl px-4 py-2" onClick={updateProfilePic}>Submit</ResponsiveDialogClose>
+        </ResponsiveDialogFooter>
+
+        </ResponsiveDialogContent>
+    </ResponsiveDialog>
+    </>
+}
+
 function ChatApp({auth}: {auth: AuthContext}){
     const profile = auth.profile!;
     const user = auth.user!;
+
+    const titleRef = useRef<HTMLInputElement | null>(null);
+    const contentRef = useRef<HTMLTextAreaElement | null>(null);
+
     const [isPosting, setIsPosting] = useState(false);
+    const [attachment, setAttachment] = useState<File | null>(null); 
+    const [posts, setPosts] = useState<Post[]>([]);
+
     const signOut = async() => {
         await supabase.auth.signOut()
     };
     // new post - input fields
-    const titleRef = useRef<HTMLInputElement | null>(null);
-    const contentRef = useRef<HTMLTextAreaElement | null>(null);
     const toggleCreatePost = async() => {
         setIsPosting(true);
         window.scrollTo({top:0, left:0, behavior: 'smooth'});
     };
     // sending a post or reply
-    const [attachment, setAttachment] = useState<File | null>(null); 
     const sendPost = async (title: string, content: string, attachmentFile: File) => {
         if (!user || !title || !content) return;
         // set the UI to loading while sending the post
@@ -395,7 +483,6 @@ function ChatApp({auth}: {auth: AuthContext}){
         setIsPosting(false);
     };
     // Function to get post details from the db
-    const [posts, setPosts] = useState<Post[]>([]);
     const getPosts = async (sort_by: string) => {
         // Retrieving a fixed quantity of posts + replies
         const { data, error } = await supabase
@@ -443,10 +530,13 @@ function ChatApp({auth}: {auth: AuthContext}){
         {/* header  */}
         <div className="w-full p-4 bg-slate-900 shadow-2xl text-xl flex flex-row justify-between ">
             {/* sign in name  */}
-            <div className="flex flex-row space-x-2 text-white items-center">
-                <p className="font-bold">Welcome</p> 
-                {profile.pfpUrl && <img src={profile.pfpUrl} className="w-10 h-10 rounded-full shadow-2xl"/>}
-                <p>{profile!.username}</p>
+            <div className="flex flex-row space-x-4 text-white items-center">
+                <div className="flex flex-col sm:flex-row space-x-2 items-center">
+                    <p className="font-bold">Welcome</p> 
+                    {profile.pfpUrl && <img src={profile.pfpUrl} className="w-10 h-10 rounded-full shadow-2xl"/>}
+                    <p className="text-base sm:text-lg">{profile!.username}</p>
+                </div>
+                {!profile.pfp_path && <AddProfilePic auth={auth}/> }
             </div>
             {/* log out */}
             <button onClick={signOut} className=" hover:scale-103 font-bold text-lg">
@@ -457,11 +547,11 @@ function ChatApp({auth}: {auth: AuthContext}){
         <SortBySelect getPosts={getPosts}/>
 
         {/* posts */}
-        <div className="w-full h-full flex flex-col space-y-1 items-center pt-2 pb-6">
+        <div className="w-full h-full flex flex-col items-center pt-2 pb-6">
             {/* new post  */}
             {isPosting && 
             <div className="w-[99%] h-fit h-max-124 rounded-lg py-2 px-2 sm:px-6 bg-slate-700 flex flex-col shadow-2xl space-y-2 my-2">
-                <div className="w-full flex flex-row justify-between space-x-2 items-center py-1">
+                <div className="w-full flex flex-row justify-between space-x-2 items-center py-1 ">
                     <h1 className="text-xl sm:text-2xl font-bold">Create Post</h1>
                     <button onClick={() => setIsPosting(false)} className="text-white hover:text-red-700">
                         Cancel
@@ -480,11 +570,11 @@ function ChatApp({auth}: {auth: AuthContext}){
                     Post
                 </button>
             </div>}
-            {/* existing posts */}
+            {/* existing posts with replies*/}
             {posts.filter((post: Post) => (post.parent_id === null)).map(post => (
-            <div key={post.id} className="items-end flex flex-col w-[99%] space-y-1">
+            <div key={post.id} className="items-end flex flex-col w-[99%]">
                 {/* post */}
-                <div key={post.id} className="w-full h-max-124 rounded-lg px-2 py-2 bg-slate-700">
+                <div key={post.id} className="w-full h-max-124 rounded-lg px-2 py-2 bg-slate-700 mt-1">
                     {/* user + date */}
                     <div className="flex flex-row justify-between">
                         <div className="flex flex-row space-x-1 items-center">
@@ -556,9 +646,9 @@ function Replies({auth, parent_post, posts, setPosts}:
     <div className="w-[95%] sm:w-[98%]">
         {/* existing replies */}
         {parent_post.reply_ids.length > 0 && replies.map((reply: Post) => (
-        <div key={reply.id} className="w-full flex items-end flex-col space-y-1">
+        <div key={reply.id} className="w-full flex items-end flex-col">
             {/* reply */}
-            <div key={reply.id} className="w-full bg-slate-700 rounded-lg space-y-1 px-2 py-1">
+            <div key={reply.id} className="w-full bg-slate-700 rounded-lg space-y-1 px-2 py-1 mt-1">
                 {/* username, date, delete button */}
                 <div className="w-full flex flex-row justify-between">
                     <div className="flex flex-row space-x-1 items-center">
