@@ -1,4 +1,3 @@
-import { ParticleLife } from '@/util/particleLife/particleLife';
 import '../main.css'
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom'

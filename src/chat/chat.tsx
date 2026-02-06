@@ -125,6 +125,39 @@ const retrieveProfile = async (user_id: string) => {
     return profileWithPFP;
 }
 
+// function Marquee(){
+//     const srcs = ["react", "tailwind", "typescript", "vite"];
+
+//     return <>
+//     <style>{`
+//         .marquee-inner {
+//             animation: marqueeScroll linear infinite;
+//         }
+
+//         @keyframes marqueeScroll {
+//             0% {
+//                 transform: translateX(0%);
+//             }
+
+//             100% {
+//                 transform: translateX(-50%);
+//             }
+//         }
+//     `}</style>
+//     <div className="overflow-hidden w-full relative max-w-[90vw] sm:max-w-1/2 xl:max-w-1/4 mx-auto select-none">
+//         <div className="absolute left-0 top-0 h-full w-20 z-10 pointer-events-none bg-gradient-to-r from-black to-transparent" />
+//         <div className="marquee-inner flex will-change-transform min-w-[200%]" style={{ animationDuration: "15s" }}>
+//             <div className="flex">
+//                 {[...srcs, ...srcs].map((src, index) => (
+//                     <img key={index} src={`/public/chat/${src}` + ".svg"} alt={src} className="w-20 h-20 shrink-0 object-cover mx-6" draggable={false} />
+//                 ))}
+//             </div>
+//         </div>
+//         <div className="absolute right-0 top-0 h-full w-20 md:w-40 z-10 pointer-events-none bg-gradient-to-l from-black to-transparent" />
+//     </div>
+//     </>
+// };
+
 function Login(){
     const signInWithGoogle = async () => {
         const { error } = await supabase.auth.signInWithOAuth({ 
@@ -137,12 +170,15 @@ function Login(){
             console.error(error.message)
         }
     };
-
+    // vtxnhauvmmbwrztpmsuq.supabase.co
     return <>
     <ParticlesBack/>
     <div className="flex flex-col space-y-4 p-8 rounded-xl shadow-2xl text-white bg-transparent">
         <div className="items-start space-y-2">
-            <h1 className="font-extrabold text-5xl"> RIT Chat</h1>
+            <div className="flex flex-row space-x-4 sm:space-x-8 items-center">
+                <h1 className="font-extrabold text-5xl"> RIT Chat</h1>
+                <img src="/public/chat/tiger.svg" alt="tiger" className="w-20 h-20 shrink-0"/>
+            </div>
             <ul className="appearance-auto list-disc">
                 <li>you are anonymous to other users</li>
                 <li>some posts are restricted to @rit.edu emails</li>
@@ -151,7 +187,7 @@ function Login(){
         </div>
         <button onClick={signInWithGoogle} className="flex items-center justify-center rounded-full border border-gray-200 py-2.5 hover:bg-gray-50 focus:border-gray-300 cursor-pointer">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <g clip-path="url(#clip0_8755_1278)">
+                <g clipPath="url(#clip0_8755_1278)">
                     <path d="M12 9.81836V14.4656H18.4582C18.1746 15.9602 17.3236 17.2257 16.0472 18.0766L19.9417 21.0984C22.2108 19.0039 23.5199 15.9276 23.5199 12.273C23.5199 11.4221 23.4436 10.6039 23.3017 9.81849L12 9.81836Z" fill="#4285F4" />
                     <path d="M5.27657 14.2842L4.3982 14.9566L1.28906 17.3783C3.2636 21.2947 7.31058 24.0002 12.0014 24.0002C15.2414 24.0002 17.9577 22.9311 19.9432 21.0984L16.0487 18.0765C14.9796 18.7965 13.6159 19.2329 12.0014 19.2329C8.88146 19.2329 6.23063 17.1275 5.28147 14.2911L5.27657 14.2842Z" fill="#34A853" />
                     <path d="M1.28718 6.62207C0.469042 8.23655 0 10.0584 0 12.0002C0 13.942 0.469042 15.7638 1.28718 17.3783C1.28718 17.3891 5.27997 14.2801 5.27997 14.2801C5.03998 13.5601 4.89812 12.7965 4.89812 12.0001C4.89812 11.2036 5.03998 10.44 5.27997 9.72L1.28718 6.62207Z" fill="#FBBC05" />
@@ -163,9 +199,10 @@ function Login(){
                     </clipPath>
                 </defs>
             </svg>
-        </button>
-    
+        </button>    
     </div>
+
+    {/* <Marquee/> */}
     </>
 }
 
@@ -539,8 +576,8 @@ function ChatApp({auth}: {auth: AuthContext}){
         <div className="w-full p-4 bg-slate-900 shadow-2xl text-xl flex flex-row justify-between ">
             {/* sign in name  */}
             <div className="flex flex-row space-x-4 text-white items-center">
-                <div className="flex flex-col sm:flex-row space-x-2 items-center">
-                    <p className="font-bold">Welcome</p> 
+                <div className="flex flex-row space-x-2 items-center">
+                    <p className="text-base sm:text-xl font-bold">Welcome</p> 
                     {profile.pfpUrl && <img src={profile.pfpUrl} className="w-10 h-10 rounded-full shadow-2xl"/>}
                     <p className="text-base sm:text-lg">{profile!.username}</p>
                 </div>

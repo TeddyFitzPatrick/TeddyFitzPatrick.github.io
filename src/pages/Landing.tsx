@@ -67,14 +67,14 @@ function Landing() {
     </div>
 }
 
-function SocialLink({imgPath, targetUrl}: {imgPath: string, targetUrl: string}){
-    return (
-        <a className="w-24 h-24 flex rounded-xl shadow-2xl bg-white flex-shrink-0 hover:scale-103" 
-            target="_blank" 
-            href={targetUrl}>
-            <img src={imgPath}/>
-        </a>   
-    );
-}
+// function SocialLink({imgPath, targetUrl}: {imgPath: string, targetUrl: string}){
+//     return (
+//         <a className="w-24 h-24 flex rounded-xl shadow-2xl bg-white flex-shrink-0 hover:scale-103" 
+//             target="_blank" 
+//             href={targetUrl}>
+//             <img src={imgPath}/>
+//         </a>   
+//     );
+// }
 
 export default Landing

@@ -73,7 +73,7 @@ function Classes() {
 
 function Semester({title, classList}: {title: string, classList: string[]}){
     return <>
-        <div className="rounded-2xl shadow-2xl bg-slate-900 w-fit h-fit p-8 sm:p-10 flex-shrink-0">
+        <div className="rounded-2xl shadow-2xl bg-slate-900 w-fit h-fit p-8 sm:p-10 shrink-0">
             <h1 className="w-auto italic text-4xl font-bold">{title}</h1>
             <ul className="text-lg text-white pt-4 space-y-2">
                 {classList.map((className, index) => (
