@@ -156,7 +156,7 @@ export function Sliders(){
     </>
 }
 
-export function ParticleLife(){
+export function ParticleLife({canvasClasses}: {canvasClasses?: string}){
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -200,5 +200,5 @@ export function ParticleLife(){
     return <canvas ref={canvasRef}
         width={window.innerWidth}
         height={window.innerHeight}
-        className="w-full h-full bg-black"/>
+        className={`${canvasClasses} w-full h-full bg-black `}/>
 }

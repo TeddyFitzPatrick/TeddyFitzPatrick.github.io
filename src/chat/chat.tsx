@@ -680,7 +680,7 @@ function Replies({auth, parent_post, posts, setPosts}:
         ))}
         {/* add a reply window */}
         {parent_post.add_reply && 
-        <div className="w-full bg-slate-700 px-2 py-1 rounded-lg space-y-1 mb-1">
+        <div className="w-full bg-slate-700 px-2 py-1 rounded-lg space-y-1 mb-1 mt-1">
             <h1 className="font-bold ">Add a reply</h1>
             <input ref={replyRef} type="text" placeholder="Your reply" className="w-full bg-slate-100 rounded-lg px-2 py-1 text-black"/>
             <button 

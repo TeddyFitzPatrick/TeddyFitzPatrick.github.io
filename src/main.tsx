@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Link } from 'react-router-dom';
 import './main.css'
 
+
 import Landing from './pages/Landing.tsx'
 import Projects from './pages/Projects.tsx'
 import Classes from './pages/Classes.tsx'
@@ -31,24 +32,25 @@ function NavItem({destination, name}: {destination: string, name: string}){
 function App(){
     const location = useLocation();
     // hide the nav bar for special interactive pages
-    const hideNav = ["/chess", "/plife", "/chat"].includes(location.pathname); 
-    const standardLayout = !["/chat"].includes(location.pathname);
-    return <>
-        {!hideNav && <Nav/>}
-        <div className={`${standardLayout ? "font-['Montserrat'] min-h-screen bg-gradient-to-br from-orange-500 to-fuchsia-400 text-white flex flex-col items-center" : "flex flex-col items-center justify-center w-full min-h-screen"}`}>
-            {/* Defining the routes; these don't appear in the DOM  */}
-            <Routes>
-                <Route path="/" element={<Landing/>}/>
-                <Route path="/projects" element={<Projects/>}/>
-                <Route path="/classes" element={<Classes/>}/>
-                <Route path="/chess" element={<Chess/>}/>
-                <Route path="/plife" element={<><Sliders/><ParticleLife/></>}/>
 
-                {/* chat  */}
-                <Route path="/chat" element={<Chat/>}/>
-            </Routes>
-        </div>
-    </>
+    const currentPath = location.pathname;
+    const routes = ["/", "/chat", "/chess", "/particles", "/plife"];
+    const standardLayout = !["/chat"].includes(currentPath);
+
+    return <div className={`${standardLayout ? "font-roboto min-h-screen bg-gradient-to-br from-orange-500 to-fuchsia-400 text-white flex flex-col items-center" : "font-montserrat flex flex-col items-center justify-center w-full min-h-screen"}`}>
+        {/* Defining the routes; these don't appear in the DOM  */}
+        <Routes>
+            {/* portfolio */}
+            <Route path="/" element={<Landing/>}/>
+            {/* chess */}
+            <Route path="/chess" element={<Chess/>}/>
+            {/* particles */}
+            <Route path="/particles" element={<><Sliders/><ParticleLife/></>}/> 
+            <Route path="/plife" element={<><Sliders/><ParticleLife/></>}/> 
+            {/* chat  */}
+            <Route path="/chat" element={<Chat/>}/>
+        </Routes>
+    </div>
 }
 
 createRoot(document.getElementById('root')!).render(

@@ -1,13 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
+
+/* tailwind font classes */
+@theme {  
+  --font-roboto: "Roboto Mono", sans-serif;
+  --font-montserrat: "Montserrat", sans-serif;
+}
 
 @custom-variant dark (&:is(.dark *));
 
 .typewriter {
   text-transform: none!important;
   overflow: hidden;
-  border-right: .05em solid black;
+  border-right: .05em solid white;
   white-space: nowrap;
   margin: 0; /* Remove auto margin to align left */
   letter-spacing: .05em;
@@ -19,7 +26,7 @@
 }
 @keyframes blink-caret {
   from, to { border-color: transparent }
-  50% { border-color: black; }
+  50% { border-color: white; }
 }
 
 @theme inline {

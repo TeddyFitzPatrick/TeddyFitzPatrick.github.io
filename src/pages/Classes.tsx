@@ -1,7 +1,6 @@
 import '../main.css'
 
 function Classes() {
-
     const classes: Record<string, string[]> = {
         "Spring 2026 (Upcoming)": [
             "*Studying abroad in Osnabrück, Germany (April-August)",
@@ -54,8 +53,13 @@ function Classes() {
             "VISL 120 (Intro to Film)"
         ]
     }
-    return <>
-        <p className="mt-[10vh] px-4 pt-4 text-xl">GPA: 3.9; Tutoring Analysis of Algorithms & CS Theory </p>
+    return <div className="w-full h-fit flex flex-col">
+        <div className="flex flex-row bg-slate-900 rounded-xl shadow-2xl px-4 py-2 w-fit h-fit ml-4 justify-center items-center">
+            <p className=" font-bold text-4xl">
+                Coursework: (3.9 GPA)
+            </p>
+        </div>
+      
         <div className="flex flex-wrap items-center gap-4 p-4 w-full h-auto">
             {Object.keys(classes).map((semester, index) =>
                 // this div makes react happy 
@@ -64,12 +68,12 @@ function Classes() {
                 </div>
             )}
         </div>
-    </>
+    </div>
 }
 
 function Semester({title, classList}: {title: string, classList: string[]}){
     return <>
-        <div className="rounded-2xl shadow-2xl bg-slate-800 w-fit h-fit p-10 flex-shrink-0">
+        <div className="rounded-2xl shadow-2xl bg-slate-900 w-fit h-fit p-8 sm:p-10 flex-shrink-0">
             <h1 className="w-auto italic text-4xl font-bold">{title}</h1>
             <ul className="text-lg text-white pt-4 space-y-2">
                 {classList.map((className, index) => (
