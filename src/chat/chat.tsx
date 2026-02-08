@@ -61,6 +61,7 @@ type Post = {
     imageUrl: string,
     pfpUrl: string,
     add_reply: boolean,
+    hide_replies: boolean,
     reply_ids: string[]
 }
 
@@ -149,7 +150,7 @@ const retrieveProfile = async (user_id: string) => {
 //         <div className="marquee-inner flex will-change-transform min-w-[200%]" style={{ animationDuration: "15s" }}>
 //             <div className="flex">
 //                 {[...srcs, ...srcs].map((src, index) => (
-//                     <img key={index} src={`/public/chat/${src}` + ".svg"} alt={src} className="w-20 h-20 shrink-0 object-cover mx-6" draggable={false} />
+//                     <img key={index} src={`/chat/${src}` + ".svg"} alt={src} className="w-20 h-20 shrink-0 object-cover mx-6" draggable={false} />
 //                 ))}
 //             </div>
 //         </div>
@@ -177,7 +178,7 @@ function Login(){
         <div className="items-start space-y-2">
             <div className="flex flex-row space-x-4 sm:space-x-8 items-center">
                 <h1 className="font-extrabold text-5xl"> RIT Chat</h1>
-                <img src="/public/chat/tiger.svg" alt="tiger" className="w-20 h-20 shrink-0"/>
+                <img src="/chat/tiger.svg" alt="tiger" className="w-20 h-20 shrink-0"/>
             </div>
             <ul className="appearance-auto list-disc">
                 <li>you are anonymous to other users</li>
@@ -276,8 +277,8 @@ function SignUp({auth}: {auth: AuthContext}){
 }
 
 function ImageUpload({setAttachment}: {setAttachment: React.Dispatch<React.SetStateAction<File | null>>}) {
-  const [isUploading, setIsUploading] = React.useState(false);
-  const [files, setFiles] = React.useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
   const onUpload: NonNullable<FileUploadProps["onUpload"]> = React.useCallback(
     async (files, {  }) => {
         setIsUploading(true);
@@ -336,36 +337,30 @@ function ImageUpload({setAttachment}: {setAttachment: React.Dispatch<React.SetSt
   );
 }
 
-function SortBySelect({getPosts}: {getPosts: (sortBy: string) => Promise<void>}){
-    type SortBySetting = {
-        name: string,
-        sql_clause: string,
-        image: string
-    }
-    const sortSettings: SortBySetting[] = [
-        {name: "New", sql_clause: "created_on like_count", image: "/chat/new_star.svg"},
-        {name: "Hot", sql_clause: "like_count created_on", image: "/chat/fire.svg"},
-    ];
+type SortBySetting = {
+    name: string,
+    sql_clause: string,
+    image: string
+}
+const sortBySettings: SortBySetting[] = [
+    {name: "new", sql_clause: "created_on like_count", image: "/chat/new_star.svg"},
+    {name: "hot", sql_clause: "like_count created_on", image: "/chat/fire.svg"},
+]
+function SelectSortBy({sortBy, setSortBy}:
+                      {sortBy: SortBySetting,
+                       setSortBy: React.Dispatch<React.SetStateAction<SortBySetting>>}){
     const [isOpen, setIsOpen] = React.useState<boolean>(false);
-    const [selectedSetting, setSelectedSetting] = React.useState<SortBySetting>(sortSettings[0]);
     // update the sort by ordering of the post feed
     const updateSortBy = (newSetting: SortBySetting) => {
         setIsOpen(false);
-        if (selectedSetting.name === newSetting.name) return;
-        console.log("updated")
-        setSelectedSetting(newSetting);
-        getPosts(newSetting.sql_clause);
+        if (sortBy.name === newSetting.name) return;
+        setSortBy(newSetting);
     };
-    // Load posts on app start up
-    useEffect(() => {
-        getPosts(sortSettings[0].sql_clause);
-    }, []);
-    return <div className="flex flex-row w-[99%] items-center justify-start pt-2 font-bold text-white">
-    <div className="flex flex-col w-32 text-sm relative">
+    return <div className="flex flex-col w-32 text-sm relative">
         <button type="button" onClick={() => setIsOpen(!isOpen)} className="group flex items-center justify-between w-full text-left px-2 py-2  rounded-lg bg-slate-900 shadow-sm focus:outline-none border border-black">
             <div className="flex items-center gap-2">
-                <img className="w-6 h-6 rounded-full invert" src={selectedSetting.image} alt={selectedSetting.name} />
-                <span>{selectedSetting.name}</span>
+                <img className="w-6 h-6 rounded-full invert" src={sortBy.image} alt={sortBy.name} />
+                <span>{sortBy.name}</span>
             </div>
             <svg className="invert" width="11" height="17" viewBox="0 0 11 17" fill="none" xmlns="http://www.w3.org/2000/svg" >
                 <path d="M9.92546 6L5.68538 1L1.44531 6" stroke="#6B7280" strokeOpacity="0.7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -374,9 +369,9 @@ function SortBySelect({getPosts}: {getPosts: (sortBy: string) => Promise<void>})
         </button>
 
         {isOpen && (
-            <ul className="w-32 bg-slate-900 rounded shadow-md mt-1 right-0">
-                {sortSettings.map((setting) => (
-                    <li key={setting.name} className={`px-2 py-2 flex items-center gap-2 cursor-pointer ${setting.name === selectedSetting.name ? "bg-indigo-500 text-white" : "hover:bg-indigo-500 hover:text-white"}`}
+            <ul className="absolute top-10 w-32 bg-slate-900 rounded shadow-md mt-1 right-0 z-10">
+                {sortBySettings.map((setting) => (
+                    <li key={setting.name} className={`px-2 py-2 flex items-center gap-2 cursor-pointer ${setting.name === sortBy.name ? "bg-indigo-500 text-white" : "hover:bg-indigo-500 hover:text-white"}`}
                         onClick={() => updateSortBy(setting)} >
                         <img className="w-6 h-6 rounded-full invert" src={setting.image} alt={setting.name} />
                         <span>{setting.name}</span>
@@ -385,6 +380,64 @@ function SortBySelect({getPosts}: {getPosts: (sortBy: string) => Promise<void>})
             </ul>
         )}
     </div>
+}
+
+type Thread = {
+    id: string,
+    name: string,
+    num_posts: string
+}
+function SelectThread({setCurrentThread, currentThread}:
+                      {setCurrentThread: React.Dispatch<React.SetStateAction<Thread | null>>,
+                       currentThread: Thread | null}){
+    const [isOpen, setIsOpen] = useState<boolean>(false);
+    const [threads, setThreads] = useState<Thread[]>([]);
+    
+    const threadImages: Record<string, string> = {
+        "general": "/chat/general_group.svg",
+        "classes": "/chat/book.svg",
+        "shitposting": "/chat/star.svg"
+    }; 
+
+    useEffect(() => {
+        const getThreads = async () => {
+            const { data: threadsData, error: threadsError } = await supabase
+                .from("threads")
+                .select("*");
+            if (threadsError){
+                console.log("Error getting threads::", threadsError)
+            } else{
+                const threadArray = threadsData.map((thread: Thread) => thread);
+                setThreads(threadArray);
+            }
+        }
+        getThreads();
+    }, []); 
+
+    return <div className="flex flex-col w-36 text-xs relative">
+        <button type="button" onClick={() => setIsOpen(!isOpen)} className="group flex items-center justify-between w-full text-left px-2 py-2  rounded-lg bg-slate-900 shadow-sm focus:outline-none border border-black">
+            <div className="flex items-center gap-2">
+                <img className="w-6 h-6 rounded-full invert" src={threadImages[currentThread!.name]} alt={"n/a"} />
+                <span>{currentThread && currentThread.name}</span>
+            </div>
+            <svg className="invert" width="11" height="17" viewBox="0 0 11 17" fill="none" xmlns="http://www.w3.org/2000/svg" >
+                <path d="M9.92546 6L5.68538 1L1.44531 6" stroke="#6B7280" strokeOpacity="0.7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M1.44564 11L5.68571 16L9.92578 11" stroke="#6B7280" strokeOpacity="0.7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+        </button>
+
+        {isOpen && (
+            <ul className="absolute top-10 w-36 bg-slate-900 rounded shadow-md mt-1 right-0 z-10">
+                {threads.map((thread: Thread) => (
+                    <li key={thread.name} 
+                        className={`px-2 py-2 flex items-center gap-2 cursor-pointer ${thread.id === currentThread!.id ? "bg-indigo-500 text-white" : "hover:bg-indigo-500 hover:text-white"}`}
+                        onClick={() => {setIsOpen(!isOpen); setCurrentThread(thread)}}>
+                        <img className="w-6 h-6 rounded-full invert " src={threadImages[thread.name]} alt={"n/a"} />
+                        <span>{thread.name}</span>
+                    </li>
+                ))}
+            </ul>
+        )}
     </div>
 }
 
@@ -451,24 +504,30 @@ export function AddProfilePic({auth}: {auth: AuthContext}) {
 function ChatApp({auth}: {auth: AuthContext}){
     const profile = auth.profile!;
     const user = auth.user!;
-
+    // create post inputs
     const titleRef = useRef<HTMLInputElement | null>(null);
     const contentRef = useRef<HTMLTextAreaElement | null>(null);
-
+    // posts + attachments
     const [isPosting, setIsPosting] = useState(false);
     const [attachment, setAttachment] = useState<File | null>(null); 
     const [posts, setPosts] = useState<Post[]>([]);
-
+    // post ordering/filtering
+    const [sortBy, setSortBy] = React.useState<SortBySetting>(sortBySettings[0]);
+    const defaultThread = "general";
+    const [currentThread, setCurrentThread] = useState<Thread | null>(null);
     const signOut = async() => {
         await supabase.auth.signOut()
     };
     // new post - input fields
     const toggleCreatePost = async() => {
-        setIsPosting(true);
+        setIsPosting(!isPosting);
         window.scrollTo({top:0, left:0, behavior: 'smooth'});
     };
     // sending a post or reply
-    const sendPost = async (title: string, content: string, attachmentFile: File) => {
+    const sendPost = async () => {
+        const title = titleRef.current!.value;
+        const content = contentRef.current!.value;
+        const attachmentFile: File = attachment!;
         if (!user || !title || !content) return;
         // set the UI to loading while sending the post
         auth.setLoading(true)
@@ -477,6 +536,7 @@ function ChatApp({auth}: {auth: AuthContext}){
             .from("posts")
             .insert({
                 user_id: user.id,
+                thread_id: currentThread!.id,
                 title,
                 content
             })
@@ -484,7 +544,7 @@ function ChatApp({auth}: {auth: AuthContext}){
             .single();
         // alert the user if the post failed to send
         if (error){
-            alert("Error sending post. Posts are limited to 10,000 ASCII characters.");
+            alert("Error sending post. Posts must have a title and are limited to 10,000 characters.");
             console.log(error)
             auth.setLoading(false);
             setIsPosting(false);
@@ -493,7 +553,6 @@ function ChatApp({auth}: {auth: AuthContext}){
         const post_id = postData.id;
         // Push attachments to database if there are any
         if (attachmentFile){
-            console.log("atfile.name",attachmentFile.name)
             // add extension log
             const { data: _logData, error: logError } = await supabase
                 .from("attachments")
@@ -527,11 +586,14 @@ function ChatApp({auth}: {auth: AuthContext}){
         auth.setLoading(false);
         setIsPosting(false);
     };
-    // Function to get post details from the db
-    const getPosts = async (sort_by: string) => {
+    // Function to get posts from the db (requires a value is loaded for currentThread)
+    const getPosts = async () => {
+        if (!currentThread || !sortBy) return;  // premature post retrieval: select currentThread first
+        console.log("SQL get_posts executing...");
         // Retrieving a fixed quantity of posts + replies
+        const sort_by = sortBy.sql_clause;
         const { data, error } = await supabase
-            .rpc("get_posts", { target_user_id: user.id, quantity: DEFAULT_POST_QUANTITY})
+            .rpc("get_posts", { target_user_id: user.id, target_thread_id: currentThread.id, quantity: DEFAULT_POST_QUANTITY})
             .order(sort_by.split(" ")[0], {ascending: false})
             .order(sort_by.split(" ")[1], {ascending: false});
         if (error){
@@ -566,10 +628,45 @@ function ChatApp({auth}: {auth: AuthContext}){
             const parentPost = idToPost.get(post.parent_id)!;
             parentPost.reply_ids.push(post.id);
         }
+        // hide replies below a certain comment recursion depth
+        const hide_replies_dfs = (post: Post, depth: number) => {
+            if (depth >= 3){
+                post.hide_replies = true;
+            }
+            for (const reply_id of post.reply_ids){
+                const reply = data.filter((post: Post) => post.id === reply_id)[0];
+                if (reply) hide_replies_dfs(reply, depth+1);
+            }
+        }
+        data.filter((post: Post) => {
+            if (!post.parent_id){
+                hide_replies_dfs(post, 0);
+            }
+        });
         // Update the UI state with the posts
         setPosts(data ?? []);
+        auth.setLoading(false);
     };
-    
+    // Set the default thread
+    useEffect(() => {
+        const getGeneral = async () =>{
+            const { data, error: threadRetrievalError } = await supabase
+                .from("threads")
+                .select("*")
+                .eq("name", defaultThread);
+            if (threadRetrievalError){
+                console.log("Error retrieving general thread id");
+            } else {
+                setCurrentThread(data[0]);
+            }
+        }
+        getGeneral();
+    }, []);
+
+    // Load posts from the default thread on start up
+    useEffect(() => {
+        getPosts();
+    }, [currentThread, sortBy]);
     return <>
     <div className="w-full min-h-screen h-fit flex flex-col items-center bg-slate-800 text-white space-y-1">
         {/* header  */}
@@ -588,9 +685,14 @@ function ChatApp({auth}: {auth: AuthContext}){
                 Log Out
             </button>
         </div>
-        {/* posts sort by  */}
-        <SortBySelect getPosts={getPosts}/>
-
+        {/* dropdowns */}
+        <div className="flex flex-row w-[99%] items-start justify-start pt-2 font-bold text-white space-x-2 sm:space-x-4">
+            {/* thread select */}
+            {currentThread && 
+                <SelectThread setCurrentThread={setCurrentThread} currentThread={currentThread}/>}
+            {/* posts sort by  */}
+            <SelectSortBy sortBy={sortBy!} setSortBy={setSortBy}/>
+        </div>
         {/* posts */}
         <div className="w-full h-full flex flex-col items-center pt-2 pb-6">
             {/* new post  */}
@@ -609,14 +711,12 @@ function ChatApp({auth}: {auth: AuthContext}){
                 {/* Add attachments */}
                 <ImageUpload setAttachment={setAttachment}/>
                 {/* send post  */}
-                <button 
-                    onClick={() => sendPost(titleRef.current!.value, contentRef.current!.value, attachment!)}
-                    className="bg-cyan-600 rounded-2xl shadow-xl py-2 px-6 w-fit h-fit hover:scale-102 text-lg font-semibold">
+                <button onClick={() => sendPost()} className="bg-cyan-600 rounded-2xl shadow-xl py-2 px-6 w-fit h-fit hover:scale-102 text-lg font-semibold">
                     Post
                 </button>
             </div>}
-            {/* existing posts with replies*/}
-            {posts.filter((post: Post) => (post.parent_id === null)).map(post => (
+            {/* render posts with replies*/}
+            { posts.length > 0 ? posts.filter((post: Post) => (post.parent_id === null)).map(post => (
             <div key={post.id} className="items-end flex flex-col w-[99%]">
                 {/* post */}
                 <div key={post.id} className="w-full h-max-124 rounded-lg px-2 py-2 bg-slate-700 mt-1">
@@ -633,8 +733,8 @@ function ChatApp({auth}: {auth: AuthContext}){
                         </button>}
                     </div>
                     {/* text */}
-                    <h1 className="font-bold text-xl sm:text-2xl">{post.title}</h1>
-                    <p className="break-all text-wrap max-h-48 overflow-y-auto text-base sm:text-lg">{post.content}</p>
+                    <h1 className="font-bold text-xl sm:text-2xl overflow-clip">{post.title}</h1>
+                    <p className="break-all text-wrap max-h-48 overflow-y-auto text-base sm:text-lg overflow-clip">{post.content}</p>
                     {/* attachment */}
                     {post.imageUrl && 
                     <div className="my-1">
@@ -644,10 +744,12 @@ function ChatApp({auth}: {auth: AuthContext}){
                     <MessageOptions auth={auth} post={post} posts={posts} setPosts={setPosts}/>
                 </div>
                 {/* replies */}
-                <Replies auth={auth} parent_post={post} posts={posts} setPosts={setPosts}/>
+                {!post.hide_replies && 
+                    <Replies auth={auth} parent_post={post} posts={posts} setPosts={setPosts} depth={0}/>}
             </div>
-            ))}
-            
+            )) :
+            (<div className="w-[99%] shadow-2xl rounded-lg p-4 bg-slate-700 text-2xl mt-2">Looks like there's no posts here :/</div>)
+            }
         </div>
         {/* Buttons  */}
         <div className="fixed bottom-2 right-2 w-fit h-fit p-4 hover:scale-101 text-xl rounded-2xl bg-slate-900 shadow-2xl text-white">
@@ -660,13 +762,14 @@ function ChatApp({auth}: {auth: AuthContext}){
     </>
 }
 
-function Replies({auth, parent_post, posts, setPosts}:
+function Replies({auth, parent_post, posts, setPosts, depth}:
                  {auth: AuthContext,
                   parent_post: Post,
                   posts: Post[],
-                  setPosts: React.Dispatch<React.SetStateAction<Post[]>>}){
+                  setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
+                  depth: number}){
     const user = auth.user!;
-    const replyRef = useRef<HTMLInputElement | null>(null);
+    const replyRef = useRef<HTMLTextAreaElement | null>(null);
     const sendReply = async (content: string, parent_id: string) => {
         if (!user || !content || !parent_id) return;
         auth.setLoading(true);
@@ -686,9 +789,18 @@ function Replies({auth, parent_post, posts, setPosts}:
         auth.setLoading(false);
     };
     const idToPost = new Map<string, Post>(posts.map(post => [post.id, post]));
-    const replies = parent_post.reply_ids.map(reply_id => idToPost.get(reply_id)!).filter(reply => reply !== undefined && reply !== null);
+    let replies = parent_post.reply_ids.map(reply_id => idToPost.get(reply_id)!).filter(reply => reply !== undefined && reply !== null);
     return <>   
-    <div className="w-[95%] sm:w-[98%]">
+    <div className="w-[96%] sm:w-[98%]">
+        {/* add reply window */}
+        {parent_post.add_reply && 
+        <div className="w-full bg-slate-700 px-2 py-1 rounded-lg mt-1">
+            <textarea ref={replyRef} className="bg-transparent text-white border border-gray-200 rounded-xl py-2 px-2 sm:px-3 w-full mt-1" placeholder="Your reply"/>
+            <button onClick={() => sendReply(replyRef.current!.value, parent_post.id)}
+                    className="bg-cyan-600 rounded-2xl py-2 px-5 font-bold hover:scale-102">
+                Post
+            </button>
+        </div>}
         {/* existing replies */}
         {parent_post.reply_ids.length > 0 && replies.map((reply: Post) => (
         <div key={reply.id} className="w-full flex items-end flex-col">
@@ -703,7 +815,7 @@ function Replies({auth, parent_post, posts, setPosts}:
                     </div>
                     {(reply.user_id === user.id) && 
                     <button onClick={() => deletePost(posts, setPosts, reply.id)} className="hover:text-red-700">
-                        Delete
+                        Delete 
                     </button>}
                 </div>
                 {/* reply text */}
@@ -712,20 +824,11 @@ function Replies({auth, parent_post, posts, setPosts}:
                 <MessageOptions auth={auth} post={reply} posts={posts} setPosts={setPosts}/>
             </div>
             {/* replies to the reply */}
-            <Replies auth={auth} parent_post={reply} posts={posts} setPosts={setPosts}/>
+            { !reply.hide_replies && 
+                (<Replies auth={auth} parent_post={reply} posts={posts} setPosts={setPosts} depth={depth + 1}/>)
+            }
         </div>
         ))}
-        {/* add a reply window */}
-        {parent_post.add_reply && 
-        <div className="w-full bg-slate-700 px-2 py-1 rounded-lg space-y-1 mb-1 mt-1">
-            <h1 className="font-bold ">Add a reply</h1>
-            <input ref={replyRef} type="text" placeholder="Your reply" className="w-full bg-slate-100 rounded-lg px-2 py-1 text-black"/>
-            <button 
-                onClick={() => sendReply(replyRef.current!.value, parent_post.id)}
-                className="bg-cyan-600 rounded-lg py-1 px-3 w-fit h-fit hover:scale-104 hover:font-bold">
-                Post
-            </button>
-        </div>}
     </div>
     </>
 }
@@ -751,12 +854,25 @@ function MessageOptions({auth, post, posts, setPosts}:
             <p>{post.dislike_count}</p>
         </div>
         {/* replies */}
-        <div className="flex flex-row space-x-1">
-            <button className="" onClick={() => toggleCreateReply(posts, setPosts, post.id)}>
-                Reply
+        <button className="" onClick={() => toggleCreateReply(posts, setPosts, post.id)}>
+            Reply
+        </button>
+        {/* show/hide replies */}
+        {post.reply_ids.length > 0 && 
+            <button className="flex flex-row items-center" onClick={() => toggleHideReplies(posts, setPosts, post.id)}>
+                { post.hide_replies ?
+                    (<>  
+                        <img src="/chat/plus.svg" alt="+" className="w-4 h-4 rounded-full bg-white"/>
+                        <p className="text-xs ml-1">Show Replies</p>
+                    </>) 
+                    :
+                    (<>
+                        <img src="/chat/minus.svg" alt="-" className="w-4 h-4 rounded-full bg-white"/>
+                        <p className="text-xs ml-1">Hide Replies</p>
+                    </>) 
+                }
             </button>
-            <p></p>
-        </div>
+        }
     </div>
 }
 
@@ -853,6 +969,13 @@ const formatDate = (timestamp: string) =>{
 const toggleCreateReply = async (posts: Post[], setPosts: React.Dispatch<React.SetStateAction<Post[]>>, post_id: string) => {
     setPosts(posts.map(post => {
         if (post.id !== post_id) return {...post, add_reply: false};
-        return {...post, add_reply: (post.id === post_id) ? !post.add_reply : post.add_reply}
+        return {...post, add_reply: !post.add_reply}
+    }));
+}
+
+const toggleHideReplies = async (posts: Post[], setPosts: React.Dispatch<React.SetStateAction<Post[]>>, post_id: string) => {
+    setPosts(posts.map(post => {
+        if (post.id !== post_id) return post;
+        return {...post, hide_replies: !post.hide_replies}
     }));
 }

@@ -6,7 +6,7 @@ import { ParticleLife } from '../util/particleLife/particleLife.tsx';
 import { Link } from 'react-router-dom';
 
 function Landing() {
-    return <div className="space-y-12 flex flex-col">
+    return <div className="space-y-12 flex flex-col items-center">
         <div className="absolute flex flex-col w-1/2 h-1/2 top-1/4 left-1/4 items-center justify-evenly">
             {/* Greeting */}
             <div className="text-center text-4xl md:text-7xl lg:text-8xl rounded-2xl text-white opacity-100 shadow-2xl border-black px-4 py-2">
@@ -58,7 +58,7 @@ function Landing() {
         </div>  
 
         {/* Projects */}
-        <div className="h-fit w-full flex flex-col justify-start items-start max-w-screen">
+        <div className="w-full flex flex-col justify-start items-start max-w-[95vw]">
             <Projects/>
         </div>
 
