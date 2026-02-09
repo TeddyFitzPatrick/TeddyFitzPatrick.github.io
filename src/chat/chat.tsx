@@ -615,7 +615,7 @@ function ChatApp({auth}: {auth: AuthContext}){
         getPosts();
         setIsPosting(false);
     };
-    // editing a post or reply
+    // editing a post
     const editPost = async (post_id: string) => {
         if (!editTitleRef || !editContentRef) return;
         const editedTitle = editTitleRef.current!.value;
@@ -837,7 +837,10 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
                   depth: number}){
     const user = auth.user!;
     const profile = auth.profile!;
+
     const replyRef = useRef<HTMLTextAreaElement | null>(null);
+    const editContentRef = useRef<HTMLTextAreaElement | null>(null);
+    // send a reply to db
     const sendReply = async () => {
         if (!replyRef.current) return;
         const content: string = replyRef.current!.value;
@@ -865,6 +868,28 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
             setPosts(posts.concat(newReply).map((post: Post) => {
                 if (post !== parent_post) return post;
                 return {...parent_post, reply_ids: parent_post.reply_ids.concat([newReply.id]), hide_replies: false, add_reply: false}
+            }))
+        }
+    };
+    // edit a reply
+    const editReply = async (post_id: string) => {
+        if (!editContentRef) return;
+        const editedContent = editContentRef.current!.value;
+        if (editedContent === "") return;
+        const { error: editError } = await supabase
+            .from("posts")
+            .update({
+                content: editedContent
+            })
+            .eq("user_id", user.id)
+            .eq("id", post_id);
+        if (editError){
+            console.log("Error editing reply::", editError);
+            alert("Error occurred editing a reply.")
+        } else {
+            setPosts(posts.map((post: Post) => {
+                if (post.id !== post_id) return post;
+                return {...post, content: editedContent, editing: false};
             }))
         }
     };
@@ -898,7 +923,20 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
                     {(reply.user_id === user.id) && <MessageOptions post={reply} posts={posts} setPosts={setPosts}/>}
                 </div>
                 {/* reply text */}
-                <p className="break-all text-wrap max-h-48 overflow-y-auto text-base sm:text-lg">{reply.content}</p>
+                { reply.editing ? 
+                (<>
+                    <textarea ref={editContentRef} defaultValue={reply.content} className="mt-1 border border-white rounded-xl p-2 w-full overflow-clip break-all text-wrap overflow-y-auto text-base"/>
+                    <button className="mr-2 bg-red-700 rounded-lg px-3 py-1 hover:scale-102"
+                            onClick={() => toggleEditing(posts, setPosts, reply.id)}>
+                        Cancel
+                    </button>
+                    <button className="bg-cyan-700 rounded-lg px-3 py-1 hover:scale-102"
+                            onClick={() => {toggleEditing(posts, setPosts, reply.id); editReply(reply.id)}}>
+                        Save
+                    </button>  
+                </>) : (<>
+                    <p className="break-all text-wrap max-h-48 overflow-y-auto text-base sm:text-lg">{reply.content}</p>
+                </>)}
                 {/* buttons  */}
                 <PostButtons auth={auth} post={reply} posts={posts} setPosts={setPosts}/>
             </div>
