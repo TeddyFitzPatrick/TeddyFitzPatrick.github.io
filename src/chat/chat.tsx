@@ -2,9 +2,10 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabase"
 import { type User} from "@supabase/supabase-js";
 import { ParticlesBack } from "./particles";
+// @ts-expect-error
 import AutoLinkText from 'react-autolink-text2';
 
-// DiceUI components
+// DiceUI components 
 import { Upload, X} from "lucide-react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
@@ -185,6 +186,8 @@ function Login(){
                 <li>you are anonymous to other users</li>
                 <li>some posts are restricted to @rit.edu emails</li>
                 <li>content provided on an 'as-is' basis + use at your own risk</li>
+                <li>i'm not responsible for what links you click; exercise caution</li>
+                <li>excuse any bugs, this is experimental</li>
             </ul>
         </div>
         <button onClick={signInWithGoogle} className="flex items-center justify-center rounded-full border border-gray-200 py-2.5 hover:bg-gray-50 focus:border-gray-300 cursor-pointer">
