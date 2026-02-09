@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabase"
 import { type User} from "@supabase/supabase-js";
 import { ParticlesBack } from "./particles";
+import AutoLinkText from 'react-autolink-text2';
 
 // DiceUI components
 import { Upload, X} from "lucide-react";
@@ -441,13 +442,25 @@ function SelectThread({setCurrentThread, currentThread}:
     </div>
 }
 
-export function AddProfilePic({auth}: {auth: AuthContext}) {
+export function EditProfile({auth}: {auth: AuthContext}) {
     const user_id = auth.user!.id;
     const [profilePic, setProfilePic] = useState<File | null>(null);
 
     const updateProfilePic = async() => {
         if (!profilePic) return;
-        // upload the profile photo
+        // delete the old profile photo (if it exists)
+        const { data: oldPFPData, error: oldPFPError } = await supabase
+            .from("profiles")
+            .select("pfp_path")
+            .eq("id", user_id);
+        if (!oldPFPError && oldPFPData[0] && oldPFPData[0].pfp_path ){
+            // const oldPFPPath = oldPFPData[0].pfp_path;
+            // const {error: deleteOldPFPError} = await supabase
+            //     .storage
+            //     .from("profile_pics")
+            //     .delete({})
+        }   
+        // upload the new profile photo
         const {error: uploadPFPError} = await supabase
             .storage
             .from("profile_pics")
@@ -480,11 +493,14 @@ export function AddProfilePic({auth}: {auth: AuthContext}) {
     return <>
     <ResponsiveDialog>
         <ResponsiveDialogTrigger asChild>
-        <button className="text-white bg-slate-800 rounded-lg px-4 py-2 shadow-2xl hover:animate-pulse text-base normal:text-lg">Add Profile Pic</button>
+            <button className="flex flex-row bg-black  rounded-lg shadow-2xl text-white text-sm tracking-wider items-center p-2 space-x-2 hover:scale-101">
+                <img className="w-6 h-6 shrink-0 hover:scale-102" alt="cog" src="/chat/cog.svg"/>
+                <p>Profile</p>
+            </button>
         </ResponsiveDialogTrigger>
         <ResponsiveDialogContent >
         <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle>Add a profile picture</ResponsiveDialogTitle>
+            <ResponsiveDialogTitle>Update your profile picture</ResponsiveDialogTitle>
             <ResponsiveDialogDescription>
             Upload an image file (5MB max).
             </ResponsiveDialogDescription>
@@ -662,7 +678,6 @@ function ChatApp({auth}: {auth: AuthContext}){
         }
         getGeneral();
     }, []);
-
     // Load posts from the default thread on start up
     useEffect(() => {
         getPosts();
@@ -670,18 +685,18 @@ function ChatApp({auth}: {auth: AuthContext}){
     return <>
     <div className="w-full min-h-screen h-fit flex flex-col items-center bg-slate-800 text-white space-y-1">
         {/* header  */}
-        <div className="w-full p-4 bg-slate-900 shadow-2xl text-xl flex flex-row justify-between ">
+        <div className="w-full p-4 bg-slate-900 shadow-2xl text-xl flex flex-row justify-between items-start">
             {/* sign in name  */}
-            <div className="flex flex-row space-x-4 text-white items-center">
-                <div className="flex flex-row space-x-2 items-center">
-                    <p className="text-base sm:text-xl font-bold">Welcome</p> 
-                    {profile.pfpUrl && <img src={profile.pfpUrl} className="w-10 h-10 rounded-full shadow-2xl"/>}
+            <div className="flex flex-col sm:flex-row space-x-2 space-y-2 sm:space-y-0">
+                {/* <EditProfile auth={auth}/> */}
+                {/* pfp & username */}
+                <div className="flex flex-row items-center w-full space-x-2">
+                    {profile.pfpUrl && <img src={profile.pfpUrl} className="w-10 shrink-0 rounded-full shadow-2xl"/>}
                     <p className="text-base sm:text-lg">{profile!.username}</p>
                 </div>
-                {!profile.pfp_path && <AddProfilePic auth={auth}/> }
             </div>
             {/* log out */}
-            <button onClick={signOut} className=" hover:scale-103 font-bold text-lg">
+            <button onClick={signOut} className="hover:scale-103 font-bold text-lg">
                 Log Out
             </button>
         </div>
@@ -734,7 +749,9 @@ function ChatApp({auth}: {auth: AuthContext}){
                     </div>
                     {/* text */}
                     <h1 className="font-bold text-xl sm:text-2xl overflow-clip">{post.title}</h1>
-                    <p className="break-all text-wrap max-h-48 overflow-y-auto text-base sm:text-lg overflow-clip">{post.content}</p>
+                    <p className="break-all text-wrap max-h-48 overflow-y-auto text-base sm:text-lg overflow-clip">
+                        <AutoLinkText text={post.content} linkProps={{ target: '_blank', className:"text-cyan-600 underline"}}/>
+                    </p>
                     {/* attachment */}
                     {post.imageUrl && 
                     <div className="my-1">
