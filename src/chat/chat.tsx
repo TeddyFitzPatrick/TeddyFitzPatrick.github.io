@@ -30,6 +30,17 @@ import {
   ResponsiveDialogTitle,
   ResponsiveDialogTrigger,
 } from "@/components/ui/responsive-dialog";
+// import {
+//   Editable,
+//   EditableArea,
+//   EditableCancel,
+//   EditableInput,
+//   EditableLabel,
+//   EditablePreview,
+//   EditableSubmit,
+//   EditableToolbar,
+//   EditableTrigger,
+// } from "@/components/ui/editable";
 
 // Type Definitions
 type Profile = { 
@@ -64,7 +75,8 @@ type Post = {
     pfpUrl: string,
     add_reply: boolean,
     hide_replies: boolean,
-    reply_ids: string[]
+    reply_ids: string[],
+    editing: boolean
 }
 
 const DEFAULT_POST_QUANTITY = 500;
@@ -363,12 +375,11 @@ function SelectSortBy({sortBy, setSortBy}:
     return <div className="flex flex-col w-32 text-sm relative">
         <button type="button" onClick={() => setIsOpen(!isOpen)} className="group flex items-center justify-between w-full text-left px-2 py-2  rounded-lg bg-slate-900 shadow-sm focus:outline-none border border-black">
             <div className="flex items-center gap-2">
-                <img className="w-6 h-6 rounded-full invert" src={sortBy.image} alt={sortBy.name} />
+                <img className="w-6 h-6 rounded-full grayscale-100 invert" src={sortBy.image} alt={sortBy.name} />
                 <span>{sortBy.name}</span>
             </div>
-            <svg className="invert" width="11" height="17" viewBox="0 0 11 17" fill="none" xmlns="http://www.w3.org/2000/svg" >
-                <path d="M9.92546 6L5.68538 1L1.44531 6" stroke="#6B7280" strokeOpacity="0.7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M1.44564 11L5.68571 16L9.92578 11" stroke="#6B7280" strokeOpacity="0.7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <svg className={`w-5 h-5 inline float-right transition-transform duration-200 ${isOpen ? "rotate-0" : "-rotate-90"}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#6B7280" >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
         </button>
 
@@ -377,7 +388,7 @@ function SelectSortBy({sortBy, setSortBy}:
                 {sortBySettings.map((setting) => (
                     <li key={setting.name} className={`px-2 py-2 flex items-center gap-2 cursor-pointer ${setting.name === sortBy.name ? "bg-indigo-500 text-white" : "hover:bg-indigo-500 hover:text-white"}`}
                         onClick={() => updateSortBy(setting)} >
-                        <img className="w-6 h-6 rounded-full invert" src={setting.image} alt={setting.name} />
+                        <img className="w-6 h-6 rounded-full grayscale-100 invert" src={setting.image} alt={setting.name} />
                         <span>{setting.name}</span>
                     </li>
                 ))}
@@ -400,7 +411,7 @@ function SelectThread({setCurrentThread, currentThread}:
     const threadImages: Record<string, string> = {
         "general": "/chat/general_group.svg",
         "classes": "/chat/book.svg",
-        "shitposting": "/chat/star.svg"
+        "coding": "/chat/html_tag.svg",
     }; 
 
     useEffect(() => {
@@ -421,12 +432,11 @@ function SelectThread({setCurrentThread, currentThread}:
     return <div className="flex flex-col w-36 text-xs relative">
         <button type="button" onClick={() => setIsOpen(!isOpen)} className="group flex items-center justify-between w-full text-left px-2 py-2  rounded-lg bg-slate-900 shadow-sm focus:outline-none border border-black">
             <div className="flex items-center gap-2">
-                <img className="w-6 h-6 rounded-full invert" src={threadImages[currentThread!.name]} alt={"n/a"} />
+                <img className="w-6 h-6 rounded-full grayscale-100 invert" src={threadImages[currentThread!.name]} alt={"n/a"} />
                 <span>{currentThread && currentThread.name}</span>
             </div>
-            <svg className="invert" width="11" height="17" viewBox="0 0 11 17" fill="none" xmlns="http://www.w3.org/2000/svg" >
-                <path d="M9.92546 6L5.68538 1L1.44531 6" stroke="#6B7280" strokeOpacity="0.7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M1.44564 11L5.68571 16L9.92578 11" stroke="#6B7280" strokeOpacity="0.7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <svg className={`w-5 h-5 inline float-right transition-transform duration-200 ${isOpen ? "rotate-0" : "-rotate-90"}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#6B7280" >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
         </button>
 
@@ -436,7 +446,7 @@ function SelectThread({setCurrentThread, currentThread}:
                     <li key={thread.name} 
                         className={`px-2 py-2 flex items-center gap-2 cursor-pointer ${thread.id === currentThread!.id ? "bg-indigo-500 text-white" : "hover:bg-indigo-500 hover:text-white"}`}
                         onClick={() => {setIsOpen(!isOpen); setCurrentThread(thread)}}>
-                        <img className="w-6 h-6 rounded-full invert " src={threadImages[thread.name]} alt={"n/a"} />
+                        <img className="w-6 h-6 rounded-full grayscale-100 invert" src={threadImages[thread.name]} alt={"n/a"} />
                         <span>{thread.name}</span>
                     </li>
                 ))}
@@ -523,9 +533,12 @@ export function EditProfile({auth}: {auth: AuthContext}) {
 function ChatApp({auth}: {auth: AuthContext}){
     const profile = auth.profile!;
     const user = auth.user!;
-    // create post inputs
+    // post inputs
     const titleRef = useRef<HTMLInputElement | null>(null);
     const contentRef = useRef<HTMLTextAreaElement | null>(null);
+
+    const editTitleRef = useRef<HTMLInputElement | null>(null);
+    const editContentRef = useRef<HTMLTextAreaElement | null>(null);
     // posts + attachments
     const [isPosting, setIsPosting] = useState(false);
     const [attachment, setAttachment] = useState<File | null>(null); 
@@ -547,15 +560,13 @@ function ChatApp({auth}: {auth: AuthContext}){
         const title = titleRef.current!.value;
         const content = contentRef.current!.value;
         const attachmentFile: File = attachment!;
-        if (!user || !title || !content) return;
-        // set the UI to loading while sending the post
-        auth.setLoading(true)
+        if (!user || !title || !content || !currentThread) return;
         // push the post to the database
         const { data: postData, error } = await supabase
             .from("posts")
             .insert({
                 user_id: user.id,
-                thread_id: currentThread!.id,
+                thread_id: currentThread.id,
                 title,
                 content
             })
@@ -565,7 +576,6 @@ function ChatApp({auth}: {auth: AuthContext}){
         if (error){
             alert("Error sending post. Posts must have a title and are limited to 10,000 characters.");
             console.log(error)
-            auth.setLoading(false);
             setIsPosting(false);
             return;  // do not proceed to add attachments if the post failed
         };
@@ -585,7 +595,6 @@ function ChatApp({auth}: {auth: AuthContext}){
             if (logError){
                 console.log("Error sending attachment log: ", logError)
                 alert("Error attaching attachment log");
-                auth.setLoading(false);
                 setIsPosting(false);
                 return
             }
@@ -602,8 +611,33 @@ function ChatApp({auth}: {auth: AuthContext}){
                 alert('Error attaching attachment to post. Files must be supported image files less than 20MB.');
             }
         };
-        auth.setLoading(false);
+        // after sending post, retrieve post records from db
+        getPosts();
         setIsPosting(false);
+    };
+    // editing a post or reply
+    const editPost = async (post_id: string) => {
+        if (!editTitleRef || !editContentRef) return;
+        const editedTitle = editTitleRef.current!.value;
+        const editedContent = editContentRef.current!.value;
+        if (editedContent === "") return;
+        const { error: editError } = await supabase
+            .from("posts")
+            .update({
+                title: editedTitle,
+                content: editedContent
+            })
+            .eq("user_id", user.id)
+            .eq("id", post_id);
+        if (editError){
+            console.log("Error editing post::", editError);
+            alert("Error occurred editing a post.")
+        } else {
+            setPosts(posts.map((post: Post) => {
+                if (post.id !== post_id) return post;
+                return {...post, title: editedTitle, content: editedContent, editing: false};
+            }))
+        }
     };
     // Function to get posts from the db (requires a value is loaded for currentThread)
     const getPosts = async () => {
@@ -644,8 +678,8 @@ function ChatApp({auth}: {auth: AuthContext}){
         for (const post of data){
             if (!post.parent_id) continue;
             // add replies to their parent post
-            const parentPost = idToPost.get(post.parent_id)!;
-            parentPost.reply_ids.push(post.id);
+            const parentPost = idToPost.get(post.parent_id);
+            if (parentPost) parentPost.reply_ids.push(post.id);
         }
         // hide replies below a certain comment recursion depth
         const hide_replies_dfs = (post: Post, depth: number) => {
@@ -664,7 +698,6 @@ function ChatApp({auth}: {auth: AuthContext}){
         });
         // Update the UI state with the posts
         setPosts(data ?? []);
-        auth.setLoading(false);
     };
     // Set the default thread
     useEffect(() => {
@@ -713,7 +746,7 @@ function ChatApp({auth}: {auth: AuthContext}){
         </div>
         {/* posts */}
         <div className="w-full h-full flex flex-col items-center pt-2 pb-6">
-            {/* new post  */}
+            {/* create post window  */}
             {isPosting && 
             <div className="w-[99%] h-fit h-max-124 rounded-lg py-2 px-2 sm:px-6 bg-slate-700 flex flex-col shadow-2xl space-y-2 my-2">
                 <div className="w-full flex flex-row justify-between space-x-2 items-center py-1 ">
@@ -737,7 +770,7 @@ function ChatApp({auth}: {auth: AuthContext}){
             { posts.length > 0 ? posts.filter((post: Post) => (post.parent_id === null)).map(post => (
             <div key={post.id} className="items-end flex flex-col w-[99%]">
                 {/* post */}
-                <div key={post.id} className="w-full h-max-124 rounded-lg px-2 py-2 bg-slate-700 mt-1">
+                <div key={post.id} className="w-full h-max-124 rounded-lg px-2 py-2 bg-slate-700 mt-1 space-y-1">
                     {/* user + date */}
                     <div className="flex flex-row justify-between">
                         <div className="flex flex-row space-x-1 items-center">
@@ -746,29 +779,42 @@ function ChatApp({auth}: {auth: AuthContext}){
                             <p className="opacity-60 text-sm">∘ {formatDate(post.created_on)}</p>
                         </div>
                         {(post.user_id === user.id) && 
-                        <button onClick={() => deletePost(posts, setPosts, post.id)} className="hover:text-red-700">
-                            Delete
-                        </button>}
+                            <MessageOptions post={post} posts={posts} setPosts={setPosts}/>
+                        }
                     </div>
                     {/* text */}
-                    <h1 className="font-bold text-xl sm:text-2xl overflow-clip">{post.title}</h1>
-                    <p className="break-all text-wrap max-h-48 overflow-y-auto text-base sm:text-lg overflow-clip">
-                        <AutoLinkText text={post.content} linkProps={{ target: '_blank', className:"text-cyan-600 underline"}}/>
-                    </p>
+                    { post.editing ?
+                    (<>
+                        <input ref={editTitleRef} type="text" defaultValue={post.title} className="font-bold w-full text-xl sm:text-2xl overflow-clip border rounded-xl border-white p-2"/>
+                        <textarea ref={editContentRef} defaultValue={post.content} className="mt-1 border border-white rounded-xl p-2 w-full overflow-clip break-all text-wrap overflow-y-auto text-base"/>
+                        <button className="mr-2 bg-red-700 rounded-lg px-3 py-1 hover:scale-102"
+                                onClick={() => toggleEditing(posts, setPosts, post.id)}>
+                            Cancel
+                        </button>
+                        <button className="bg-cyan-700 rounded-lg px-3 py-1 hover:scale-102"
+                                onClick={() => {toggleEditing(posts, setPosts, post.id); editPost(post.id)}}>
+                            Save
+                        </button>   
+                    </>) : (<>
+                        <h1 className="font-bold text-xl sm:text-2xl overflow-clip">{post.title}</h1>
+                        <p className="break-all text-wrap max-h-48 overflow-y-auto text-base sm:text-lg overflow-clip">
+                            <AutoLinkText text={post.content} linkProps={{ target: '_blank', className:"text-cyan-600 underline"}}/>
+                        </p>
+                    </>)}
                     {/* attachment */}
                     {post.imageUrl && 
                     <div className="my-1">
                         <img src={post.imageUrl} className="max-h-96 object-contan aspect-auto"/>
                     </div>}
                     {/* buttons  */}
-                    <MessageOptions auth={auth} post={post} posts={posts} setPosts={setPosts}/>
+                    <PostButtons auth={auth} post={post} posts={posts} setPosts={setPosts}/>
                 </div>
                 {/* replies */}
                 {!post.hide_replies && 
-                    <Replies auth={auth} parent_post={post} posts={posts} setPosts={setPosts} depth={0}/>}
+                    <Replies auth={auth} parent_post={post} posts={posts} setPosts={setPosts} currentThread={currentThread} depth={0}/>}
             </div>
             )) :
-            (<div className="w-[99%] shadow-2xl rounded-lg p-4 bg-slate-700 text-2xl mt-2">Looks like there's no posts here :/</div>)
+            (<div className="w-[99%] shadow-2xl rounded-lg p-4 bg-slate-700 text-2xl mt-2">Loading...</div>)
             }
         </div>
         {/* Buttons  */}
@@ -782,31 +828,45 @@ function ChatApp({auth}: {auth: AuthContext}){
     </>
 }
 
-function Replies({auth, parent_post, posts, setPosts, depth}:
+function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
                  {auth: AuthContext,
                   parent_post: Post,
                   posts: Post[],
                   setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
+                  currentThread: Thread | null,
                   depth: number}){
     const user = auth.user!;
+    const profile = auth.profile!;
     const replyRef = useRef<HTMLTextAreaElement | null>(null);
-    const sendReply = async (content: string, parent_id: string) => {
-        if (!user || !content || !parent_id) return;
-        auth.setLoading(true);
-        const { data: _data, error } = await supabase
+    const sendReply = async () => {
+        if (!replyRef.current) return;
+        const content: string = replyRef.current!.value;
+        if (!user || !content || !parent_post || !currentThread) return;
+        const { data: newReplyData, error } = await supabase
             .from("posts")
             .insert({
                 user_id: user.id,
-                parent_id,
-                content
+                thread_id: currentThread.id,
+                parent_id: parent_post.id,
+                content,
             })
-            .select("id")
-            .single();
-        if (error){
+            .select();
+        if (error || !newReplyData[0]){
             alert("Error sending reply");
             console.log(error);
+        } else {
+            // add the reply to the ui
+            const newReply: Post = {
+                ...newReplyData[0],
+                reply_ids: [],
+                username: profile.username,
+                pfpUrl: profile.pfpUrl
+            }
+            setPosts(posts.concat(newReply).map((post: Post) => {
+                if (post !== parent_post) return post;
+                return {...parent_post, reply_ids: parent_post.reply_ids.concat([newReply.id]), hide_replies: false, add_reply: false}
+            }))
         }
-        auth.setLoading(false);
     };
     const idToPost = new Map<string, Post>(posts.map(post => [post.id, post]));
     let replies = parent_post.reply_ids.map(reply_id => idToPost.get(reply_id)!).filter(reply => reply !== undefined && reply !== null);
@@ -816,13 +876,15 @@ function Replies({auth, parent_post, posts, setPosts, depth}:
         {parent_post.add_reply && 
         <div className="w-full bg-slate-700 px-2 py-1 rounded-lg mt-1">
             <textarea ref={replyRef} className="bg-transparent text-white border border-gray-200 rounded-xl py-2 px-2 sm:px-3 w-full mt-1" placeholder="Your reply"/>
-            <button onClick={() => sendReply(replyRef.current!.value, parent_post.id)}
+            <button onClick={() => sendReply()}
                     className="bg-cyan-600 rounded-2xl py-2 px-5 font-bold hover:scale-102">
                 Post
             </button>
         </div>}
         {/* existing replies */}
-        {parent_post.reply_ids.length > 0 && replies.map((reply: Post) => (
+        {!parent_post.hide_replies
+         && parent_post.reply_ids.length > 0
+         && replies.map((reply: Post) => (
         <div key={reply.id} className="w-full flex items-end flex-col">
             {/* reply */}
             <div key={reply.id} className="w-full bg-slate-700 rounded-lg space-y-1 px-2 py-1 mt-1">
@@ -833,27 +895,65 @@ function Replies({auth, parent_post, posts, setPosts, depth}:
                         <p className="">{reply.username}</p>
                         <p className="opacity-60 text-sm">∘ {formatDate(reply.created_on)}</p>
                     </div>
-                    {(reply.user_id === user.id) && 
-                    <button onClick={() => deletePost(posts, setPosts, reply.id)} className="hover:text-red-700">
-                        Delete 
-                    </button>}
+                    {(reply.user_id === user.id) && <MessageOptions post={reply} posts={posts} setPosts={setPosts}/>}
                 </div>
                 {/* reply text */}
                 <p className="break-all text-wrap max-h-48 overflow-y-auto text-base sm:text-lg">{reply.content}</p>
                 {/* buttons  */}
-                <MessageOptions auth={auth} post={reply} posts={posts} setPosts={setPosts}/>
+                <PostButtons auth={auth} post={reply} posts={posts} setPosts={setPosts}/>
             </div>
             {/* replies to the reply */}
-            { !reply.hide_replies && 
-                (<Replies auth={auth} parent_post={reply} posts={posts} setPosts={setPosts} depth={depth + 1}/>)
-            }
+            <Replies auth={auth} parent_post={reply} posts={posts} setPosts={setPosts} currentThread={currentThread} depth={depth + 1}/>
         </div>
         ))}
     </div>
     </>
 }
 
-function MessageOptions({auth, post, posts, setPosts}:
+function MessageOptions({post, posts, setPosts}:
+                        {post: Post,
+                         posts: Post[],
+                         setPosts: React.Dispatch<React.SetStateAction<Post[]>>}){
+    const [isOpen, setIsOpen] = useState<boolean>(false);
+
+    const deletePost = async () => {
+        const { error } = await supabase
+            .rpc("delete_post", {delete_post_id: post.id});
+        if (error){
+            console.log("Error deleting post", error);
+            alert("Error deleting post");
+        }
+        // Update posts after deleting
+        setPosts(posts.filter(p => p.id !== post.id));
+    }
+    
+    return <>
+        <div className="flex flex-col text-xs relative">
+            <button type="button" onClick={() => setIsOpen(!isOpen)} className="group flex items-center justify-between w-full text-left px-2 py-2">
+                <div className="flex items-center">
+                    <img className="w-6 h-6 rounded-full grayscale-100 fill-black hover:scale-104" src={"/chat/cog.svg"} alt={"edit"} />
+                </div>
+                <svg className={`w-5 h-5 inline float-right transition-transform duration-200 ${isOpen ? "rotate-0" : "-rotate-90"}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#6B7280" >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+
+            {isOpen && (
+                <ul className="absolute top-10 text-base rounded-xl bg-slate-900 shadow-md right-0 z-10 space-y-1 flex flex-col">
+                    <button onClick={() => {setIsOpen(false); toggleEditing(posts, setPosts, post.id)}} className="hover:bg-slate-100 p-2 rounded-xl text-cyan-600">
+                        Edit
+                    </button>
+                    <button onClick={() => {setIsOpen(false); deletePost()}} className="text-red-600 p-2 rounded-xl hover:bg-slate-100">
+                        Delete
+                    </button>
+                </ul>
+            )}
+        </div>
+
+    </>
+}
+
+function PostButtons({auth, post, posts, setPosts}:
                         {auth: AuthContext,
                          post: Post,
                          posts: Post[],
@@ -874,22 +974,23 @@ function MessageOptions({auth, post, posts, setPosts}:
             <p>{post.dislike_count}</p>
         </div>
         {/* replies */}
-        <button className="" onClick={() => toggleCreateReply(posts, setPosts, post.id)}>
-            Reply
+        <button className="flex flex-row text-xs items-center space-x-1 hover:scale-106" onClick={() => toggleCreateReply(posts, setPosts, post.id)}>
+            <img src="/chat/comment.svg" className="w-6 h-6 shrink-0 invert" alt="comment"/>
         </button>
         {/* show/hide replies */}
-        {post.reply_ids.length > 0 && 
-            <button className="flex flex-row items-center" onClick={() => toggleHideReplies(posts, setPosts, post.id)}>
+        {(post.reply_ids &&
+          post.reply_ids.length > 0) && 
+            <button className="flex flex-row items-center hover:scale-102" onClick={() => toggleHideReplies(posts, setPosts, post.id)}>
                 { post.hide_replies ?
-                    (<>  
+                    (<div className="space-x-1 flex flex-row">  
+                        <p className="text-xs">Show Replies</p>
                         <img src="/chat/plus.svg" alt="+" className="w-4 h-4 rounded-full bg-white"/>
-                        <p className="text-xs ml-1">Show Replies</p>
-                    </>) 
+                    </div>) 
                     :
-                    (<>
+                    (<div className="space-x-1 flex flex-row">
+                        <p className="text-xs">Hide Replies</p>
                         <img src="/chat/minus.svg" alt="-" className="w-4 h-4 rounded-full bg-white"/>
-                        <p className="text-xs ml-1">Hide Replies</p>
-                    </>) 
+                    </div>) 
                 }
             </button>
         }
@@ -955,19 +1056,6 @@ const reactToPost = async (auth: AuthContext,
     }));
 }
 
-const deletePost = async (posts: Post[],
-                          setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
-                          post_id: string) => {
-    const { error } = await supabase
-        .rpc("delete_post", {delete_post_id: post_id});
-    if (error){
-        console.log("Error deleting post", error);
-        alert("Error deleting post");
-    }
-    // Update posts after deleting
-    setPosts(posts.filter(post => post.id !== post_id));
-}
-
 const formatDate = (timestamp: string) =>{
     const date = new Date(timestamp);
     const today = new Date();
@@ -978,7 +1066,13 @@ const formatDate = (timestamp: string) =>{
         date.getDate() === today.getDate()){
         const deltaHours = deltaMilliseconds / (1000 * 60 * 60);
         const deltaMinutes = deltaMilliseconds / (1000 * 60);
-        return (deltaHours < 1) ? `${deltaMinutes.toFixed(0)}m ago` : `${deltaHours.toFixed(0)}hr ago`;
+        if (deltaHours < 1){
+            const minutesAgo = +deltaMinutes.toFixed(0);
+            if (minutesAgo === 0) return "now"
+            else return `${minutesAgo}m ago`
+        }
+        const hoursAgo = deltaHours.toFixed(0);
+        return `${hoursAgo}hr ago`;
     }
     const deltaDays = deltaMilliseconds / (1000 * 60 * 60 * 24);
     const deltaDaysTruncated = deltaDays.toFixed(0);
@@ -997,5 +1091,12 @@ const toggleHideReplies = async (posts: Post[], setPosts: React.Dispatch<React.S
     setPosts(posts.map(post => {
         if (post.id !== post_id) return post;
         return {...post, hide_replies: !post.hide_replies}
+    }));
+}
+
+const toggleEditing = async (posts: Post[], setPosts: React.Dispatch<React.SetStateAction<Post[]>>, post_id: string) => {
+    setPosts(posts.map(post => {
+        if (post.id !== post_id) return {...post, editing: false};
+        return {...post, editing: !post.editing};
     }));
 }
