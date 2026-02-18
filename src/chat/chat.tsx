@@ -1,11 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabase"
 import { type User} from "@supabase/supabase-js";
+import CreatePost from "./createPost";
+// animation
 import { ParticlesBack } from "./particles";
-// @ts-expect-error
-import AutoLinkText from 'react-autolink-text2';
-
-// DiceUI components 
+import { AnimatePresence, motion } from "motion/react";
+// dependency
+import Linkify from 'linkify-react';
+// pre-made components
 import { Upload, X} from "lucide-react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
@@ -30,17 +32,6 @@ import {
   ResponsiveDialogTitle,
   ResponsiveDialogTrigger,
 } from "@/components/ui/responsive-dialog";
-// import {
-//   Editable,
-//   EditableArea,
-//   EditableCancel,
-//   EditableInput,
-//   EditableLabel,
-//   EditablePreview,
-//   EditableSubmit,
-//   EditableToolbar,
-//   EditableTrigger,
-// } from "@/components/ui/editable";
 
 // Type Definitions
 type Profile = { 
@@ -49,7 +40,7 @@ type Profile = {
     pfpUrl?: string
 };
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>
-type AuthContext = {
+export type AuthContext = {
     user: User | null,
     profile: Profile | null,
     loading: boolean,
@@ -78,8 +69,23 @@ type Post = {
     reply_ids: string[],
     editing: boolean
 }
-
+type SortBySetting = {
+    name: string,
+    sql_clause: string,
+    image: string
+}
+export type Thread = {
+    id: string,
+    name: string,
+    num_posts: string
+}
+// constants
 const DEFAULT_POST_QUANTITY = 500;
+const sortBySettings: SortBySetting[] = [
+    {name: "new", sql_clause: "created_on like_count", image: "/chat/new_star.svg"},
+    {name: "hot", sql_clause: "like_count created_on", image: "/chat/fire.svg"},
+];
+const MAX_VISUAL_DEPTH = 3;
 
 export default function Chat(){
     const [user, setUser] = useState<User | null>(null)
@@ -140,6 +146,7 @@ const retrieveProfile = async (user_id: string) => {
     return profileWithPFP;
 }
 
+/** 
 // function Marquee(){
 //     const srcs = ["react", "tailwind", "typescript", "vite"];
 
@@ -172,7 +179,7 @@ const retrieveProfile = async (user_id: string) => {
 //     </div>
 //     </>
 // };
-
+*/
 function Login(){
     const signInWithGoogle = async () => {
         const { error } = await supabase.auth.signInWithOAuth({ 
@@ -329,7 +336,7 @@ function ImageUpload({setAttachment}: {setAttachment: React.Dispatch<React.SetSt
           </div>
           <p className="font-medium text-sm">Drag & drop an image here</p>
           <p className="text-muted-foreground text-xs">
-            Or click to browse (max 1 file, up to 20MB)
+            Or click to browse (max 1 file, up to 10MB)
           </p>
         </div>
       </FileUploadDropzone>
@@ -353,27 +360,47 @@ function ImageUpload({setAttachment}: {setAttachment: React.Dispatch<React.SetSt
   );
 }
 
-type SortBySetting = {
-    name: string,
-    sql_clause: string,
-    image: string
+/**
+    Closes a dropdown when the mouse is clicked outside of it
+*/
+const useClickOutside = <T extends HTMLDivElement | null>(ref:React.RefObject<T>, handler: () => void): void => {
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent){
+            if (!ref || !ref.current) return;
+
+            if (!ref.current.contains(event.target as Node)){
+                handler();
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside);
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        }
+    }, [ref, handler])
 }
-const sortBySettings: SortBySetting[] = [
-    {name: "new", sql_clause: "created_on like_count", image: "/chat/new_star.svg"},
-    {name: "hot", sql_clause: "like_count created_on", image: "/chat/fire.svg"},
-]
+
 function SelectSortBy({sortBy, setSortBy}:
                       {sortBy: SortBySetting,
                        setSortBy: React.Dispatch<React.SetStateAction<SortBySetting>>}){
     const [isOpen, setIsOpen] = React.useState<boolean>(false);
+
+    const dropdownRef = useRef<HTMLDivElement | null>(null);
     // update the sort by ordering of the post feed
     const updateSortBy = (newSetting: SortBySetting) => {
         setIsOpen(false);
         if (sortBy.name === newSetting.name) return;
         setSortBy(newSetting);
     };
-    return <div className="flex flex-col w-32 text-sm relative">
-        <button type="button" onClick={() => setIsOpen(!isOpen)} className="group flex items-center justify-between w-full text-left px-2 py-2  rounded-lg bg-slate-900 shadow-sm focus:outline-none border border-black">
+
+    useClickOutside(dropdownRef, () => setIsOpen(false));
+
+    return <div ref={dropdownRef} className="flex flex-col w-32 text-sm relative cursor-pointer shadow-lg shadow-indigo-600">
+        <motion.button 
+            whileTap={{ scale: 0.90 }}
+            onClick={() => setIsOpen(!isOpen)}
+            className="cursor-pointer group flex items-center justify-between w-full text-left px-2 py-2  rounded-lg bg-slate-950 shadow-sm focus:outline-none border border-black">
             <div className="flex items-center gap-2">
                 <img className="w-6 h-6 rounded-full grayscale-100 invert" src={sortBy.image} alt={sortBy.name} />
                 <span>{sortBy.name}</span>
@@ -381,33 +408,33 @@ function SelectSortBy({sortBy, setSortBy}:
             <svg className={`w-5 h-5 inline float-right transition-transform duration-200 ${isOpen ? "rotate-0" : "-rotate-90"}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#6B7280" >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
-        </button>
+        </motion.button>
 
         {isOpen && (
-            <ul className="absolute top-10 w-32 bg-slate-900 rounded shadow-md mt-1 right-0 z-10">
+            <ul className="absolute top-10 w-32 bg-slate-950 rounded-xl mt-1 right-0 z-10 shadow-lg shadow-indigo-600">
                 {sortBySettings.map((setting) => (
-                    <li key={setting.name} className={`px-2 py-2 flex items-center gap-2 cursor-pointer ${setting.name === sortBy.name ? "bg-indigo-500 text-white" : "hover:bg-indigo-500 hover:text-white"}`}
-                        onClick={() => updateSortBy(setting)} >
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        key={setting.name} 
+                        className={`px-2 py-2 flex rounded-xl items-center w-full gap-2 cursor-pointer ${setting.name === sortBy.name ? "bg-indigo-500 text-white" : "hover:bg-indigo-500 hover:text-white"}`}
+                        onClick={() => updateSortBy(setting)}>
                         <img className="w-6 h-6 rounded-full grayscale-100 invert" src={setting.image} alt={setting.name} />
                         <span>{setting.name}</span>
-                    </li>
+                    </motion.button>
                 ))}
             </ul>
         )}
     </div>
 }
 
-type Thread = {
-    id: string,
-    name: string,
-    num_posts: string
-}
 function SelectThread({setCurrentThread, currentThread}:
                       {setCurrentThread: React.Dispatch<React.SetStateAction<Thread | null>>,
                        currentThread: Thread | null}){
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [threads, setThreads] = useState<Thread[]>([]);
     
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
     const threadImages: Record<string, string> = {
         "general": "/chat/general_group.svg",
         "classes": "/chat/book.svg",
@@ -429,8 +456,13 @@ function SelectThread({setCurrentThread, currentThread}:
         getThreads();
     }, []); 
 
-    return <div className="flex flex-col w-36 text-xs relative">
-        <button type="button" onClick={() => setIsOpen(!isOpen)} className="group flex items-center justify-between w-full text-left px-2 py-2  rounded-lg bg-slate-900 shadow-sm focus:outline-none border border-black">
+    useClickOutside(dropdownRef, () => setIsOpen(false));
+
+    return <div ref={dropdownRef} className="flex flex-col w-36 text-xs relative cursor-pointer shadow-lg shadow-indigo-600">
+        <motion.button
+            whileTap={{ scale: 0.90 }}
+            onClick={() => setIsOpen(!isOpen)} 
+            className="cursor-pointer group flex items-center justify-between w-full text-left px-2 py-2  rounded-lg bg-slate-950 shadow-sm focus:outline-none border border-black">
             <div className="flex items-center gap-2">
                 <img className="w-6 h-6 rounded-full grayscale-100 invert" src={threadImages[currentThread!.name]} alt={"n/a"} />
                 <span>{currentThread && currentThread.name}</span>
@@ -438,17 +470,19 @@ function SelectThread({setCurrentThread, currentThread}:
             <svg className={`w-5 h-5 inline float-right transition-transform duration-200 ${isOpen ? "rotate-0" : "-rotate-90"}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#6B7280" >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
-        </button>
+        </motion.button>
 
         {isOpen && (
-            <ul className="absolute top-10 w-36 bg-slate-900 rounded shadow-md mt-1 right-0 z-10">
+            <ul className="absolute top-10 w-36 bg-slate-950 rounded-xl mt-1 right-0 z-10 shadow-lg shadow-indigo-600">
                 {threads.map((thread: Thread) => (
-                    <li key={thread.name} 
-                        className={`px-2 py-2 flex items-center gap-2 cursor-pointer ${thread.id === currentThread!.id ? "bg-indigo-500 text-white" : "hover:bg-indigo-500 hover:text-white"}`}
+                    <motion.button 
+                        whileHover={{scale: 1.1}}
+                        key={thread.name} 
+                        className={`px-2 py-2 flex items-center gap-2 cursor-pointer w-full rounded-xl ${thread.id === currentThread!.id ? "bg-indigo-500 text-white" : "hover:bg-indigo-500 hover:text-white"}`}
                         onClick={() => {setIsOpen(!isOpen); setCurrentThread(thread)}}>
                         <img className="w-6 h-6 rounded-full grayscale-100 invert" src={threadImages[thread.name]} alt={"n/a"} />
                         <span>{thread.name}</span>
-                    </li>
+                    </motion.button>
                 ))}
             </ul>
         )}
@@ -533,15 +567,11 @@ export function EditProfile({auth}: {auth: AuthContext}) {
 function ChatApp({auth}: {auth: AuthContext}){
     const profile = auth.profile!;
     const user = auth.user!;
-    // post inputs
-    const titleRef = useRef<HTMLInputElement | null>(null);
-    const contentRef = useRef<HTMLTextAreaElement | null>(null);
 
     const editTitleRef = useRef<HTMLInputElement | null>(null);
     const editContentRef = useRef<HTMLTextAreaElement | null>(null);
     // posts + attachments
     const [isPosting, setIsPosting] = useState(false);
-    const [attachment, setAttachment] = useState<File | null>(null); 
     const [posts, setPosts] = useState<Post[]>([]);
     // post ordering/filtering
     const [sortBy, setSortBy] = React.useState<SortBySetting>(sortBySettings[0]);
@@ -554,66 +584,6 @@ function ChatApp({auth}: {auth: AuthContext}){
     const toggleCreatePost = async() => {
         setIsPosting(!isPosting);
         window.scrollTo({top:0, left:0, behavior: 'smooth'});
-    };
-    // sending a post or reply
-    const sendPost = async () => {
-        const title = titleRef.current!.value;
-        const content = contentRef.current!.value;
-        const attachmentFile: File = attachment!;
-        if (!user || !title || !content || !currentThread) return;
-        // push the post to the database
-        const { data: postData, error } = await supabase
-            .from("posts")
-            .insert({
-                user_id: user.id,
-                thread_id: currentThread.id,
-                title,
-                content
-            })
-            .select("id")
-            .single();
-        // alert the user if the post failed to send
-        if (error){
-            alert("Error sending post. Posts must have a title and are limited to 10,000 characters.");
-            console.log(error)
-            setIsPosting(false);
-            return;  // do not proceed to add attachments if the post failed
-        };
-        const post_id = postData.id;
-        // Push attachments to database if there are any
-        if (attachmentFile){
-            // add extension log
-            const { data: _logData, error: logError } = await supabase
-                .from("attachments")
-                .insert({
-                    post_id: post_id,
-                    sender_id: user.id,
-                    img_path: attachmentFile.name,
-                })
-                .select()
-                .single();
-            if (logError){
-                console.log("Error sending attachment log: ", logError)
-                alert("Error attaching attachment log");
-                setIsPosting(false);
-                return
-            }
-            // Send the attachment to the DB's bucket
-            const { error: attachmentError } = await supabase
-                .storage
-                .from("attachments")
-                .upload(attachmentFile.name, attachmentFile, {
-                    upsert: false,
-                });
-            // Notify user if DB rejects the attachment
-            if (attachmentError){
-                console.log("Error attaching attachment: ", attachmentError);
-                alert('Error attaching attachment to post. Files must be supported image files less than 20MB.');
-            }
-        };
-        // after sending post, retrieve post records from db
-        getPosts();
-        setIsPosting(false);
     };
     // editing a post
     const editPost = async (post_id: string) => {
@@ -642,7 +612,6 @@ function ChatApp({auth}: {auth: AuthContext}){
     // Function to get posts from the db (requires a value is loaded for currentThread)
     const getPosts = async () => {
         if (!currentThread || !sortBy) return;  // premature post retrieval: select currentThread first
-        console.log("SQL get_posts executing...");
         // Retrieving a fixed quantity of posts + replies
         const sort_by = sortBy.sql_clause;
         const { data, error } = await supabase
@@ -719,9 +688,9 @@ function ChatApp({auth}: {auth: AuthContext}){
         getPosts();
     }, [currentThread, sortBy]);
     return <>
-    <div className="w-full min-h-screen h-fit flex flex-col items-center bg-slate-800 text-white space-y-1">
-        {/* header  */}
-        <div className="w-full p-4 bg-slate-900 shadow-2xl text-xl flex flex-row justify-between items-start">
+    <div className="w-full min-h-screen flex flex-col items-center bg-accent-foreground text-white space-y-1">
+        {/* app header  */}
+        <section className="w-full p-4 bg-slate-950 shadow-2xl text-xl flex flex-row justify-between items-start">
             {/* sign in name  */}
             <div className="flex flex-col sm:flex-row space-x-2 space-y-2 sm:space-y-0">
                 {/* <EditProfile auth={auth}/> */}
@@ -732,98 +701,109 @@ function ChatApp({auth}: {auth: AuthContext}){
                 </div>
             </div>
             {/* log out */}
-            <button onClick={signOut} className="hover:scale-103 font-bold text-lg">
+            <motion.button
+                whileHover={{ scale: 0.95 }}
+                onClick={signOut} 
+                className="hover:scale-103 font-bold text-lg cursor-pointer">
                 Log Out
-            </button>
-        </div>
+            </motion.button>
+        </section>
         {/* dropdowns */}
-        <div className="flex flex-row w-[99%] items-start justify-start pt-2 font-bold text-white space-x-2 sm:space-x-4">
+        <section className="flex flex-row w-[99%] max-w-3xl items-start justify-start pt-2 font-bold text-white space-x-2 sm:space-x-4">
             {/* thread select */}
             {currentThread && 
                 <SelectThread setCurrentThread={setCurrentThread} currentThread={currentThread}/>}
             {/* posts sort by  */}
             <SelectSortBy sortBy={sortBy!} setSortBy={setSortBy}/>
-        </div>
-        {/* posts */}
-        <div className="w-full h-full flex flex-col items-center pt-2 pb-6">
-            {/* create post window  */}
-            {isPosting && 
-            <div className="w-[99%] h-fit h-max-124 rounded-lg py-2 px-2 sm:px-6 bg-slate-700 flex flex-col shadow-2xl space-y-2 my-2">
-                <div className="w-full flex flex-row justify-between space-x-2 items-center py-1 ">
-                    <h1 className="text-xl sm:text-2xl font-bold">Create Post</h1>
-                    <button onClick={() => setIsPosting(false)} className="text-white hover:text-red-700">
-                        Cancel
-                    </button>
-                </div>
-                {/* title  */}
-                <input ref={titleRef} className="w-full rounded-xl bg-transparent border border-gray-200 text-white p-3 font-bold tracking-wider" type="text" placeholder="Title*" id="title"/>
-                {/* content  */}
-                <textarea ref={contentRef} className="bg-transparent text-white border border-gray-200 rounded-xl p-4" placeholder="Post Text" id="content"/>
-                {/* Add attachments */}
-                <ImageUpload setAttachment={setAttachment}/>
-                {/* send post  */}
-                <button onClick={() => sendPost()} className="bg-cyan-600 rounded-2xl shadow-xl py-2 px-6 w-fit h-fit hover:scale-102 text-lg font-semibold">
-                    Post
-                </button>
-            </div>}
-            {/* render posts with replies*/}
-            { posts.length > 0 ? posts.filter((post: Post) => (post.parent_id === null)).map(post => (
-            <div key={post.id} className="items-end flex flex-col w-[99%]">
-                {/* post */}
-                <div key={post.id} className="w-full h-max-124 rounded-lg px-2 py-2 bg-slate-700 mt-1 space-y-1">
-                    {/* user + date */}
-                    <div className="flex flex-row justify-between">
-                        <div className="flex flex-row space-x-1 items-center">
-                            {post.pfpUrl && <img src={post.pfpUrl} className="mr-2 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-transparent shadow-2xl"/>}
-                            <p>{post.username}</p>
-                            <p className="opacity-60 text-sm">∘ {formatDate(post.created_on)}</p>
+        </section>
+        {/* main content */}
+        <section className="w-full h-full flex justify-center items-start">
+            {/* all posts */}
+            <section className="h-full flex flex-col items-center pt-2 pb-6 max-w-3xl w-[99%]">
+                {/* create post window  */}
+                <AnimatePresence>
+                    {isPosting &&
+                    <motion.div 
+                        initial={{opacity: 0, scale: 0.6}} 
+                        animate={{opacity: 1, scale: 1}}
+                        exit={{
+                            opacity: 0,
+                            scale: 0,
+                            transition: {
+                                duration: 0.3
+                            }
+                        }}
+                        className="w-full h-full flex items-center justify-center max-w-[99vw]">
+                        <CreatePost auth={auth} getPosts={getPosts} isPosting={isPosting} setIsPosting={setIsPosting} currentThread={currentThread}/>
+                    </motion.div>}
+                </AnimatePresence>
+                {/* render posts their replies*/}
+                { posts.length > 0 ? posts.filter((post: Post) => (post.parent_id === null)).map(post => (
+                <div key={post.id} className="items-end flex flex-col w-full rounded-lg ">
+                    {/* individual post */}
+                    <div key={post.id} className="w-full h-max-124 p-2 mt-1 space-y-1 rounded-lg bg-slate-950">
+                        {/* user + date */}
+                        <div className="flex flex-row justify-between">
+                            <div className="flex flex-row space-x-1 items-center">
+                                {post.pfpUrl && <img src={post.pfpUrl} className="mr-2 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-transparent shadow-2xl"/>}
+                                <p>{post.username}</p>
+                                <p className="opacity-60 text-sm">∘ {formatDate(post.created_on)}</p>
+                            </div>
+                            {(post.user_id === user.id) && 
+                                <MessageOptions post={post} posts={posts} setPosts={setPosts}/>
+                            }
                         </div>
-                        {(post.user_id === user.id) && 
-                            <MessageOptions post={post} posts={posts} setPosts={setPosts}/>
-                        }
+                        {/* text */}
+                        { post.editing ?
+                        (<>
+                            <input ref={editTitleRef} type="text" defaultValue={post.title} className="font-bold w-full text-xl sm:text-2xl overflow-clip border rounded-xl border-white p-2"/>
+                            <textarea ref={editContentRef} defaultValue={post.content} className="mt-1 border border-white rounded-xl p-2 w-full overflow-clip wrap-break-word text-wrap overflow-y-auto text-base"/>
+                            <button className="mr-2 bg-red-700 rounded-lg px-3 py-1 hover:scale-102"
+                                    onClick={() => toggleEditing(posts, setPosts, post.id)}>
+                                Cancel
+                            </button>
+                            <button className="bg-cyan-700 rounded-lg px-3 py-1 hover:scale-102"
+                                    onClick={() => {toggleEditing(posts, setPosts, post.id); editPost(post.id)}}>
+                                Save
+                            </button>   
+                        </>) : (<>
+                            <h1 className="font-bold text-xl sm:text-2xl overflow-clip">{post.title}</h1>
+                            <Linkify as='p'
+                                options= {{ target: '_blank', className:"text-cyan-600 underline"}}
+                                className="wrap-break-word text-wrap max-h-48 overflow-y-auto text-base sm:text-lg overflow-clip">
+                                {post.content}
+                            </Linkify>
+                        </>)}
+                        {/* attachment */}
+                        {post.imageUrl && 
+                        <div className="my-1 rounded-xl bg-black">
+                            <img src={post.imageUrl} className="w-full object-contain max-h-124 rounded-xl"/>
+                        </div>}
+                        {/* buttons  */}
+                        <PostButtons auth={auth} post={post} posts={posts} setPosts={setPosts}/>
                     </div>
-                    {/* text */}
-                    { post.editing ?
-                    (<>
-                        <input ref={editTitleRef} type="text" defaultValue={post.title} className="font-bold w-full text-xl sm:text-2xl overflow-clip border rounded-xl border-white p-2"/>
-                        <textarea ref={editContentRef} defaultValue={post.content} className="mt-1 border border-white rounded-xl p-2 w-full overflow-clip break-all text-wrap overflow-y-auto text-base"/>
-                        <button className="mr-2 bg-red-700 rounded-lg px-3 py-1 hover:scale-102"
-                                onClick={() => toggleEditing(posts, setPosts, post.id)}>
-                            Cancel
-                        </button>
-                        <button className="bg-cyan-700 rounded-lg px-3 py-1 hover:scale-102"
-                                onClick={() => {toggleEditing(posts, setPosts, post.id); editPost(post.id)}}>
-                            Save
-                        </button>   
-                    </>) : (<>
-                        <h1 className="font-bold text-xl sm:text-2xl overflow-clip">{post.title}</h1>
-                        <p className="break-all text-wrap max-h-48 overflow-y-auto text-base sm:text-lg overflow-clip">
-                            <AutoLinkText text={post.content} linkProps={{ target: '_blank', className:"text-cyan-600 underline"}}/>
-                        </p>
-                    </>)}
-                    {/* attachment */}
-                    {post.imageUrl && 
-                    <div className="my-1">
-                        <img src={post.imageUrl} className="max-h-96 object-contan aspect-auto"/>
-                    </div>}
-                    {/* buttons  */}
-                    <PostButtons auth={auth} post={post} posts={posts} setPosts={setPosts}/>
+                    {/* replies */}
+                    {!post.hide_replies && <Replies auth={auth} parent_post={post} posts={posts} setPosts={setPosts} currentThread={currentThread} depth={1}/>}
                 </div>
-                {/* replies */}
-                {!post.hide_replies && 
-                    <Replies auth={auth} parent_post={post} posts={posts} setPosts={setPosts} currentThread={currentThread} depth={0}/>}
-            </div>
-            )) :
-            (<div className="w-[99%] shadow-2xl rounded-lg p-4 bg-slate-700 text-2xl mt-2">Loading...</div>)
-            }
-        </div>
-        {/* Buttons  */}
-        <div className="fixed bottom-2 right-2 w-fit h-fit p-4 hover:scale-101 text-xl rounded-2xl bg-slate-900 shadow-2xl text-white">
-            <button onClick={() => toggleCreatePost()} className="flex flex-row space-x-2 font-bold text-xl justify-center items-center">
-                <img src="/chat/plus.svg" alt="+" className="w-8 invert"/>
-                <p>Create Post</p>
-            </button>
-        </div>
+                )) :
+                (<div className="w-[99%] shadow-2xl rounded-lg p-4 bg-slate-700 text-2xl mt-2">Loading...</div>)
+                }
+            </section>
+            {/* leaderboard */}
+            {/* <section className="w-0 h-0 lg:w-[calc(99%-896px)] invisible lg:visible bg-orange-200 ">
+                leaderboard:
+            </section> */}
+        </section>
+
+        {/* create post button  */}
+        <motion.button
+            whileHover={{ scale: 1.10 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={() => toggleCreatePost()}
+            className="fixed bottom-2 right-2 p-4 rounded-2xl shadow-lg invert bg-slate-950 text-white flex flex-row space-x-2 justify-center items-center cursor-pointer">
+            <img src="/chat/plus.svg" alt="+" className="w-8 invert"/>
+            <p className="font-bold text-xl">Create Post</p>
+        </motion.button>
     </div>
     </>
 }
@@ -835,9 +815,13 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
                   setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
                   currentThread: Thread | null,
                   depth: number}){
+    // post/reply organization
+    const idToPost = new Map<string, Post>(posts.map(post => [post.id, post]));
+    let replies = parent_post.reply_ids.map(reply_id => idToPost.get(reply_id)!).filter(reply => reply !== undefined && reply !== null);
+    // supabase
     const user = auth.user!;
     const profile = auth.profile!;
-
+    // input fields
     const replyRef = useRef<HTMLTextAreaElement | null>(null);
     const editContentRef = useRef<HTMLTextAreaElement | null>(null);
     // send a reply to db
@@ -865,10 +849,18 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
                 username: profile.username,
                 pfpUrl: profile.pfpUrl
             }
+            idToPost.set(newReply.id, newReply);
             setPosts(posts.concat(newReply).map((post: Post) => {
                 if (post !== parent_post) return post;
-                return {...parent_post, reply_ids: parent_post.reply_ids.concat([newReply.id]), hide_replies: false, add_reply: false}
-            }))
+                // add the reply's id to the parent post's reply ids (also sort by earliest)
+                const parent_reply_ids = parent_post.reply_ids.concat([newReply.id]).sort((aID: string, bID: string) => {
+                    const postA = idToPost.get(aID);
+                    const postB = idToPost.get(bID);
+                    if (!postA || !postB) return 1;
+                    return new Date(postB.created_on).getTime() - new Date(postA.created_on).getTime();
+                });
+                return {...parent_post, reply_ids: parent_reply_ids, hide_replies: false, add_reply: false}
+            }));
         }
     };
     // edit a reply
@@ -893,16 +885,23 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
             }))
         }
     };
-    const idToPost = new Map<string, Post>(posts.map(post => [post.id, post]));
-    let replies = parent_post.reply_ids.map(reply_id => idToPost.get(reply_id)!).filter(reply => reply !== undefined && reply !== null);
+    // nested reply styling
+    const getVisualDepth = (d: number) => {
+        if (d <= 0) return 0;
+        return ((d - 1) % (MAX_VISUAL_DEPTH)) + 1;
+    }
+    const parentVisualDepth = getVisualDepth(depth-1)
+    const visualDepth = getVisualDepth(depth);
+    const isReset = depth > 1 && (depth % MAX_VISUAL_DEPTH) === 1; 
     return <>   
-    <div className="w-[96%] sm:w-[98%]">
-        {/* add reply window */}
+    <div className={`w-full flex items-end flex-col`}>
+        {/* window to add a reply to the parent post */}
         {parent_post.add_reply && 
-        <div className="w-full bg-slate-700 px-2 py-1 rounded-lg mt-1">
+        <div className={`w-full bg-slate-950 px-2 py-1 rounded-lg mt-1 flex flex-col space-y-2`}
+             style={{ width: `calc(100% - ${parentVisualDepth*20}px)` }}>
             <textarea ref={replyRef} className="bg-transparent text-white border border-gray-200 rounded-xl py-2 px-2 sm:px-3 w-full mt-1" placeholder="Your reply"/>
             <button onClick={() => sendReply()}
-                    className="bg-cyan-600 rounded-2xl py-2 px-5 font-bold hover:scale-102">
+                    className="bg-cyan-600 rounded-2xl w-fit h-fit py-2 px-5 font-bold hover:scale-102">
                 Post
             </button>
         </div>}
@@ -910,9 +909,15 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
         {!parent_post.hide_replies
          && parent_post.reply_ids.length > 0
          && replies.map((reply: Post) => (
-        <div key={reply.id} className="w-full flex items-end flex-col">
+        <div key={reply.id} className="relative w-full flex items-end flex-col">
+            {/* reply style line */}
+            <div className="w-px h-full bg-white absolute left-0 top-0"
+                    style={{ marginLeft: `${(visualDepth-1)*20}px` }}/>
             {/* reply */}
-            <div key={reply.id} className="w-full bg-slate-700 rounded-lg space-y-1 px-2 py-1 mt-1">
+            <div className={`max-w-full relative rounded-lg space-y-1 px-2 py-1 mt-1 bg-slate-950`}
+                style={{ width: `calc(100% - ${visualDepth*20}px)` }}>
+                {/* reset reply width */}
+                {isReset && <img src="/chat/arrow.svg" className="absolute invert left-0 -translate-x-5 top-1/2 w-4 h-4 shrink-0"/>}
                 {/* username, date, delete button */}
                 <div className="w-full flex flex-row justify-between">
                     <div className="flex flex-row space-x-1 items-center">
@@ -925,7 +930,7 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
                 {/* reply text */}
                 { reply.editing ? 
                 (<>
-                    <textarea ref={editContentRef} defaultValue={reply.content} className="mt-1 border border-white rounded-xl p-2 w-full overflow-clip break-all text-wrap overflow-y-auto text-base"/>
+                    <textarea ref={editContentRef} defaultValue={reply.content} className="mt-1 border border-white rounded-xl p-2 w-full overflow-clip wrap-break-word text-wrap overflow-y-auto text-base"/>
                     <button className="mr-2 bg-red-700 rounded-lg px-3 py-1 hover:scale-102"
                             onClick={() => toggleEditing(posts, setPosts, reply.id)}>
                         Cancel
@@ -935,7 +940,7 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
                         Save
                     </button>  
                 </>) : (<>
-                    <p className="break-all text-wrap max-h-48 overflow-y-auto text-base sm:text-lg">{reply.content}</p>
+                    <p className="wrap-break-word text-wrap max-h-48 overflow-y-auto text-base sm:text-lg">{reply.content}</p>
                 </>)}
                 {/* buttons  */}
                 <PostButtons auth={auth} post={reply} posts={posts} setPosts={setPosts}/>
@@ -953,41 +958,81 @@ function MessageOptions({post, posts, setPosts}:
                          posts: Post[],
                          setPosts: React.Dispatch<React.SetStateAction<Post[]>>}){
     const [isOpen, setIsOpen] = useState<boolean>(false);
-
+    
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const deletePost = async () => {
-        const { error } = await supabase
-            .rpc("delete_post", {delete_post_id: post.id});
-        if (error){
-            console.log("Error deleting post", error);
-            alert("Error deleting post");
+        // if the post has an image attachment, delete it from the bucket
+        if (post.img_path){
+            const {data: attachmentPathData, error} = await supabase
+                .from("attachments")
+                .select("img_path")
+                .eq("post_id", post.id);
+            if (error){
+                console.log("Error retrieving post attachment path", error);
+                alert("Error retrieving post attachment path");
+                return;
+            } 
+            const attachmentPath = attachmentPathData[0].img_path.trim();
+            console.log(await supabase.auth.getUser())
+            const {data: deleteAttachmentData, error: deleteAttachmentError} = await supabase
+                .storage
+                .from("attachments")
+                .remove([attachmentPath]);
+            console.log(`removed attachment:: <${attachmentPath}>`);
+            console.log("removed attachment data::", deleteAttachmentData);
+            if (deleteAttachmentError){
+                alert("Error deleting attachment with post");
+                console.log("Error deleting attachment with post", deleteAttachmentError);
+                return;
+            }
         }
-        // Update posts after deleting
+        // delete the post
+        const {error: deletePostError} = await supabase
+            .from("posts")
+            .delete()
+            .eq("id", post.id);
+        if (deletePostError){
+            console.log("Error deleting post::", deletePostError);
+            alert("Error deleting post");
+            return;
+        }
+        // Update the UI without the deleted post
         setPosts(posts.filter(p => p.id !== post.id));
     }
-    
+    useClickOutside(dropdownRef, () => setIsOpen(false));
     return <>
-        <div className="flex flex-col text-xs relative">
-            <button type="button" onClick={() => setIsOpen(!isOpen)} className="group flex items-center justify-between w-full text-left px-2 py-2">
+        <div ref={dropdownRef} className="flex flex-col text-xs relative cursor-pointer">
+            <motion.button 
+                className="group flex items-center justify-between w-full text-left px-2 py-2 cursor-pointer"
+                onClick={() => setIsOpen(!isOpen)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}>
                 <div className="flex items-center">
-                    <img className="w-6 h-6 rounded-full grayscale-100 fill-black hover:scale-104" src={"/chat/cog.svg"} alt={"edit"} />
+                    <img className="w-6 h-6 rounded-full grayscale-100 fill-black hover:scale-104 cursor-pointer select-none" 
+                        src={"/chat/cog.svg"} 
+                        alt={"edit"} />
                 </div>
                 <svg className={`w-5 h-5 inline float-right transition-transform duration-200 ${isOpen ? "rotate-0" : "-rotate-90"}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#6B7280" >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
-            </button>
-
+            </motion.button>
             {isOpen && (
-                <ul className="absolute top-10 text-base rounded-xl bg-slate-900 shadow-md right-0 z-10 space-y-1 flex flex-col">
-                    <button onClick={() => {setIsOpen(false); toggleEditing(posts, setPosts, post.id)}} className="hover:bg-slate-100 p-2 rounded-xl text-cyan-600">
+                <ul className="absolute top-10 text-base rounded-xl bg-slate-950 shadow-md right-0 z-10 space-y-1 flex flex-col cursor-pointer">
+                    <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }} 
+                        onClick={() => {setIsOpen(false); toggleEditing(posts, setPosts, post.id)}} className="hover:bg-slate-100 p-2 rounded-xl text-cyan-600 cursor-pointer">
                         Edit
-                    </button>
-                    <button onClick={() => {setIsOpen(false); deletePost()}} className="text-red-600 p-2 rounded-xl hover:bg-slate-100">
+                    </motion.button>
+                    <motion.button 
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }} 
+                        onClick={() => {setIsOpen(false); deletePost()}} className="text-red-600 p-2 rounded-xl hover:bg-slate-100 cursor-pointer">
                         Delete
-                    </button>
+                    </motion.button>
                 </ul>
             )}
         </div>
-
     </>
 }
 
@@ -998,27 +1043,33 @@ function PostButtons({auth, post, posts, setPosts}:
                          setPosts: React.Dispatch<React.SetStateAction<Post[]>>}){
     return <div className="w-full space-x-2 flex flex-row text-lg pt-1">
         {/* likes  */}
-        <div className={`flex flex-row items-center ${(post.reaction === "like") ? "text-cyan-600" : "hover:scale-104"}`}>
-            <button onClick={() => reactToPost(auth, posts, setPosts, post.id, post.reaction, "like")}>
-                <Upvote styles={(post.reaction === "like") ? "fill-cyan-600" : "fill-white"}/>
-            </button>
-            <p>{post.like_count}</p>
-        </div>
+        <motion.button 
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className={`flex flex-row items-center cursor-pointer ${(post.reaction === "like") ? "text-cyan-400" : ""}`}
+                onClick={() => reactToPost(auth, posts, setPosts, post.id, post.reaction, "like")}>
+            <Upvote styles={`hover:animate-bounce ${(post.reaction === "like") ? "fill-cyan-400" : "fill-white"}`}/>
+            <p className="w-2">{post.like_count}</p>
+        </motion.button>
         {/* dislikes  */}
-        <div className={`flex flex-row items-center ${(post.reaction === "dislike") ? "text-cyan-600" : "hover:scale-104"}`} >
-            <button onClick={() => reactToPost(auth, posts, setPosts, post.id, post.reaction, "dislike")}>
-                <Upvote styles={`scale-y-[-1] ${(post.reaction === "dislike") ? "fill-cyan-600" : "fill-white"}`}/>
-            </button>
-            <p>{post.dislike_count}</p>
-        </div>
+        <motion.button 
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => reactToPost(auth, posts, setPosts, post.id, post.reaction, "dislike")}
+                className={`flex flex-row items-center cursor-pointer ${(post.reaction === "dislike") ? "text-cyan-400" : ""}`} >
+            <Upvote styles={`hover:animate-bounce scale-y-[-1] ${(post.reaction === "dislike") ? "fill-cyan-400" : "fill-white"}`}/>
+            <p className="w-2">{post.dislike_count}</p>
+        </motion.button>
         {/* replies */}
-        <button className="flex flex-row text-xs items-center space-x-1 hover:scale-106" onClick={() => toggleCreateReply(posts, setPosts, post.id)}>
-            <img src="/chat/comment.svg" className="w-6 h-6 shrink-0 invert" alt="comment"/>
+        <button className="flex flex-row justify-center items-center hover:scale-108 cursor-pointer" onClick={() => toggleCreateReply(posts, setPosts, post.id)}>
+            <img src="/chat/comment.svg" className="ml-1.5 w-6 h-6 shrink-0 invert" alt="comment"/>
         </button>
         {/* show/hide replies */}
-        {(post.reply_ids &&
-          post.reply_ids.length > 0) && 
-            <button className="flex flex-row items-center hover:scale-102" onClick={() => toggleHideReplies(posts, setPosts, post.id)}>
+        {(post.reply_ids && post.reply_ids.length > 0) && 
+            <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex flex-row items-center cursor-pointer" onClick={() => toggleHideReplies(posts, setPosts, post.id)}>
                 { post.hide_replies ?
                     (<div className="space-x-1 flex flex-row">  
                         <p className="text-xs">Show Replies</p>
@@ -1030,7 +1081,7 @@ function PostButtons({auth, post, posts, setPosts}:
                         <img src="/chat/minus.svg" alt="-" className="w-4 h-4 rounded-full bg-white"/>
                     </div>) 
                 }
-            </button>
+            </motion.button>
         }
     </div>
 }
@@ -1051,14 +1102,6 @@ const reactToPost = async (auth: AuthContext,
                            newReaction: string) => {
     // delete existing reaction
     if (oldReaction === newReaction){
-        const { error: deleteReactionError } = await supabase
-            .from("reactions")
-            .delete()
-            .eq("post_id", post_id)
-            .eq("user_id", auth.user!.id);
-        if (deleteReactionError){
-            console.log("Error deleting reaction: ", deleteReactionError);
-        }
         // Update the UI
         setPosts(posts.map(post => {
             if (post.id !== post_id) return post;
@@ -1069,17 +1112,15 @@ const reactToPost = async (auth: AuthContext,
             else if (newReaction === "dislike") newDislikeCount--; 
             return {...post, like_count: newLikeCount.toString(), dislike_count: newDislikeCount.toString()};
         }));
+        const { error: deleteReactionError } = await supabase
+            .from("reactions")
+            .delete()
+            .eq("post_id", post_id)
+            .eq("user_id", auth.user!.id);
+        if (deleteReactionError){
+            console.log("Error deleting reaction: ", deleteReactionError);
+        }
         return;
-    }
-    const { data: _data, error } = await supabase
-        .from("reactions")
-        .upsert({
-            post_id: post_id,
-            user_id: auth.user!.id,
-            reaction: newReaction
-        });
-    if (error){
-        console.log(error);
     }
     // Update the UI with the new reaction
     setPosts(posts.map(post => {
@@ -1092,6 +1133,16 @@ const reactToPost = async (auth: AuthContext,
         if (oldReaction === "dislike") newDislikeCount -= 1;
         return {...post, like_count: newLikeCount.toString(), dislike_count: newDislikeCount.toString(), reaction: newReaction}
     }));
+    const { data: _data, error } = await supabase
+        .from("reactions")
+        .upsert({
+            post_id: post_id,
+            user_id: auth.user!.id,
+            reaction: newReaction
+        });
+    if (error){
+        console.log(error);
+    }
 }
 
 const formatDate = (timestamp: string) =>{
