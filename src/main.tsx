@@ -9,6 +9,7 @@ import Landing from './pages/Landing.tsx'
 import Chess from './util/chess/chess.tsx'
 import {Sliders, ParticleLife} from './util/particleLife/particleLife.tsx';
 
+import Game from './pages/Game.tsx';
 import Chat from './chat/chat.tsx';
 
 function App(){
@@ -30,6 +31,8 @@ function App(){
             <Route path="/plife" element={<><Sliders/><ParticleLife/></>}/> 
             {/* chat  */}
             <Route path="/chat" element={<Chat/>}/>
+            {/* hackathon game */}
+            <Route path="/game" element={<Game/>}/>
 
             <Route path="*" element={<PageNotFound/>}/>
         </Routes>

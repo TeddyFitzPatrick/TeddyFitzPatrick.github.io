@@ -16,13 +16,17 @@ function Landing() {
             </div>
             
             <div className="flex flex-col space-y-8 w-fit h-fit items-center">
+                <Link to="/game">
+                    <TextAnim text="{ Hackathon Game *NEW* }" cooldown={20}
+                    className="w-fittext-xl md:text-3xl hover:scale-105 font-bold bg-slate-900 text-cyan-700 italic border-cyan-500 border-8 p-2 rounded-xl shadow-2xl"/>
+                </Link>
                 <Link to="/plife">
-                     <TextAnim text="{ Particles }" cooldown={60}
-                        className="w-fittext-xl md:text-3xl hover:scale-105 font-bold bg-slate-900 text-cyan-700 italic border-cyan-500 border-8 p-2 rounded-xl shadow-2xl"/>
+                    <TextAnim text="{ Particles }" cooldown={60}
+                    className="w-fittext-xl md:text-3xl hover:scale-105 font-bold bg-slate-900 text-cyan-700 italic border-cyan-500 border-8 p-2 rounded-xl shadow-2xl"/>
                 </Link>
                 <Link to="/chat">
                     <TextAnim text="{ Reddit Clone }" cooldown={60}
-                        className="w-fittext-xl md:text-3xl hover:scale-105 font-bold bg-slate-900 text-cyan-700 italic border-cyan-500 border-8 p-2 rounded-xl shadow-2xl"/>
+                    className="w-fittext-xl md:text-3xl hover:scale-105 font-bold bg-slate-900 text-cyan-700 italic border-cyan-500 border-8 p-2 rounded-xl shadow-2xl"/>
                 </Link>
             </div>
         </div>
