@@ -19,27 +19,38 @@ const FILLED = "f";
 const OPTIMAL = "o";
 const squareInset = 4;
 
-let submitted = false;
+// let submitted = false;
 /* Wall count */
 const initialWalls = 10;
 
 /** EXAMPLE LEVEL */
 const level = [
-  ["_", "x", "_", "x", "_", "_", "_", "x", "_", "_"],
-  ["_", "_", "_", "x", "_", "_", "x", "x", "_", "_"],
-  ["_", "x", "_", "x", "x", "_", "_", "_", "_", "_"],
-  ["x", "x", "_", "_", "_", "_", "_", "_", "_", "_"],
-  ["_", "_", "_", "_", "_", "_", "_", "_", "_", "_"],
-  ["_", "_", "_", "_", "d", "x", "x", "_", "_", "_"],
-  ["x", "x", "_", "_", "_", "_", "_", "_", "_", "_"],
-  ["x", "x", "_", "_", "_", "_", "_", "_", "_", "_"],
-  ["x", "x", "_", "_", "_", "_", "_", "_", "_", "x"],
-  ["x", "x", "_", "_", "x", "x", "_", "_", "_", "x"],
+  ["_", "x", "_", "x", "_", "_", "_", "x"],
+  ["_", "_", "_", "x", "_", "_", "x", "x"],
+  ["_", "x", "_", "x", "x", "_", "_", "_"],
+  ["x", "x", "_", "_", "_", "_", "_", "_"],
+  ["_", "_", "_", "d", "_", "_", "_", "_"],
+  ["_", "_", "_", "_", "_", "x", "x", "_"],
+  ["x", "x", "_", "_", "_", "_", "_", "_"],
+  ["x", "x", "_", "_", "_", "_", "_", "_"],
 ];
+// const level2 = [
+//   ["_", "x", "_", "x", "_", "_", "_", "x", "_", "_"],
+//   ["_", "_", "_", "x", "_", "_", "x", "x", "_", "_"],
+//   ["_", "x", "_", "x", "x", "_", "_", "_", "_", "_"],
+//   ["x", "x", "_", "_", "_", "_", "_", "_", "_", "_"],
+//   ["_", "_", "_", "_", "_", "_", "_", "_", "_", "_"],
+//   ["_", "_", "_", "_", "d", "x", "x", "_", "_", "_"],
+//   ["x", "x", "_", "_", "_", "_", "_", "_", "_", "_"],
+//   ["x", "x", "_", "_", "_", "_", "_", "_", "_", "_"],
+//   ["x", "x", "_", "_", "_", "_", "_", "_", "_", "x"],
+//   ["x", "x", "_", "_", "x", "x", "_", "_", "_", "x"],
+// ];
+let highscore = 0;
 
 export default function Game() {
   return <>
-    <div className="flex flex-col items-center justify-center p-24 w-screen h-screen bg-green-800">
+    <div className="flex flex-col items-center justify-center p-24 w-screen max-w-screen max-h-screen bg-green-800">
       <Board dimension={level.length} asciiGrid={structuredClone(level)}/>      
     </div>
   </>
@@ -121,12 +132,18 @@ function Board({dimension, asciiGrid}: {dimension: number, asciiGrid: string[][]
     if (count === 0 || enclosedGrid === null) setScore(undefined);
     else setScore(count * 10);
   }
+  // record the highscore + alert
   const handleSubmit = () => {
     if (score === undefined){
       alert("Enclose the dog first!");
       return;
     }
-    alert("you achieved a score of " + score);
+    if (score > highscore){
+        highscore = score;
+        alert("New highscore of " + score + "!")
+    } else{
+        alert("Your score: " + score + ". Highscore: " + highscore + ".");
+    }
   };
   // board reset
   const resetBoard = () => {
@@ -156,7 +173,7 @@ function Board({dimension, asciiGrid}: {dimension: number, asciiGrid: string[][]
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
       // get the optimal solution walls
-      const {walls, region, area, isEnclosed} = await solveWithClingo(asciiGrid, initialWalls);
+      const {walls, region, area, isEnclosed: _enclosed} = await solveWithClingo(asciiGrid, initialWalls);
       // draw the original board
       resetBoard();
       renderBoard(canvas, ctx, level, dimension);
@@ -287,13 +304,13 @@ function loadImage(img: any, src: string) {
   });
 }
 
-function debugGrid(grid: string[][]){
-  for (let r=0; r<grid.length; r++){
-    let out = ""; 
-    for (let c=0; c<grid[0].length; c++){
-      out += grid[r][c] + " ";
-    }
-    console.log(out + "\n");
+// function debugGrid(grid: string[][]){
+//   for (let r=0; r<grid.length; r++){
+//     let out = ""; 
+//     for (let c=0; c<grid[0].length; c++){
+//       out += grid[r][c] + " ";
+//     }
+//     console.log(out + "\n");
     
-  }
-}
+//   }
+// }

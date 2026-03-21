@@ -60,7 +60,6 @@ function buildClingoProgram(grid: string[][], maxWalls: number): string {
   `);
 
   const program = lines.join('\n');
-  console.log('Clingo program:', program);
   return program;
 }
 
