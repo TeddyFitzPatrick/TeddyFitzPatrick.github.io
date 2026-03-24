@@ -18,7 +18,8 @@ function Projects() {
         goToSlide(newSlide);
     }
     const goToSlide = (index: number) => {
-        const slider = sliderRef.current!;
+        const slider = sliderRef.current;
+        if (!slider) return;
         const slideWidth = slider.children[0].clientWidth;
         slider.style.transform = `translateX(-${index * slideWidth}px)`;
     }
