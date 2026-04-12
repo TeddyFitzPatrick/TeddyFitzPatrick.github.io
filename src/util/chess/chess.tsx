@@ -4,48 +4,65 @@ import { WaitFor, GET, UPDATE, REMOVE } from "./networking.js";
 import { pieceImages, pieceMovements, Piece, Color } from "./consts.js";
 import { Move, getAlgebraicNotation } from "./move.js";
 
+/* Rendering */
+const LIGHT_SQUARE_COLOR = "rgb(173, 189, 143)";
+const DARK_SQUARE_COLOR = "rgb(111, 143, 114)";
+// const LIGHT_SQUARE_COLOR = "rgb(227, 193, 111)";
+// const DARK_SQUARE_COLOR = "rgb(184, 139, 74)";
+const LIGHT_HIGHLIGHT_COLOR = "rgba(173, 216, 230, 0.8)";
+const DARK_HIGHLIGHT_COLOR = "rgba(4, 2, 115, 0.5)";
+const MOVE_INDICATOR_COLOR = "rgba(254, 57, 57, 0.5)";
+
+/**
+ * NOTE TO SELF: CONSIDER DOING SOME PERFT TESTING
+ * Perft 4: 197,281 legal moves
+ * Perft 5: 4,865,609 legal moves
+ */
+
 /* Page selection */
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>
 type Ref<T> = {current: T}
+type PageKey = "SelectGamemode" | "MultiplayerConfiguration" | "Board";
 export type PageContext = {
     // reactive state for UI
     selected: PageKey,
     showPromotion: boolean,
     showRestart: boolean,
     gameOverText: string
-    // Nav state
+    // page nav state
     selectedRef: Ref<PageKey>,
     showPromotionRef: Ref<boolean>,
     showRestartRef: Ref<boolean>,
     gameOverTextRef: Ref<string>
-    // Updates
+    // update
     setSelected: Setter<PageKey>
     setShowPromotion: Setter<boolean>,
     setShowRestart: Setter<boolean>,
     setGameOverText: Setter<string>
 };
-
-/* Rendering */
-const LIGHT_SQUARE_COLOR = "rgb(173, 189, 143)";
-const DARK_SQUARE_COLOR = "rgb(111, 143, 114)";
-const LIGHT_HIGHLIGHT_COLOR = "rgba(173, 216, 230, 0.8)";
-const DARK_HIGHLIGHT_COLOR = "rgba(4, 2, 115, 0.5)";
-const MOVE_INDICATOR_COLOR = "rgba(254, 57, 57, 0.5)";
-
-// const LIGHT_SQUARE_COLOR = "rgb(227, 193, 111)";
-// const DARK_SQUARE_COLOR = "rgb(184, 139, 74)";
-let ctx: CanvasRenderingContext2D,
-    boardLength: number,
-    TILE_SIZE: number,
-    moveIndicators: Move[] = [],
-    moveHighlights: Move[] = [];
+/* Game configuration*/
+type ChessContext = {
+    isMultiplayer: boolean,
+    roomCode: string,
+    color: number
+}
+let chessContext: ChessContext = {
+    isMultiplayer: false,
+    roomCode: "uninitialized",
+    color: Color.WHITE
+}
 
 /* Game state */
 export let board: number[][];
-let moveHistoryIndex = -1,
+let ctx: CanvasRenderingContext2D,
+    boardLength: number,
+    TILE_SIZE: number,
+    moveIndicators: Move[],
+    moveHighlights: Move[],
+    moveHistoryIndex = -1,
     promotionSelection: number | null = null,
-    playerColor: number,
     turnToMove: number;
+
 /* Castling Rights */
 export const castlingRights = {
     white: {
@@ -76,10 +93,7 @@ const heldPiece: HeldPiece = {
     x: -1,
     y: -1
 };
-let roomCode: string | null,
-    isMultiplayer: boolean;
 
-type PageKey = "SelectGamemode" | "MultiplayerConfiguration" | "Board";
 export default function Chess(){
     const [selected, setSelected] = useState<PageKey>("SelectGamemode");
     const [showRestart, setShowRestart] = useState<boolean>(false);
@@ -117,7 +131,6 @@ export default function Chess(){
         setShowRestart,
         setGameOverText
     }
-    // fancy if-elif
     const pages = {
         SelectGamemode: 
             <SelectGamemode pageContext={pageContext}/>,
@@ -136,7 +149,12 @@ export default function Chess(){
 function SelectGamemode({pageContext}: {pageContext: PageContext}){
     const startLocalGame = (): void => {
         pageContext.setSelected("Board");
-        initGame(pageContext);
+        chessContext = {
+            isMultiplayer: false,
+            roomCode: "lol it's local",
+            color: Color.WHITE
+        }
+        initChess(pageContext);
     }
     const gotoMultiplayerConfiguration = (): void => {
         pageContext.setSelected("MultiplayerConfiguration");
@@ -198,7 +216,12 @@ function MultiplayerConfiguration({pageContext}: {pageContext: PageContext}){
         await WaitFor(`${hostRoomCode}/joined`, 1);
         // Player has joined, start the game
         pageContext.setSelected("Board");
-        initGame(pageContext, true, hostRoomCode, hostColor);
+        chessContext = {
+            isMultiplayer: true,
+            roomCode: hostRoomCode,
+            color: hostColor
+        }
+        initChess(pageContext);
     }
     const joinRoom = async function(){
         // Read the room code
@@ -218,44 +241,48 @@ function MultiplayerConfiguration({pageContext}: {pageContext: PageContext}){
         const hostColor = await GET(`${joinRoomCode}/hostColor`)
         // Start the game
         pageContext.setSelected("Board");
-        initGame(pageContext, true, joinRoomCode, -hostColor);
+        chessContext = {
+            isMultiplayer: true,
+            roomCode: joinRoomCode,
+            color: -hostColor
+        }
+        initChess(pageContext);
     }
-
-    return (
-        <div className="text-black flex flex-col lg:flex-row space-y-6 lg:space-y-0 bg-white w-[90%] sm:w-3/4 xl:w-3/5 h-fit lg:h-3/5 text-2xl font-bold border-black p-4 sm:p-8 rounded-2xl shadow-2xl">
-            {/* <!-- HOST --> */}
-            <div className="flex items-center mr-0 lg:mr-6 space-y-4 flex-col w-full lg:w-1/2 h-full border-4 border-black rounded-xl p-4">
-                <h1 className="font-bold text-4xl italic underline">Host Room</h1>
-                <div className="w-fit h-fit text-center space-y-4">
-                    <h1 className="italic">Pick Color (default random)</h1>
-                    <div className="flex flex-row w-full h-full justify-around">
-                        <button ref={selectWhiteRef} onClick={selectWhite} className="w-36 h-36 bg-white rounded-xl border-4 border-aqua hover:scale-105"></button>
-                        <button ref={selectBlackRef} onClick={selectBlack} className="w-36 h-36 bg-black rounded-xl border-4 hover:scale-105"></button>
-                    </div>
-                </div>
-                <button onClick={hostRoom} className="rounded-xl bg-blue-500 text-white hover:scale-110 shadow-lg p-4 sm:p-6">
-                    Host Room
-                </button>
-                <div className="flex flex-col bg-gray-300 rounded-xl w-full p-6">
-                    <b>Your room code: </b> <p ref={roomDisplayRef} className="text-3xl font-extrabold"> .... </p>
+    return <>
+    <div className="text-black flex flex-col lg:flex-row space-y-6 lg:space-y-0 bg-white w-[90%] sm:w-3/4 xl:w-3/5 h-fit lg:h-3/5 text-2xl font-bold border-black p-4 sm:p-8 rounded-2xl shadow-2xl">
+        {/* <!-- HOST --> */}
+        <div className="flex items-center mr-0 lg:mr-6 space-y-4 flex-col w-full lg:w-1/2 h-full border-4 border-black rounded-xl p-4">
+            <h1 className="font-bold text-4xl italic underline">Host Room</h1>
+            <div className="w-fit h-fit text-center space-y-4">
+                <h1 className="italic">Pick Color (default random)</h1>
+                <div className="flex flex-row w-full h-full justify-around">
+                    <button ref={selectWhiteRef} onClick={selectWhite} className="w-36 h-36 bg-white rounded-xl border-4 border-aqua hover:scale-105"></button>
+                    <button ref={selectBlackRef} onClick={selectBlack} className="w-36 h-36 bg-black rounded-xl border-4 hover:scale-105"></button>
                 </div>
             </div>
-            {/* <!-- JOIN --> */}
-            <div className="flex items-center space-y-4 flex-col w-full lg:w-1/2 h-full border-4 border-black rounded-xl p-4 lg:p-4 ">
-                <h1 className="font-bold italic text-4xl underline">Join Room</h1>
-                <div className="flex flex-col space-y-2 w-full">
-                    <input type="text" 
-                        ref={enterRoomCodeRef}
-                        placeholder="Enter Room Code..." 
-                        className="bg-white text-lg border-4 p-2 w-full max-w-full h-16 rounded-xl border-black"/>
-                    <input type="submit" 
-                        onClick={joinRoom} 
-                        value="Enter"
-                        className="w-28 h-12 bg-blue-500 shadow-xl text-white rext-2xl p-2 rounded-xl hover:scale-105"/>
-                </div>
+            <button onClick={hostRoom} className="rounded-xl bg-blue-500 text-white hover:scale-110 shadow-lg p-4 sm:p-6">
+                Host Room
+            </button>
+            <div className="flex flex-col bg-gray-300 rounded-xl w-full p-6">
+                <b>Your room code: </b> <p ref={roomDisplayRef} className="text-3xl font-extrabold"> .... </p>
             </div>
         </div>
-    );
+        {/* <!-- JOIN --> */}
+        <div className="flex items-center space-y-4 flex-col w-full lg:w-1/2 h-full border-4 border-black rounded-xl p-4 lg:p-4 ">
+            <h1 className="font-bold italic text-4xl underline">Join Room</h1>
+            <div className="flex flex-col space-y-2 w-full">
+                <input type="text" 
+                    ref={enterRoomCodeRef}
+                    placeholder="Enter Room Code..." 
+                    className="bg-white text-lg border-4 p-2 w-full max-w-full h-16 rounded-xl border-black"/>
+                <input type="submit" 
+                    onClick={joinRoom} 
+                    value="Enter"
+                    className="w-28 h-12 bg-blue-500 shadow-xl text-white rext-2xl p-2 rounded-xl hover:scale-105"/>
+            </div>
+        </div>
+    </div>
+    </>
 }
 
 function generateRoomCode(): string{
@@ -267,9 +294,36 @@ function generateRoomCode(): string{
     return roomCode;
 }
 
-export function Board({pageContext}: {pageContext: PageContext}){
+function Board({pageContext}: {pageContext: PageContext}){
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [moveHistory, setMoveHistory] = useState<Move[]>([]);
+    // reset
+    useEffect(()=>{
+        if (pageContext.showRestart && pageContext.gameOverText === "..."){
+            setMoveHistory([]);
+        }
+    },[pageContext.showRestart])
+    //testing
+    useEffect(() => {
+        const navigateMoveHistory = (event: KeyboardEvent): void => {
+            if (moveHistory.length <= 1) return;
+            const lastPlayedMove: Move = moveHistory.at(-1)!;
+            if (event.key === "ArrowLeft"){
+                if (moveHistoryIndex >= 0) moveHistoryIndex--;
+                lastPlayedMove.undo();
+                turnToMove *= -1;
+            } else if (event.key === "ArrowRight"){
+                if (moveHistoryIndex < moveHistory.length - 1) moveHistoryIndex++;
+                lastPlayedMove.play();
+                turnToMove *= -1;
+            }
+            render();
+        };
+        window.addEventListener("keydown", navigateMoveHistory);
+        return () => {
+            window.removeEventListener("keydown", navigateMoveHistory);
+        }
+    }, [moveHistory]);
     // Canvas 
     useEffect(() => {
         const resizeCanvas = (): void => {
@@ -403,7 +457,7 @@ function MoveList({moveHistory}: {moveHistory: Move[]}){
     return <>
     <div className="bg-slate-600 w-60 h-full rounded-lg p-4">
         <h1 className="font-extrabold text-2xl pb-4">Move History</h1>
-        <ul className="space-y-2 font-bold text-xl overflow-y-auto h-fit max-h-[90vh]">
+        <ul className="space-y-2 font-bold text-xl overflow-y-auto scroll-smooth h-fit max-h-[90vh]">
             {moveHistory.map((move, index) => (
                 <MoveRecord key={index} index={index} move={move}/>
             ))}
@@ -413,23 +467,28 @@ function MoveList({moveHistory}: {moveHistory: Move[]}){
 }
 
 function MoveRecord({index, move}: {index: number, move: Move}){
-    return <li className="w-full flex flex-row space-x-2">
+    return <li className="w-full flex flex-row text-xl">
         <div className={`w-7 h-7 shrink-0 shadow-2xl ${Math.sign(move.piece) === 1 ? "bg-white" : "bg-black"}`}/>
-        <div>
-            {(index+1) + ": " + move.algebraicNotation}
+        <div className="w-full flex justify-around"> 
+            <div>{move.algebraicNotation} </div>
+            <div>{index+1}</div>
         </div>
     </li>
 }
 
 function RestartWindow({pageContext}: {pageContext: PageContext}){
     const restartButtonRef = useRef<HTMLButtonElement | null>(null);
-    const restartGame = (): void => {
+    const restartGame = (): void => {RestartWindow
         pageContext.setShowRestart(false);
-        runGame(playerColor, pageContext);
+        chessContext = {
+            ...chessContext,
+            color: Color.WHITE
+        }
+        initChess(pageContext);
     }
     return <>
-    <div className="flex absolute flex-col justify-center items-center space-y-10  opacity-65
-        bg-slate-500 w-[90%] h-[90%] rounded-2xl border-black border-8">
+    <div className="flex absolute flex-col justify-center items-center space-y-10 opacity-90
+        bg-slate-500 w-[90%] h-[90%] rounded-2xl">
         {/* <!-- Game over text --> */}
         <h1 className="text-center text-bold italic text-white text-3xl">
             {pageContext.gameOverTextRef.current}
@@ -468,32 +527,21 @@ function PromotionOption({filename, promotionPiece, pageContext}: {filename: str
     </>
 }
 
-export function initGame(pageContext: PageContext, multiplayer: boolean = false, code: string | null = null, color: number = Color.WHITE) {
-    /* GAMEMODES */
-    isMultiplayer = multiplayer;
-    // Multiplayer
-    if (isMultiplayer){
-        roomCode = code;
-    }
-    // Start game
-    runGame(color, pageContext);
-    // Rendering loop
-    setInterval(() => {
-        render();
-    }, 30);
-}
+async function initChess(pageContext: PageContext) {
+    // clear rendering artifacts from prior games
+    moveHighlights = [];
+    moveIndicators = [];
 
-async function runGame(color: number, pageContext: PageContext) {
-    // Randomly assign a color if one wasn't selected
-    playerColor = (color !== undefined) ? color : Math.random() >= 0.5 ? 1 : -1;
-    // Local games start with white
-    if (!isMultiplayer) playerColor = Color.WHITE;
-    turnToMove = Color.WHITE; // White moves first
     resetBoard();
-    if (isMultiplayer && playerColor === Color.BLACK){
+    turnToMove = Color.WHITE; // White moves first
+    if (chessContext.isMultiplayer && chessContext.color === Color.BLACK){
         await receiveMove(pageContext);
         turnToMove *= -1;
     }
+    // Continuous rerendering
+    setInterval(() => {
+        render();
+    }, 30);
 }
 
 function pickupPiece(rank: number, file: number, pageContext: PageContext) {
@@ -503,7 +551,7 @@ function pickupPiece(rank: number, file: number, pageContext: PageContext) {
     // Moves can't be played if the game's over
     if (pageContext.showRestartRef.current) return;
     // Player must wait for opponent's move
-    if (isMultiplayer && turnToMove != playerColor) return;
+    if (chessContext.isMultiplayer && turnToMove != chessContext.color) return;
     // Clicked on a piece of the right color
     if (pieceClicked === Piece.EMPTY || Math.sign(pieceClicked) !== Math.sign(turnToMove)) return;
     // Record the piece being picked up
@@ -524,11 +572,11 @@ async function releasePiece(rank: number, file: number, pageContext: PageContext
     if (isLegalMove(playerMove)) {
         // Play the move on the board
         await playMove(playerMove, pageContext);
-        // Switch the turn
-        turnToMove *= -1;
+        // Switch the turn (unless the game just ended)
+        if (!pageContext.showRestart) turnToMove *= -1;
         /* PROMPT OPPONENT RESPONSE */
         // Multiplayer
-        if (isMultiplayer){
+        if (chessContext.isMultiplayer){
             // Send the move to the DB for the opponent to read
             sendMove(playerMove);
             // Wait for the opponent's response
@@ -538,7 +586,7 @@ async function releasePiece(rank: number, file: number, pageContext: PageContext
         // Local
         else {
             // Switch the player color to flip the board
-            playerColor *= -1;
+            chessContext.color *= -1;
         }
         // Record the move
         setMoveHistory(moveHistory => [...moveHistory, playerMove]);
@@ -549,7 +597,7 @@ async function playMove(move: Move, pageContext: PageContext) {
     /* Promote pawns */
     if (Math.abs(move.piece) == Piece.WHITE_PAWN && (move.toRank == 0 || move.toRank == 7)) {
         // Player promotes a pawn, wait for a selection
-        if (Math.sign(move.piece) === playerColor) {
+        if (Math.sign(move.piece) === chessContext.color) {
             // Show the pawn being moved up and render before promoting
             move.play();
             moveHighlights.push(move);
@@ -817,9 +865,9 @@ type MoveData = {
 };
 /* Database Communication */
 async function sendMove(move: Move){
-    if (!roomCode) throw new Error('Error sending move, room code is null');
+    if (!chessContext.roomCode) throw new Error('Error sending move, room code is null');
     // Send the move to the opponent
-    const playerColorStr = (playerColor == Color.WHITE) ? "whiteMove" : "blackMove";
+    const playerColorStr = (chessContext.color == Color.WHITE) ? "whiteMove" : "blackMove";
     const moveData: MoveData = {
         [playerColorStr]: {
             from: [move.fromRank, move.fromFile],
@@ -828,15 +876,15 @@ async function sendMove(move: Move){
         }
     }
     // Update the move to the DB
-    UPDATE(roomCode, moveData);
+    UPDATE(chessContext.roomCode, moveData);
     // Reset for future pawn promotions
     promotionSelection = null;
 }
 
 async function receiveMove(pageContext: PageContext) {
     // Wait to receive the opponent's response
-    const opponentMovePath = `${roomCode}/${
-        playerColor == 1 ? "black" : "white"
+    const opponentMovePath = `${chessContext.roomCode}/${
+        chessContext.color == 1 ? "black" : "white"
     }Move`;
     const moveData = await WaitFor(opponentMovePath) as {
         from: [number, number];
@@ -849,22 +897,22 @@ async function receiveMove(pageContext: PageContext) {
     // Clear the opponent's move from the database after storing it
     REMOVE(opponentMovePath);
     // Play the move on the board
-    playMove(new Move(from[0], from[1], to[0], to[1]), pageContext);
+    await playMove(new Move(from[0], from[1], to[0], to[1]), pageContext);
 }
 
-/* Simple Board Utility Functions */
+/* Board Utilities */
 function resetBoard() {
     board = 
-    // [
-    //     [-4, -2, -3, -5, -6, -3, -2, -4],
-    //     [-1, -1, -1, -1, -1, -1, -1, -1],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [1, 1, 1, 1, 1, 1, 1, 1],
-    //     [4, 2, 3, 5, 6, 3, 2, 4]
-    // ];
+    [
+        [-4, -2, -3, -5, -6, -3, -2, -4],
+        [-1, -1, -1, -1, -1, -1, -1, -1],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1],
+        [4, 2, 3, 5, 6, 3, 2, 4]
+    ];
     // DEFAULT GAME BOARD
     // [
     //     [-4, -2, -3, -5, -6, -3, -2, -4],
@@ -877,30 +925,41 @@ function resetBoard() {
     //     [4, 2, 3, 5, 6, 3, 2, 4]
     // ]
     // DEBUG BOARD
-    [
-        [0, 0, -3, -5, -6, -3, -2, -4],
-        [1, 0, -1, -1, -1, -1, -1, -1],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [-1, 0, 1, 1, 1, 1, 1, 1],
-        [0, 0, 3, 5, 6, 3, 2, 4]
-    ];
+    // [
+    //     [0, 0, -3, -5, -6, -3, -2, -4],
+    //     [1, 0, -1, -1, -1, -1, -1, -1],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [-1, 0, 1, 1, 1, 1, 1, 1],
+    //     [0, 0, 3, 5, 6, 3, 2, 4]
+    // ];
+    // ONE-MOVE CHECKMATE BOARD
+    // [
+    //     [0, 0, 0, 0, -6, -3, -2, -4],
+    //     [5, -1, -1, -1, -1, -1, -1, -1],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [5, 0, 3, 5, 6, 3, 2, 4]
+    // ];
 }
 
 function isInBounds(rank: number, file: number) {
     return rank >= 0 && rank <= 7 && file >= 0 && file <= 7;
 }
 
-export function getFlippedRank(rank: number) {
-    return playerColor === Color.WHITE ? rank : 7 - rank;
+function getFlippedRank(rank: number) {
+    return chessContext.color === Color.WHITE ? rank : 7 - rank;
 }
 
 /* Rendering */
 function render() {
     // Render the squares
-    let isWhite: boolean = (playerColor == Color.WHITE);
+    let isWhite: boolean = (chessContext.color == Color.WHITE);
     for (let rank = 0; rank <= 7; rank++) {
         isWhite = !isWhite;
         for (let file = 0; file <= 7; file++) {
@@ -950,7 +1009,9 @@ function render() {
             // Ignore the held piece
             if (heldPiece.isHolding && heldPiece.rank == rank && heldPiece.file == file) continue;
             // Render the piece
-            ctx.drawImage(pieceImages.get(piece)!, file * TILE_SIZE, getFlippedRank(rank) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            ctx.drawImage(
+                pieceImages.get(piece)!, file * TILE_SIZE, getFlippedRank(rank) * TILE_SIZE, TILE_SIZE, TILE_SIZE
+            );
         }
     }
     // Render square coordinates
