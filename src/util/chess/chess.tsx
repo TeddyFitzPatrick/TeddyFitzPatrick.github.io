@@ -6,41 +6,46 @@ import { Move, getAlgebraicNotation } from "./move.js";
 
 /* Page selection */
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>
+type Ref<T> = {current: T}
 export type PageContext = {
+    // reactive state for UI
     selected: PageKey,
     showPromotion: boolean,
     showRestart: boolean,
     gameOverText: string
+    // Nav state
+    selectedRef: Ref<PageKey>,
+    showPromotionRef: Ref<boolean>,
+    showRestartRef: Ref<boolean>,
+    gameOverTextRef: Ref<string>
+    // Updates
     setSelected: Setter<PageKey>
     setShowPromotion: Setter<boolean>,
     setShowRestart: Setter<boolean>,
     setGameOverText: Setter<string>
-    // user: User | null,
-    // profile: Profile | null,
-    // loading: boolean,
-    // setUser: Setter<User | null>
-    // setProfile: Setter<Profile | null>
-    // setLoading: Setter<boolean>
 };
 
 /* Rendering */
 const LIGHT_SQUARE_COLOR = "rgb(173, 189, 143)";
 const DARK_SQUARE_COLOR = "rgb(111, 143, 114)";
-const MOVE_INDICATOR_COLOR = "rgb(254, 57, 57)";
+const LIGHT_HIGHLIGHT_COLOR = "rgba(173, 216, 230, 0.8)";
+const DARK_HIGHLIGHT_COLOR = "rgba(4, 2, 115, 0.5)";
+const MOVE_INDICATOR_COLOR = "rgba(254, 57, 57, 0.5)";
+
 // const LIGHT_SQUARE_COLOR = "rgb(227, 193, 111)";
 // const DARK_SQUARE_COLOR = "rgb(184, 139, 74)";
 let ctx: CanvasRenderingContext2D,
     boardLength: number,
-    TILE_SIZE: number; 
-let moveIndicators: Move[] = [],
+    TILE_SIZE: number,
+    moveIndicators: Move[] = [],
     moveHighlights: Move[] = [];
 
 /* Game state */
 export let board: number[][];
-let moveHistoryIndex = -1;
-let playerColor: number,
-    turnToMove: number,
-    promotionSelection: number | null;
+let moveHistoryIndex = -1,
+    promotionSelection: number | null = null,
+    playerColor: number,
+    turnToMove: number;
 /* Castling Rights */
 export const castlingRights = {
     white: {
@@ -80,16 +85,39 @@ export default function Chess(){
     const [showRestart, setShowRestart] = useState<boolean>(false);
     const [showPromotion, setShowPromotion] = useState<boolean>(false);
     const [gameOverText, setGameOverText] = useState<string>("...");
+    // create references for the nav-state to prevent constant re-renders
+    const showPromotionRef = useRef(showPromotion);
+    const showRestartRef = useRef(showRestart);
+    const gameOverTextRef = useRef(gameOverText);
+    const selectedRef = useRef(selected);
+    // sync refs with state changes (via setters)
+    useEffect(() => {
+        showPromotionRef.current = showPromotion;
+    }, [showPromotion]);
+    useEffect(() => {
+        showRestartRef.current = showRestart;
+    }, [showRestart]);
+    useEffect(() => {
+        gameOverTextRef.current = gameOverText;
+    }, [gameOverText]);
+    useEffect(() => {
+        selectedRef.current = selected;
+    }, [selected]);
     const pageContext: PageContext = {
         selected,
         showPromotion,
         showRestart,
         gameOverText,
+        selectedRef,
+        showPromotionRef,
+        showRestartRef,
+        gameOverTextRef,
         setSelected,
         setShowPromotion,
         setShowRestart,
         setGameOverText
     }
+    // fancy if-elif
     const pages = {
         SelectGamemode: 
             <SelectGamemode pageContext={pageContext}/>,
@@ -98,12 +126,11 @@ export default function Chess(){
         Board: 
             <Board pageContext={pageContext} />
     }
-    /* Pages */
-    return (
+    return <>
     <div className="flex justify-center items-center w-screen h-screen bg-slate-800 m-0 p-0" id="body">
         {pages[selected]}
     </div>
-    );
+    </>;
 };
 
 function SelectGamemode({pageContext}: {pageContext: PageContext}){
@@ -220,10 +247,7 @@ function MultiplayerConfiguration({pageContext}: {pageContext: PageContext}){
                     <input type="text" 
                         ref={enterRoomCodeRef}
                         placeholder="Enter Room Code..." 
-                        className="bg-white text-lg border-4 p-2 w-full max-w-full h-16 rounded-xl border-black" 
-                        // autocomplete="off"
-                        // autocapitalize="on"
-                        />
+                        className="bg-white text-lg border-4 p-2 w-full max-w-full h-16 rounded-xl border-black"/>
                     <input type="submit" 
                         onClick={joinRoom} 
                         value="Enter"
@@ -242,7 +266,6 @@ function generateRoomCode(): string{
     }
     return roomCode;
 }
-
 
 export function Board({pageContext}: {pageContext: PageContext}){
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -271,10 +294,7 @@ export function Board({pageContext}: {pageContext: PageContext}){
     // Event listeners for Mouse + Tap: Press, Drag, and Release
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas){
-            throw new Error("chess canvas not found");
-            return;
-        }
+        if (!canvas) throw new Error("chess canvas not found");
         const getMousePos = (event: MouseEvent): {mouseX: number, mouseY: number} => {
             const rect = canvas.getBoundingClientRect();
             return {
@@ -359,23 +379,23 @@ export function Board({pageContext}: {pageContext: PageContext}){
             canvas.removeEventListener("touchend", handleTouchEnd);
         }
     }, []);
-    return <>
-        <div className="flex w-full h-full justify-center items-center">
-            {/* Board and move list */}
-            <div className="flex space-y-4 sm:space-y-0 sm:space-x-8 flex-col md:flex-row max-w-screen max-h-screen">
-                <canvas ref={canvasRef} 
-                    width="69" 
-                    height="69"
-                    className="border-0 sm:border-8 border-amber-950 rounded-0 sm:rounded-xl shadow-2xl">
-                </canvas>
 
-                <MoveList moveHistory={moveHistory}/>
-            </div>
-            {/* <!-- Restart Window --> */}
-            {pageContext.showRestart ?? <RestartWindow pageContext={pageContext}/>}
-            {/* <!-- Pawn Promotion Selection --> */}
-            {pageContext.showPromotion ?? <PromotionWindow/>}
+    return <>
+    <div className="flex w-full h-full justify-center items-center">
+        {/* Board and move list */}
+        <div className="flex space-y-4 sm:space-y-0 sm:space-x-8 flex-col md:flex-row max-w-screen max-h-screen">
+            <canvas ref={canvasRef} 
+                width="69" 
+                height="69"
+                className="border-0 sm:border-8 border-amber-950 rounded-0 sm:rounded-xl shadow-2xl">
+            </canvas>
+            <MoveList moveHistory={moveHistory}/>
         </div>
+        {/* <!-- Restart Window --> */}
+        {pageContext.showRestart && <RestartWindow pageContext={pageContext}/>}
+        {/* <!-- Pawn Promotion Selection --> */}
+        {pageContext.showPromotion && <PromotionWindow pageContext={pageContext}/>}
+    </div>
     </>
 }
 
@@ -385,10 +405,7 @@ function MoveList({moveHistory}: {moveHistory: Move[]}){
         <h1 className="font-extrabold text-2xl pb-4">Move History</h1>
         <ul className="space-y-2 font-bold text-xl overflow-y-auto h-fit max-h-[90vh]">
             {moveHistory.map((move, index) => (
-                <MoveRecord 
-                    key={index} 
-                    index={index}
-                    move={move}/>
+                <MoveRecord key={index} index={index} move={move}/>
             ))}
         </ul>
     </div>
@@ -407,15 +424,15 @@ function MoveRecord({index, move}: {index: number, move: Move}){
 function RestartWindow({pageContext}: {pageContext: PageContext}){
     const restartButtonRef = useRef<HTMLButtonElement | null>(null);
     const restartGame = (): void => {
-        pageContext.setShowRestart(true);
+        pageContext.setShowRestart(false);
         runGame(playerColor, pageContext);
     }
     return <>
-    <div id="restartWindow" className="hidden flex absolute flex-col justify-center items-center space-y-10  opacity-65
+    <div className="flex absolute flex-col justify-center items-center space-y-10  opacity-65
         bg-slate-500 w-[90%] h-[90%] rounded-2xl border-black border-8">
         {/* <!-- Game over text --> */}
-        <h1 id="gameOverText" className="text-center text-bold italic text-white text-3xl">
-            Game Over Text Placeholder
+        <h1 className="text-center text-bold italic text-white text-3xl">
+            {pageContext.gameOverTextRef.current}
         </h1>
         {/* <!-- Restart --> */}
         <button onClick={restartGame} ref={restartButtonRef} className="text-bold text-3xl p-4 hover:scale-105 rounded-2xl shadow-2xl border-black bg-blue-500 text-white">
@@ -425,26 +442,28 @@ function RestartWindow({pageContext}: {pageContext: PageContext}){
     </>
 }
 
-function PromotionWindow(){
+function PromotionWindow({pageContext}: {pageContext: PageContext}){
     return <>
-    <div id="promotionWindow" className="hidden flex absolute flex-row justify-around items-center
+    <div className="flex absolute flex-row justify-around items-center z-20
         bg-opacity-70 bg-slate-600 w-full sm:w-1/2 h-[20%] top-[40%] left-0 sm:left-1/4 rounded-3xl border-black border-8">
-        <PromotionOption filename="whiteQueen" promotionPiece={Piece.WHITE_QUEEN}/>
-        <PromotionOption filename="whiteRook" promotionPiece={Piece.WHITE_ROOK}/>
-        <PromotionOption filename="whiteBishop" promotionPiece={Piece.WHITE_BISHOP}/>
-        <PromotionOption filename="blackKnight" promotionPiece={Piece.WHITE_KNIGHT}/>
+        <PromotionOption filename="whiteQueen" promotionPiece={Piece.WHITE_QUEEN} pageContext={pageContext}/>
+        <PromotionOption filename="whiteRook" promotionPiece={Piece.WHITE_ROOK} pageContext={pageContext}/>
+        <PromotionOption filename="whiteBishop" promotionPiece={Piece.WHITE_BISHOP} pageContext={pageContext}/>
+        <PromotionOption filename="blackKnight" promotionPiece={Piece.WHITE_KNIGHT} pageContext={pageContext}/>
     </div>
     </>
 }
 
-function PromotionOption({filename, promotionPiece}: {filename: string, promotionPiece: number}){
+function PromotionOption({filename, promotionPiece, pageContext}: {filename: string, promotionPiece: number, pageContext: PageContext}){
     const promote = (): void => {
         promotionSelection = promotionPiece;
+        pageContext.setShowPromotion(false);
     }
     return <>
         <img onClick={promote} 
         src={`/chess/${filename}.png`}
         alt={filename}
+        draggable={false}
         className="bg-slate-200 rounded-2xl w-1/5 aspect-square hover:scale-110 shadow-2xl invert"/>
     </>
 }
@@ -470,21 +489,19 @@ async function runGame(color: number, pageContext: PageContext) {
     // Local games start with white
     if (!isMultiplayer) playerColor = Color.WHITE;
     turnToMove = Color.WHITE; // White moves first
-    // Initial board layout
     resetBoard();
-    // Player is black, wait for response on online games
     if (isMultiplayer && playerColor === Color.BLACK){
-        // Wait for opponent
         await receiveMove(pageContext);
         turnToMove *= -1;
     }
 }
 
 function pickupPiece(rank: number, file: number, pageContext: PageContext) {
+    if (pageContext.showPromotionRef.current || pageContext.showRestartRef.current) return;
     // Get the piece clicked
     const pieceClicked = board[rank][file];
     // Moves can't be played if the game's over
-    if (pageContext.showRestart) return;
+    if (pageContext.showRestartRef.current) return;
     // Player must wait for opponent's move
     if (isMultiplayer && turnToMove != playerColor) return;
     // Clicked on a piece of the right color
@@ -529,7 +546,6 @@ async function releasePiece(rank: number, file: number, pageContext: PageContext
 }
 
 async function playMove(move: Move, pageContext: PageContext) {
-    if (!move) throw new Error('No move');
     /* Promote pawns */
     if (Math.abs(move.piece) == Piece.WHITE_PAWN && (move.toRank == 0 || move.toRank == 7)) {
         // Player promotes a pawn, wait for a selection
@@ -541,13 +557,13 @@ async function playMove(move: Move, pageContext: PageContext) {
             pageContext.setShowPromotion(true);
             await new Promise<void>((resolve) => {
                 const check = setInterval(() => {
-                    if (promotionSelection != null) {
+                    // Wait for a promotion piece to be selected, closing the promotion window
+                    if (!pageContext.showPromotionRef.current && promotionSelection !== null) {
                         clearInterval(check);
                         resolve();
                     }
                 }, 50);
             });
-            pageContext.setShowPromotion(false);
         };
         if (!promotionSelection) throw new Error('Promotion window closed, but no selection was saved')
         // Apply the promotion by changing the pawn's piece type
@@ -838,28 +854,30 @@ async function receiveMove(pageContext: PageContext) {
 
 /* Simple Board Utility Functions */
 function resetBoard() {
-    board = [
-        [-4, -2, -3, -5, -6, -3, -2, -4],
-        [-1, -1, -1, -1, -1, -1, -1, -1],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1],
-        [4, 2, 3, 5, 6, 3, 2, 4]
-    ];
-    
-    /*   REFERENCE DEFAULT GAME BOARD
-        [-4, -2, -3, -5, -6, -3, -2, -4],
-        [-1, -1, -1, -1, -1, -1, -1, -1],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1],
-        [4, 2, 3, 5, 6, 3, 2, 4]
-    */
-    /*   TESTING BOARD
+    board = 
+    // [
+    //     [-4, -2, -3, -5, -6, -3, -2, -4],
+    //     [-1, -1, -1, -1, -1, -1, -1, -1],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [1, 1, 1, 1, 1, 1, 1, 1],
+    //     [4, 2, 3, 5, 6, 3, 2, 4]
+    // ];
+    // DEFAULT GAME BOARD
+    // [
+    //     [-4, -2, -3, -5, -6, -3, -2, -4],
+    //     [-1, -1, -1, -1, -1, -1, -1, -1],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [0, 0, 0, 0, 0, 0, 0, 0],
+    //     [1, 1, 1, 1, 1, 1, 1, 1],
+    //     [4, 2, 3, 5, 6, 3, 2, 4]
+    // ]
+    // DEBUG BOARD
+    [
         [0, 0, -3, -5, -6, -3, -2, -4],
         [1, 0, -1, -1, -1, -1, -1, -1],
         [0, 0, 0, 0, 0, 0, 0, 0],
@@ -868,7 +886,7 @@ function resetBoard() {
         [0, 0, 0, 0, 0, 0, 0, 0],
         [-1, 0, 1, 1, 1, 1, 1, 1],
         [0, 0, 3, 5, 6, 3, 2, 4]
-    */
+    ];
 }
 
 function isInBounds(rank: number, file: number) {
@@ -897,21 +915,20 @@ function render() {
     // Render move highlights
     for (const move of moveHighlights){
         // Highlight Color
-        ctx.fillStyle =
-            (Math.sign(move.piece) == Color.WHITE) ? "lightgreen" : "darkgreen";
+        ctx.fillStyle = (Math.sign(move.piece) == Color.WHITE) ? LIGHT_HIGHLIGHT_COLOR : DARK_HIGHLIGHT_COLOR;
         // Previous tile
         ctx.fillRect(
-            move.fromFile * TILE_SIZE - 1,
-            getFlippedRank(move.fromRank) * TILE_SIZE - 1,
-            TILE_SIZE + 2,
-            TILE_SIZE + 2
+            move.fromFile * TILE_SIZE,
+            getFlippedRank(move.fromRank) * TILE_SIZE,
+            TILE_SIZE,
+            TILE_SIZE
         );
         // Moved to tile
         ctx.fillRect(
-            move.toFile * TILE_SIZE - 1,
-            getFlippedRank(move.toRank) * TILE_SIZE - 1,
-            TILE_SIZE + 2,
-            TILE_SIZE + 2
+            move.toFile * TILE_SIZE,
+            getFlippedRank(move.toRank) * TILE_SIZE,
+            TILE_SIZE,
+            TILE_SIZE
         );
     }
     // Render move indicators
@@ -920,11 +937,7 @@ function render() {
         // Draw a circular move indicator for each legal move available
         for (const move of moveIndicators) {
             const rank = move.toRank, file = move.toFile;
-            ctx.fillRect(
-                file * TILE_SIZE - 1,
-                getFlippedRank(rank) * TILE_SIZE - 1,
-                TILE_SIZE + 2,
-                TILE_SIZE + 2);
+            ctx.fillRect(file * TILE_SIZE, getFlippedRank(rank) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             ctx.fill();
         }
     }

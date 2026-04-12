@@ -40,7 +40,6 @@ export class Move {
         if (Math.abs(this.piece) === Piece.WHITE_PAWN && Math.abs(this.fromRank - this.toRank) === 2){
             
         }
-
         /* Keep track if the king or rook moved to update castling rights */
         // King moved
         castlingRights.white.kingMoved = (this.piece === Piece.WHITE_KING);

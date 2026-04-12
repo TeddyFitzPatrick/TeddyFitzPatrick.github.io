@@ -15,9 +15,9 @@ function Landing() {
                 </h1> 
             </div>
             
-            <div className="flex flex-col space-y-8 w-fit h-fit items-center">
+            <div className="flex flex-col space-y-4 w-fit h-fit items-center">
                 <Link to="/game">
-                    <TextAnim text="{ Hackathon Game *NEW* }" cooldown={20}
+                    <TextAnim text="{ Puzzle Game }" cooldown={50}
                     className="w-fittext-xl md:text-3xl hover:scale-105 font-bold bg-slate-900 text-cyan-700 italic border-cyan-500 border-8 p-2 rounded-xl shadow-2xl"/>
                 </Link>
                 <Link to="/plife">
@@ -25,8 +25,12 @@ function Landing() {
                     className="w-fittext-xl md:text-3xl hover:scale-105 font-bold bg-slate-900 text-cyan-700 italic border-cyan-500 border-8 p-2 rounded-xl shadow-2xl"/>
                 </Link>
                 <Link to="/chat">
-                    <TextAnim text="{ Reddit Clone }" cooldown={60}
+                    <TextAnim text="{ Reddit Clone }" cooldown={40}
                     className="w-fittext-xl md:text-3xl hover:scale-105 font-bold bg-slate-900 text-cyan-700 italic border-cyan-500 border-8 p-2 rounded-xl shadow-2xl"/>
+                </Link>
+                <Link to="/chess">
+                    <TextAnim text="{ Chess }" cooldown={60}
+                        className="w-fittext-xl md:text-3xl hover:scale-105 font-bold bg-slate-900 text-cyan-700 italic border-cyan-500 border-8 p-2 rounded-xl shadow-2xl"/>
                 </Link>
             </div>
         </div>
