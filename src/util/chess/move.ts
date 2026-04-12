@@ -1,4 +1,4 @@
-import { board, castlingRights, enPassant } from "./chessEngine.tsx";
+import { board, castlingRights, enPassant  } from "./chess.tsx";
 import { Piece } from "./consts.ts";
 
 export class Move {
@@ -27,9 +27,10 @@ export class Move {
         if (Math.abs(this.piece) === Piece.WHITE_ROOK || Math.abs(this.piece) === Piece.WHITE_KING){
             this.priorCastlingRights = structuredClone(castlingRights);
         }
-
         // Algebraic Coordinates
-        this.algebraicNotation = `${String.fromCharCode(97 + toFile)}${8-toRank}`;
+        this.algebraicNotation = getAlgebraicNotation(
+            toRank, toFile 
+        );
         // Piece captured on move
         this.capturedPiece = board[toRank][toFile];
     }
@@ -122,4 +123,8 @@ export class Move {
         board[this.toRank][this.toFile] = this.capturedPiece;
         board[this.fromRank][this.fromFile] = this.piece;
     }
+}
+
+export function getAlgebraicNotation(rank: number, file: number): string{
+    return `${String.fromCharCode('a'.charCodeAt(0) + file)}${8 - rank}`;
 }
