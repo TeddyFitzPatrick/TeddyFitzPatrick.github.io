@@ -15,23 +15,12 @@ function Landing() {
                 </h1> 
             </div>
             
-            <div className="flex flex-col space-y-4 w-fit h-fit items-center">
-                <Link to="/game">
-                    <TextAnim text="{ Puzzle Game }" cooldown={50}
-                    className="w-fittext-xl md:text-3xl hover:scale-105 font-bold bg-slate-900 text-cyan-700 italic border-cyan-500 border-8 p-2 rounded-xl shadow-2xl"/>
-                </Link>
-                <Link to="/plife">
-                    <TextAnim text="{ Particles }" cooldown={60}
-                    className="w-fittext-xl md:text-3xl hover:scale-105 font-bold bg-slate-900 text-cyan-700 italic border-cyan-500 border-8 p-2 rounded-xl shadow-2xl"/>
-                </Link>
-                <Link to="/chat">
-                    <TextAnim text="{ Reddit Clone }" cooldown={40}
-                    className="w-fittext-xl md:text-3xl hover:scale-105 font-bold bg-slate-900 text-cyan-700 italic border-cyan-500 border-8 p-2 rounded-xl shadow-2xl"/>
-                </Link>
-                <Link to="/chess">
-                    <TextAnim text="{ Chess }" cooldown={60}
-                        className="w-fittext-xl md:text-3xl hover:scale-105 font-bold bg-slate-900 text-cyan-700 italic border-cyan-500 border-8 p-2 rounded-xl shadow-2xl"/>
-                </Link>
+            <div className="flex flex-col space-y-1 w-fit h-fit items-center">
+                <AnimLink to="/chess" text="{ Multiplayer Chess }" cooldown={60}/>
+                <AnimLink to="https://teddyfitzpatrick.github.io/mips-interpreter-web/" text="{ MIPS Interpreter }" cooldown={40}/>
+                <AnimLink to="/plife" text="{ Particles }" cooldown={60}/>
+                <AnimLink to="/chat" text="{ Reddit Clone }" cooldown={40}/>
+                <AnimLink to="/game" text="{ Puzzle Game }" cooldown={50}/>
             </div>
         </div>
         {/* Canvas */}
@@ -39,31 +28,24 @@ function Landing() {
             <ParticleLife/>
         </div>
         {/* about  */}
-        <div className="w-full flex flex-col md:flex-row text-8xl font-bold h-fit ">
+        {/* <div className="w-full flex flex-col md:flex-row text-8xl font-bold h-fit ">
             <div className="w-0 md:w-2/5 flex justify-center">
                 <img src="/misc/vermont.png" className="object-contain rounded-xl"/>
             </div>
             <div className="w-full h-full md:w-3/5 flex flex-col justify-center rounded-4xl">
-                <div className="h-fit flex items-center justify-center text-lg md:text-xl xl:text-3xl font-bond shadow-2xl p-6 rounded-xl">
+                <div className="h-fit flex items-center justify-center text-lg md:text-xl xl:text-3xl font-bond p-6 rounded-xl">
                     <p>
-                        I'm Teddy FitzPatrick, a junior year CS major at RIT. <br/><br/>
-                        
-                        I tutor Analysis of Algorithms and Computer Science Theory. <br/><br/>
-
-                        I will be studying abroad in April, and in the meantime, I am working as a research assistant, creating computational models
-                        of cytoskeletal structure self-assembly.<br/><br/>
-
-                        In my free time, I play badminton and practice piano.<br/><br/>
+                        I'm Teddy FitzPatrick, a senior year CS major at RIT. <br/><br/>
 
                         If you want to get in contact, message me on LinkedIn or send an email.
                     </p>
                 </div>
-                {/* <ul className="relative bottom-0 flex flex-row justify-around shadow-2xl rounded-xl py-4 sm:py-8 items-center">
+                <ul className="relative bottom-0 flex flex-row justify-around shadow-2xl rounded-xl py-4 sm:py-8 items-center">
                     <SocialLink imgPath={"/misc/github-mark.svg"} targetUrl={"https://github.com/TeddyFitzPatrick/"}/>
                     <SocialLink imgPath={"/misc/linkedin-mark.svg"} targetUrl={"https://www.linkedin.com/in/teddyfitzpatrick/"}/>
-                </ul> */}
+                </ul> 
             </div>
-        </div>  
+        </div>   */}
 
         {/* Projects */}
         <div className="w-full flex flex-col justify-start items-start max-w-[95vw]">
@@ -73,6 +55,13 @@ function Landing() {
         {/* Classes  */}
         <Classes/>
     </div>
+}
+
+function AnimLink({to, text, cooldown}: {to: string, text: string, cooldown: number}){
+    return <Link to={to}>
+        <TextAnim text={`${text}`} cooldown={cooldown}
+        className="w-fittext-xl md:text-4xl hover:scale-105 font-extrabold text-cyan-300 bg-black p-8 hover:underline"/>
+    </Link>
 }
 
 // function SocialLink({imgPath, targetUrl}: {imgPath: string, targetUrl: string}){

@@ -396,11 +396,11 @@ function SelectSortBy({sortBy, setSortBy}:
 
     useClickOutside(dropdownRef, () => setIsOpen(false));
 
-    return <div ref={dropdownRef} className="flex flex-col w-32 text-sm relative cursor-pointer shadow-lg shadow-indigo-600">
+    return <div ref={dropdownRef} className="flex flex-col w-32 text-sm relative cursor-pointer">
         <motion.button 
             whileTap={{ scale: 0.90 }}
             onClick={() => setIsOpen(!isOpen)}
-            className="cursor-pointer group flex items-center justify-between w-full text-left px-2 py-2  rounded-lg bg-slate-950 shadow-sm focus:outline-none border border-black">
+            className="cursor-pointer group flex items-center justify-between w-full text-left px-2 py-2 rounded-lg bg-slate-800 shadow-sm focus:outline-none border border-black">
             <div className="flex items-center gap-2">
                 <img className="w-6 h-6 rounded-full grayscale-100 invert" src={sortBy.image} alt={sortBy.name} />
                 <span>{sortBy.name}</span>
@@ -411,7 +411,7 @@ function SelectSortBy({sortBy, setSortBy}:
         </motion.button>
 
         {isOpen && (
-            <ul className="absolute top-10 w-32 bg-slate-950 rounded-xl mt-1 right-0 z-10 shadow-lg shadow-indigo-600">
+            <ul className="absolute top-10 w-32 bg-slate-800 rounded-xl mt-1 right-0 z-10 shadow-lg shadow-indigo-600">
                 {sortBySettings.map((setting) => (
                     <motion.button
                         whileHover={{ scale: 1.05 }}
@@ -432,15 +432,12 @@ function SelectThread({setCurrentThread, currentThread}:
                        currentThread: Thread | null}){
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [threads, setThreads] = useState<Thread[]>([]);
-    
     const dropdownRef = useRef<HTMLDivElement>(null);
-
     const threadImages: Record<string, string> = {
         "general": "/chat/general_group.svg",
         "classes": "/chat/book.svg",
         "coding": "/chat/html_tag.svg",
     }; 
-
     useEffect(() => {
         const getThreads = async () => {
             const { data: threadsData, error: threadsError } = await supabase
@@ -455,14 +452,12 @@ function SelectThread({setCurrentThread, currentThread}:
         }
         getThreads();
     }, []); 
-
     useClickOutside(dropdownRef, () => setIsOpen(false));
-
-    return <div ref={dropdownRef} className="flex flex-col w-36 text-xs relative cursor-pointer shadow-lg shadow-indigo-600">
+    return <div ref={dropdownRef} className="flex flex-col w-36 text-xs relative cursor-pointer ">
         <motion.button
             whileTap={{ scale: 0.90 }}
             onClick={() => setIsOpen(!isOpen)} 
-            className="cursor-pointer group flex items-center justify-between w-full text-left px-2 py-2  rounded-lg bg-slate-950 shadow-sm focus:outline-none border border-black">
+            className="cursor-pointer group flex items-center justify-between w-full text-left px-2 py-2  rounded-lg bg-slate-800 shadow-sm focus:outline-none border border-black">
             <div className="flex items-center gap-2">
                 <img className="w-6 h-6 rounded-full grayscale-100 invert" src={threadImages[currentThread!.name]} alt={"n/a"} />
                 <span>{currentThread && currentThread.name}</span>
@@ -471,9 +466,8 @@ function SelectThread({setCurrentThread, currentThread}:
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
         </motion.button>
-
         {isOpen && (
-            <ul className="absolute top-10 w-36 bg-slate-950 rounded-xl mt-1 right-0 z-10 shadow-lg shadow-indigo-600">
+            <ul className="absolute top-10 w-36 bg-slate-800 rounded-xl mt-1 right-0 z-10 shadow-lg shadow-indigo-600">
                 {threads.map((thread: Thread) => (
                     <motion.button 
                         whileHover={{scale: 1.1}}
@@ -688,9 +682,9 @@ function ChatApp({auth}: {auth: AuthContext}){
         getPosts();
     }, [currentThread, sortBy]);
     return <>
-    <div className="w-full min-h-screen flex flex-col items-center bg-accent-foreground text-white space-y-1">
+    <div className="w-full min-h-screen flex flex-col items-center bg-slate-400 text-white space-y-1">
         {/* app header  */}
-        <section className="w-full p-4 bg-slate-950 shadow-2xl text-xl flex flex-row justify-between items-start">
+        <section className="w-full p-4 bg-slate-800 shadow-2xl text-xl flex flex-row justify-between items-start">
             {/* sign in name  */}
             <div className="flex flex-col sm:flex-row space-x-2 space-y-2 sm:space-y-0">
                 {/* <EditProfile auth={auth}/> */}
@@ -741,7 +735,7 @@ function ChatApp({auth}: {auth: AuthContext}){
                 { posts.length > 0 ? posts.filter((post: Post) => (post.parent_id === null)).map(post => (
                 <div key={post.id} className="items-end flex flex-col w-full rounded-lg ">
                     {/* individual post */}
-                    <div key={post.id} className="w-full h-max-124 p-2 mt-1 space-y-1 rounded-lg bg-slate-950">
+                    <div key={post.id} className="w-full h-max-124 p-2 mt-1 space-y-1 rounded-lg bg-slate-800">
                         {/* user + date */}
                         <div className="flex flex-row justify-between">
                             <div className="flex flex-row space-x-1 items-center">
@@ -786,7 +780,7 @@ function ChatApp({auth}: {auth: AuthContext}){
                     {!post.hide_replies && <Replies auth={auth} parent_post={post} posts={posts} setPosts={setPosts} currentThread={currentThread} depth={1}/>}
                 </div>
                 )) :
-                (<div className="w-[99%] shadow-2xl rounded-lg p-4 bg-slate-700 text-2xl mt-2">Loading...</div>)
+                (<div className="w-[99%] shadow-2xl rounded-lg p-4 bg-slate-800 text-2xl mt-2">Loading...</div>)
                 }
             </section>
             {/* leaderboard */}
@@ -794,13 +788,12 @@ function ChatApp({auth}: {auth: AuthContext}){
                 leaderboard:
             </section> */}
         </section>
-
         {/* create post button  */}
         <motion.button
             whileHover={{ scale: 1.10 }}
             whileTap={{ scale: 0.92 }}
             onClick={() => toggleCreatePost()}
-            className="fixed bottom-2 right-2 p-4 rounded-2xl shadow-lg invert bg-slate-950 text-white flex flex-row space-x-2 justify-center items-center cursor-pointer">
+            className="fixed bottom-2 right-2 p-4 rounded-2xl shadow-lg bg-slate-800 text-white flex flex-row space-x-2 justify-center items-center cursor-pointer">
             <img src="/chat/plus.svg" alt="+" className="w-8 invert"/>
             <p className="font-bold text-xl">Create Post</p>
         </motion.button>
@@ -897,7 +890,7 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
     <div className={`w-full flex items-end flex-col`}>
         {/* window to add a reply to the parent post */}
         {parent_post.add_reply && 
-        <div className={`w-full bg-slate-950 px-2 py-1 rounded-lg mt-1 flex flex-col space-y-2`}
+        <div className={`w-full bg-slate-800 px-2 py-1 rounded-lg mt-1 flex flex-col space-y-2`}
              style={{ width: `calc(100% - ${parentVisualDepth*20}px)` }}>
             <textarea ref={replyRef} className="bg-transparent text-white border border-gray-200 rounded-xl py-2 px-2 sm:px-3 w-full mt-1" placeholder="Your reply"/>
             <button onClick={() => sendReply()}
@@ -914,7 +907,7 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
             <div className="w-px h-full bg-white absolute left-0 top-0"
                     style={{ marginLeft: `${(visualDepth-1)*20}px` }}/>
             {/* reply */}
-            <div className={`max-w-full relative rounded-lg space-y-1 px-2 py-1 mt-1 bg-slate-950`}
+            <div className={`max-w-full relative rounded-lg space-y-1 px-2 py-1 mt-1 bg-slate-800`}
                 style={{ width: `calc(100% - ${visualDepth*20}px)` }}>
                 {/* reset reply width */}
                 {isReset && <img src="/chat/arrow.svg" className="absolute invert left-0 -translate-x-5 top-1/2 w-4 h-4 shrink-0"/>}
@@ -1017,7 +1010,7 @@ function MessageOptions({post, posts, setPosts}:
                 </svg>
             </motion.button>
             {isOpen && (
-                <ul className="absolute top-10 text-base rounded-xl bg-slate-950 shadow-md right-0 z-10 space-y-1 flex flex-col cursor-pointer">
+                <ul className="absolute top-10 text-base rounded-xl bg-black shadow-md right-0 z-10 space-y-1 flex flex-col cursor-pointer">
                     <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }} 

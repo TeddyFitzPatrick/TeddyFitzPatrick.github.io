@@ -95,7 +95,6 @@ export default function CreatePost({auth, getPosts, isPosting, setIsPosting, cur
   const onFileReject = React.useCallback((file: File, _message: string) => {
     console.log(`"${file.name.length > 20 ? `${file.name.slice(0, 20)}...` : file.name}" has been rejected`);
   }, []);
-
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     await sendPost();
@@ -103,7 +102,6 @@ export default function CreatePost({auth, getPosts, isPosting, setIsPosting, cur
     if (titleRef && titleRef.current) titleRef.current.value = "";
     if (contentRef && contentRef.current) contentRef.current.value = "";
   }
-
   return (
     <section className="w-[99%] h-max-124 rounded-lg pt-4 pb-8 px-2 sm:px-6 flex flex-col space-y-3 my-2 bg-slate-950">
     <h1 className="w-full text-3xl tracking-wider">Create Post</h1>

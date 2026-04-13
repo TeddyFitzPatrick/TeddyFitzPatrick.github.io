@@ -2,12 +2,12 @@ import '../main.css'
 
 function Classes() {
     const classes: Record<string, string[]> = {
-        "Spring 2026 (Upcoming)": [
-            "*Studying abroad in Osnabrück, Germany (April-August)",
-            "German Language - Level B1",
+        "Spring/Summer 2026": [
+            "*Studying at the Universität Osnabrück in Germany",
             "Introduction to Computational Linguistics",
-            "Machine Learning",
-            "Scientific Programming in Python"
+            "Foundations of Machine Learning",
+            "Introduction to Artificial Intelligence",
+            "German as a Foreign Language A2.2",
         ],
         "Fall 2025": [
             "CSCI 250 (Concepts of Computer Systems)",

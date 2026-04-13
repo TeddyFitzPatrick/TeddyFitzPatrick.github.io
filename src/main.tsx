@@ -10,7 +10,7 @@ import Chess from './util/chess/chess.tsx'
 import {Sliders, ParticleLife} from './util/particleLife/particleLife.tsx';
 
 import Game from './pages/Game.tsx';
-import Chat from './chat/chat.tsx';
+import Chat from './util/chat/chat.tsx';
 
 function App(){
     const location = useLocation();
