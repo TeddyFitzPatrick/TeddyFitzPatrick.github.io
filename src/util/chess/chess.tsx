@@ -358,7 +358,7 @@ function Board({pageContext}: {pageContext: PageContext}){
         }
         const getTouchPos = (event: TouchEvent): {touchX: number, touchY: number} => {
             const rect = canvas.getBoundingClientRect();
-            const touch = event.touches[0];
+            const touch = event.touches[0] || event.changedTouches[0];
             return {
                 touchX: touch.clientX - rect.left,
                 touchY: touch.clientY - rect.top
@@ -455,7 +455,7 @@ function Board({pageContext}: {pageContext: PageContext}){
 
 function MoveList({moveHistory}: {moveHistory: Move[]}){
     return <>
-    <div className="bg-slate-600 w-60 h-full rounded-lg p-4">
+    <div className="bg-slate-600 w-60 h-full rounded-lg p-4 hidden md:visible">
         <h1 className="font-extrabold text-2xl pb-4">Move History</h1>
         <ul className="space-y-2 font-bold text-xl overflow-y-auto scroll-smooth h-fit max-h-[90vh]">
             {moveHistory.map((move, index) => (

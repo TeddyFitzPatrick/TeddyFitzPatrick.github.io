@@ -53,7 +53,7 @@ function Classes() {
             "VISL 120 (Intro to Film)"
         ]
     }
-    return <div className="w-full h-fit flex flex-col">
+    return <div className="flex flex-col">
         <div className="flex flex-row bg-slate-900 rounded-xl shadow-2xl px-4 py-2 w-fit h-fit ml-4 justify-center items-center">
             <p className=" font-bold text-4xl">
                 Coursework: (3.9 GPA)
@@ -73,7 +73,7 @@ function Classes() {
 
 function Semester({title, classList}: {title: string, classList: string[]}){
     return <>
-        <div className="rounded-2xl shadow-2xl bg-slate-900 w-fit h-fit p-8 sm:p-10 shrink-0">
+        <div className="rounded-2xl shadow-2xl bg-slate-900 p-8 sm:p-10 shrink-0">
             <h1 className="w-auto italic text-4xl font-bold">{title}</h1>
             <ul className="text-lg text-white pt-4 space-y-2">
                 {classList.map((className, index) => (

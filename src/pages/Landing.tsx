@@ -1,9 +1,9 @@
 import '../main.css'
-import TextAnim from '../util/textAnim/TextAnim.tsx';
+// import TextAnim from '../util/textAnim/TextAnim.tsx';
 import Projects from './Projects.tsx';
 import Classes from './Classes.tsx';
 import { ParticleLife } from '../util/particleLife/particleLife.tsx';
-import { Link } from 'react-router-dom';
+// import { Link } from 'react-router-dom';
 
 function Landing() {
     return <div className="space-y-12 flex flex-col items-center">
@@ -15,13 +15,13 @@ function Landing() {
                 </h1> 
             </div>
             
-            <div className="flex flex-col space-y-1 w-fit h-fit items-center">
+            {/* <div className="flex flex-col space-y-1 w-fit h-fit items-center">
                 <AnimLink to="/chess" text="{ Multiplayer Chess }" cooldown={60}/>
                 <AnimLink to="https://teddyfitzpatrick.github.io/mips-interpreter-web/" text="{ MIPS Interpreter }" cooldown={40}/>
                 <AnimLink to="/plife" text="{ Particles }" cooldown={60}/>
                 <AnimLink to="/chat" text="{ Reddit Clone }" cooldown={40}/>
                 <AnimLink to="/game" text="{ Puzzle Game }" cooldown={50}/>
-            </div>
+            </div> */}
         </div>
         {/* Canvas */}
         <div className="w-full h-screen">
@@ -48,7 +48,7 @@ function Landing() {
         </div>   */}
 
         {/* Projects */}
-        <div className="w-full flex flex-col justify-start items-start max-w-[95vw]">
+        <div className="w-full flex flex-col justify-center items-center">
             <Projects/>
         </div>
 
@@ -57,12 +57,12 @@ function Landing() {
     </div>
 }
 
-function AnimLink({to, text, cooldown}: {to: string, text: string, cooldown: number}){
-    return <Link to={to}>
-        <TextAnim text={`${text}`} cooldown={cooldown}
-        className="w-fittext-xl md:text-4xl hover:scale-105 font-extrabold text-cyan-300 bg-black p-8 hover:underline"/>
-    </Link>
-}
+// function AnimLink({to, text, cooldown}: {to: string, text: string, cooldown: number}){
+//     return <Link to={to}>
+//         <TextAnim text={`${text}`} cooldown={cooldown}
+//         className="w-fittext-xl md:text-4xl hover:scale-105 font-extrabold text-cyan-300 bg-black p-8 hover:underline"/>
+//     </Link>
+// }
 
 // function SocialLink({imgPath, targetUrl}: {imgPath: string, targetUrl: string}){
 //     return (
