@@ -7,7 +7,8 @@ import './main.css'
 import PageNotFound from './pages/PageNotFound.tsx';
 import Landing from './pages/Landing.tsx'
 import Chess from './util/chess/chess.tsx'
-import {Sliders, ParticleLife} from './util/particleLife/particleLife.tsx';
+import {Sliders} from './util/particleLife/particleLife.tsx';
+import ParticleLife from './util/particleLife/particleLife.tsx';
 
 import Game from './pages/Game.tsx';
 import Chat from './util/chat/chat.tsx';
@@ -17,10 +18,12 @@ function App(){
 
     const currentPath = location.pathname;
     // const routes = ["/", "/chat", "/chess", "/particles", "/plife"];
-    const standardLayout = !["/chat"].includes(currentPath);
+    const standardLayout = !["/chat", "/game"].includes(currentPath);
 
-    return <div className={`${standardLayout ? "font-roboto min-h-screen bg-linear-to-br from-orange-500 to-fuchsia-400 text-white flex flex-col items-center" : "font-montserrat flex flex-col items-center justify-center w-full min-h-screen"}`}>
-        {/* Defining the routes; these don't appear in the DOM  */}
+    return <div className={
+        `${standardLayout 
+          ? "font-roboto min-h-screen bg-linear-to-br from-orange-500 to-fuchsia-400 text-white flex flex-col items-center" 
+          : "font-montserrat flex flex-col items-center justify-center w-full min-h-screen"}`}>
         <Routes>
             {/* portfolio */}
             <Route path="/" element={<Landing/>}/>

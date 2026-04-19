@@ -94,8 +94,6 @@ function getRandomPosition(){
 
 type Slider = {name: string, variable: keyof typeof simulationVariables, minValue: number, maxValue: number, step?: number}
 function Slider({name, variable, minValue, maxValue, step=1}: Slider){
-    
-
     const initialValue = localStorage.getItem(variable) ?? simulationVariables[variable];
     const [sliderValue, setSliderValue] = useState(+initialValue)
     simulationVariables[variable] = +initialValue;
@@ -156,7 +154,7 @@ export function Sliders(){
     </>
 }
 
-export function ParticleLife({canvasClasses}: {canvasClasses?: string}){
+export default function ParticleLife({canvasClasses}: {canvasClasses?: string}){
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
 

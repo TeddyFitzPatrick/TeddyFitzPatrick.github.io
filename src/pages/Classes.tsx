@@ -2,6 +2,14 @@ import '../main.css'
 
 function Classes() {
     const classes: Record<string, string[]> = {
+        "Fall 2026 (Upcoming)": [
+            "CSCI-662 (Foundations of Cryptography)",
+            "CSCI-631 (Foundations of Computer Vision)",
+            "SWEN-261 (Introduction to Software Engineering)",
+            "CSCI-472 (Historical & Current Computer Science)",
+            "MATH-231 (Differential Equations)",
+            "PHYS-315 (Experiments in Modern Physics)",
+        ],
         "Spring/Summer 2026": [
             "*Studying at the Universität Osnabrück in Germany",
             "Introduction to Computational Linguistics",
@@ -54,11 +62,9 @@ function Classes() {
         ]
     }
     return <div className="flex flex-col">
-        <div className="flex flex-row bg-slate-900 rounded-xl shadow-2xl px-4 py-2 w-fit h-fit ml-4 justify-center items-center">
-            <p className=" font-bold text-4xl">
-                Coursework: (3.9 GPA)
-            </p>
-        </div>
+        <p className="text-4xl text-white text-center w-full font-extrabold pb-6">
+            Coursework <span className="text-nowrap">(3.9 GPA)</span>
+        </p>
       
         <div className="flex flex-wrap items-center gap-4 p-4 w-full h-auto">
             {Object.keys(classes).map((semester, index) =>
