@@ -1,4 +1,4 @@
-import { simulationVariables, canvas, ctx, particles, forceMatrix } from './particleLife.tsx';
+import { simulationVariables, canvas, ctx, particles, type colorMatrix } from './particleLife.tsx';
 
 export class Particle{
     position: number[];
@@ -10,7 +10,8 @@ export class Particle{
         this.velocity = initialVelocity;
         this.color = color;
     }
-    applyForces(){
+
+    applyForces(forceMatrix: colorMatrix){
         let deltaX, deltaY, distance, angle, forceMagnitude,xDir, yDir
         const minRadius = simulationVariables["minRadius"];
         const maxRadius = simulationVariables["maxRadius"];
@@ -47,12 +48,16 @@ export class Particle{
             // minRadius to middleRadius
             else if (distance < middleRadius){
                 forceMagnitude = 0.2 * (distance - minRadius) / (middleRadius - minRadius);
-                forceMagnitude *= forceMatrix[this.color][otherParticle.color];
+                const forceMultiplier = forceMatrix.get(this.color)?.get(otherParticle.color);
+                if (forceMultiplier === undefined) throw new Error("Undefined particle color force interaction");
+                forceMagnitude *= forceMultiplier;
             }
             // middleRadius to maxRadius
             else if (distance <= maxRadius){
                 forceMagnitude = 0.2 * (distance - maxRadius) / (middleRadius - maxRadius);
-                forceMagnitude *= forceMatrix[this.color][otherParticle.color];
+                const forceMultiplier = forceMatrix.get(this.color)?.get(otherParticle.color);
+                if (forceMultiplier === undefined) throw new Error("Undefined particle color force interaction");
+                forceMagnitude *= forceMultiplier
             }
             // Apply acceleration to the particle's velocity
             this.velocity[0] += forceMagnitude * xDir;
@@ -87,8 +92,8 @@ export class Particle{
         this.velocity[1] *= (1 - simulationVariables.frictionCoefficient);
     }
     // Update the state of the particle (position/velocity)
-    update(){
-        this.applyForces();
+    update(forceMatrix: colorMatrix){
+        this.applyForces(forceMatrix);
         this.applyVelocity();
         this.applyFriction();
     }

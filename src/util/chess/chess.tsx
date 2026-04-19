@@ -163,7 +163,7 @@ function SelectGamemode({pageContext}: {pageContext: PageContext}){
         <div className="flex justify-evenly flex-col space-y-3 text-center items-center p-12 w-4/5 sm:w-1/2 h-3/4 min-h-fit sm:h-1/2 bg-white rounded-2xl shadow-2xl">
             {/* <!-- Back to Home --> */}
             <Link to="/">
-                <button className="text-xl sm:text-4xl bg-blue-400 text-white shadow-2xl p-6 rounded-2xl hover:scale-110 absolute left-6 top-4">
+                <button className="text-xl sm:text-4xl bg-blue-400 text-white shadow-2xl p-6 rounded-2xl hover:scale-101 absolute left-6 top-4">
                     Back to Home
                 </button>
             </Link>

@@ -26,17 +26,17 @@ export default function Projects(){
             desc: "PUZZLE GAME",
             icons: ["ts", "react", "clingo"]
         },
-        {   
-            location: "/plife",
-            url: "/psim/plife.png",
-            desc: "PARTICLE LIFE",
-            icons: ["ts", "react"]
-        },
         {
             location: "https://teddyfitzpatrick.github.io/mips-interpreter-web/",
             url: "/mips/mips_interpreter.png",
             desc: "MIPS INTERPRETER",
             icons: ["ts", "react", "tw"]
+        },
+        {   
+            location: "/plife",
+            url: "/psim/pblob.png",
+            desc: "PARTICLE LIFE",
+            icons: ["ts", "react"]
         },
         {   
             location: "/mandelbrot",
@@ -66,7 +66,7 @@ export default function Projects(){
 function Project({project}: {project: ProjectForm}){
     const icons: string[] = project.icons;
     return <>
-    <Link to={location} 
+    <Link to={project.location} 
         style={{ backgroundImage: `url(${project.url})` }}
         className={`flex items-end overflow-hidden bg-cover rounded-lg h-96 hover:cursor-pointer hover:scale-101 shadow-xl shadow-purple-400`}>
         <div className="w-full px-8 py-4 overflow-hidden rounded-b-lg backdrop-blur-sm bg-black/60 dark:bg-gray-800/60">
