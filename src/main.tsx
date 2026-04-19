@@ -1,7 +1,7 @@
 // import { StrictMode } from 'react'  <<< Mounts twice on development; not necessarily useful
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-// import { Link } from 'react-router-dom';
+import Mandelbrot from './util/mandelbrot/mandelbrot.tsx';
 import './main.css'
 
 import PageNotFound from './pages/PageNotFound.tsx';
@@ -18,7 +18,7 @@ function App(){
 
     const currentPath = location.pathname;
     // const routes = ["/", "/chat", "/chess", "/particles", "/plife"];
-    const standardLayout = !["/chat", "/game"].includes(currentPath);
+    const standardLayout = !["/chat", "/game", "/mandelbrot"].includes(currentPath);
 
     return <div className={
         `${standardLayout 
@@ -32,11 +32,15 @@ function App(){
             {/* particles */}
             <Route path="/particles" element={<><Sliders/><ParticleLife/></>}/> 
             <Route path="/plife" element={<><Sliders/><ParticleLife/></>}/> 
+            <Route path="/psim" element={<><Sliders/><ParticleLife/></>}/> 
             {/* chat  */}
             <Route path="/chat" element={<Chat/>}/>
             {/* hackathon game */}
             <Route path="/game" element={<Game/>}/>
-
+            {/* mandelbrot */}
+            <Route path="/mandelbrot" element={<Mandelbrot/>}/>
+            <Route path="/mndl" element={<Mandelbrot/>}/>
+            {/* 404 Page */}
             <Route path="*" element={<PageNotFound/>}/>
         </Routes>
     </div>
