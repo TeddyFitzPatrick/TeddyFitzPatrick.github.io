@@ -14,10 +14,10 @@ const DARK_HIGHLIGHT_COLOR = "rgba(4, 2, 115, 0.5)";
 const MOVE_INDICATOR_COLOR = "rgba(254, 57, 57, 0.5)";
 
 /**
- * NOTE TO SELF: CONSIDER DOING SOME PERFT TESTING
- * Perft 4: 197,281 legal moves
- * Perft 5: 4,865,609 legal moves
- */
+* NOTE TO SELF: CONSIDER DOING SOME PERFT TESTING
+* Perft 4: 197,281 legal moves
+* Perft 5: 4,865,609 legal moves
+*/
 
 /* Page selection */
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>
@@ -441,8 +441,7 @@ function Board({pageContext}: {pageContext: PageContext}){
             <canvas ref={canvasRef} 
                 width="69" 
                 height="69"
-                className="border-0 sm:border-8 border-amber-950 rounded-0 sm:rounded-xl shadow-2xl">
-            </canvas>
+                className="border-0 sm:border-8 border-amber-950 rounded-0 sm:rounded-xl shadow-2xl"/>
             <MoveList moveHistory={moveHistory}/>
         </div>
         {/* <!-- Restart Window --> */}
@@ -455,7 +454,7 @@ function Board({pageContext}: {pageContext: PageContext}){
 
 function MoveList({moveHistory}: {moveHistory: Move[]}){
     return <>
-    <div className="bg-slate-600 w-60 h-full rounded-lg p-4 hidden md:visible">
+    <div className="bg-slate-600 w-60 h-full rounded-lg p-4 hidden md:flex z-20">
         <h1 className="font-extrabold text-2xl pb-4">Move History</h1>
         <ul className="space-y-2 font-bold text-xl overflow-y-auto scroll-smooth h-fit max-h-[90vh]">
             {moveHistory.map((move, index) => (

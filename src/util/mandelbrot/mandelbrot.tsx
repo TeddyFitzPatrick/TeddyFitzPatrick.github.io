@@ -1,10 +1,10 @@
 import { useRef, useState, useEffect } from "react";
-type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
-const MAX_DIVERGENCE_ITERATIONS = 1_000;
+// type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
+const MAX_DIVERGENCE_ITERATIONS = 500;
 
 
 export default function Mandelbrot(){
-    const [loading, setLoading] = useState<boolean>(false);
+    const [loading, _setLoading] = useState<boolean>(false);
 
     return <>
         <div className="w-screen h-screen overflow-x-hidden grid grid-cols-1 2xl:grid-cols-[auto_auto]">
@@ -37,43 +37,100 @@ precision highp float;
 
 uniform vec2 u_resolution;
 uniform float u_scale;
-uniform vec2 u_offset;
+
+uniform vec2 u_offset_hi;
+uniform vec2 u_offset_lo;
+
 uniform int u_maxIter;
 
-float mandelbrot(vec2 c) {
-    vec2 z = vec2(0.0);
-    for (int i = 0; i < 1000; i++) {
+// -------- double-float helpers --------
+
+// add two double-floats
+vec2 df_add(vec2 a, vec2 b) {
+    float s = a.x + b.x;
+    float v = s - a.x;
+    float t = ((b.x - v) + (a.x - (s - v))) + a.y + b.y;
+    float hi = s + t;
+    float lo = t - (hi - s);
+    return vec2(hi, lo);
+}
+
+// multiply two double-floats
+vec2 df_mul(vec2 a, vec2 b) {
+    float p = a.x * b.x;
+    float err = a.x * b.y + a.y * b.x;
+    float hi = p + err;
+    float lo = err - (hi - p);
+    return vec2(hi, lo);
+}
+
+// square complex number
+void complex_square(
+    in vec2 zx, in vec2 zy,
+    out vec2 rx, out vec2 ry
+) {
+    vec2 x2 = df_mul(zx, zx);
+    vec2 y2 = df_mul(zy, zy);
+    vec2 xy = df_mul(zx, zy);
+
+    // real: x² - y²
+    rx = df_add(x2, vec2(-y2.x, -y2.y));
+
+    // imag: 2xy
+    ry = df_add(xy, xy);
+}
+
+// -------- Mandelbrot --------
+
+float mandelbrot(vec2 cx, vec2 cy) {
+    vec2 zx = vec2(0.0);
+    vec2 zy = vec2(0.0);
+
+    for (int i = 0; i < 2000; i++) {
         if (i >= u_maxIter) break;
-        if (dot(z, z) > 4.0) {
-            float log_zn = log(dot(z, z)) / 2.0;
-            float nu = log(log_zn / log(2.0)) / log(2.0);
-            return float(i) + 1.0 - nu;
+
+        // bailout (approx using hi only for speed)
+        if (zx.x*zx.x + zy.x*zy.x > 4.0) {
+            return float(i);
         }
-        z = vec2(
-            z.x * z.x - z.y * z.y,
-            2.0 * z.x * z.y
-        ) + c;
+
+        vec2 nx, ny;
+        complex_square(zx, zy, nx, ny);
+
+        zx = df_add(nx, cx);
+        zy = df_add(ny, cy);
     }
+
     return -1.0;
 }
 
 void main() {
-    vec2 uv = (gl_FragCoord.xy / u_resolution) - 0.5;
-    vec2 c = uv * u_scale + u_offset;
-    float iter = mandelbrot(c);
+    vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+
+    // convert to double-float
+    vec2 cx = df_add(vec2(uv.x * u_scale, 0.0), vec2(u_offset_hi.x, u_offset_lo.x));
+    vec2 cy = df_add(vec2(uv.y * u_scale, 0.0), vec2(u_offset_hi.y, u_offset_lo.y));
+    cx = df_add(cx, u_offset_lo);
+    cy = df_add(cy, vec2(u_offset_lo.y, 0.0));
+
+    float iter = mandelbrot(cx, cy);
+
     if (iter < 0.0) {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        gl_FragColor = vec4(0.0,0.0,0.0,1.0);
         return;
     }
+
     float t = iter / float(u_maxIter);
-    t = pow(t, 0.35);
-    vec3 color = vec3(t);
-    gl_FragColor = vec4(color, 1.0);
+    vec3 col = 0.5 + 0.5*cos(3.0 + t*5.0 + vec3(0.0,0.6,1.0));
+
+    gl_FragColor = vec4(col,1.0);
 }
 `;
 
 function Canvas() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const scaleRef = useRef(5.0);
+    const offsetRef = useRef({x: 0.0, y: 0.0});
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -114,23 +171,75 @@ function Canvas() {
 
         const uResolution = gl.getUniformLocation(program, "u_resolution");
         const uScale = gl.getUniformLocation(program, "u_scale");
-        const uOffset = gl.getUniformLocation(program, "u_offset");
+        const uOffsetHi = gl.getUniformLocation(program, "u_offset_hi");
+        const uOffsetLo = gl.getUniformLocation(program, "u_offset_lo");
         const uMaxIter = gl.getUniformLocation(program, "u_maxIter");
 
-        const scale = 5.0;
-        const xOffset = 0.0;
-        const yOffset = 0.0;
-
         gl.uniform2f(uResolution, canvas.width, canvas.height);
-        gl.uniform1f(uScale, scale);
-        gl.uniform2f(uOffset, xOffset, yOffset);
+        
         gl.uniform1i(uMaxIter, MAX_DIVERGENCE_ITERATIONS);
 
         gl.clearColor(0, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
+
+        function render(gl: WebGLRenderingContext) {
+            gl.uniform1f(uScale, scaleRef.current);
+
+            const x = offsetRef.current.x;
+            const y = offsetRef.current.y;
+
+            const hiX = Math.fround(x);
+            const loX = x - hiX;
+
+            const hiY = Math.fround(y);
+            const loY = y - hiY;
+
+            gl.uniform2f(uOffsetHi, hiX, hiY);
+            gl.uniform2f(uOffsetLo, loX, loY);
+
+            const zoom = 1 / scaleRef.current;
+            let iter = Math.floor(50 + Math.log2(zoom) * 25);
+            iter = Math.min(2000, Math.max(100, iter));
+
+            gl.uniform1i(uMaxIter, iter);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+        }
+
+        canvas.addEventListener("wheel", (e) => {
+            e.preventDefault();
+
+            const zoomFactor = 1.1;
+            const direction = e.deltaY > 0 ? 1 : -1;
+
+            const rect = canvas.getBoundingClientRect();
+            const px = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const py = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+            const nx = (px - 0.5 * canvas.width) / canvas.height;
+            const ny = (0.5 * canvas.height - py) / canvas.height;
+
+            const oldScale = scaleRef.current;
+
+            // world position before zoom
+            const worldX = offsetRef.current.x + nx * oldScale;
+            const worldY = offsetRef.current.y + ny * oldScale;
+
+            // update scale
+            const factor = direction > 0 ? zoomFactor : 1 / zoomFactor;
+            const newScale = oldScale * factor;
+            scaleRef.current = newScale;
+
+            // recompute offset so cursor stays fixed
+            offsetRef.current.x = worldX - nx * newScale;
+            offsetRef.current.y = worldY - ny * newScale;
+
+            render(gl);
+        }, { passive: false });
+
         // measure performance
         const t0 = performance.now();
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        render(gl);
         gl.finish();
         const t1 = performance.now();
         console.log("WebGL render time:", (t1 - t0).toFixed(12), "ms");
@@ -143,6 +252,8 @@ function Canvas() {
         />
     );
 }
+
+
 
 function createShader(gl: WebGLRenderingContext, type: number, src: string) {
     const shader = gl.createShader(type)!;
@@ -172,8 +283,8 @@ function createProgram(gl: WebGLRenderingContext, vs: string, fs: string) {
 function Controls(){
     return <>
         <div className="max-h-screen w-full bg-orange-200 text-center flex items-center justify-center flex-col px-4 text-xl">
-            <h1>Controls</h1>
-            <div>Under development. I am working on making this efficient. Wouldn't it be cool if this used GPU shaders?</div>
+            <h1 className="text-3xl font-extrabold">Controls</h1>
+            <div>I'm working on migrating this to WebGL. When I figure out GLSL, it infinite zoom again.</div>
         </div>
     </>
 }

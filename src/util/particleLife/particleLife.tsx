@@ -114,7 +114,7 @@ function Slider({name, variable, minValue, maxValue, step=1}: Slider){
     }
 
     return <>
-        <div className="flex flex-col">
+        <div className="flex flex-col text-white">
             <div className="flex flex-row space-x-2">
                 <input onChange={changeVariable}
                     type="range" 
@@ -141,7 +141,7 @@ export function Sliders(){
         <Slider name={"Friction Coefficient"} 
             variable={"frictionCoefficient"} 
             minValue={0} 
-            maxValue={0.1} 
+            maxValue={0.2} 
             step={0.01}/>
         <Slider name={"Repulsion Distance"} 
             variable={"minRadius"}

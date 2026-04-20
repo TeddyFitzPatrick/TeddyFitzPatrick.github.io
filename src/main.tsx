@@ -15,31 +15,22 @@ import Chat from './util/chat/chat.tsx';
 
 function App(){
     const location = useLocation();
-
     const currentPath = location.pathname;
-    // const routes = ["/", "/chat", "/chess", "/particles", "/plife"];
-    const standardLayout = !["/chat", "/game", "/mandelbrot"].includes(currentPath);
-
-    return <div className={
-        `${standardLayout 
-          ? "font-roboto min-h-screen bg-linear-to-br from-orange-500 to-fuchsia-400 text-white flex flex-col items-center" 
-          : "font-montserrat flex flex-col items-center justify-center w-full min-h-screen"}`}>
+    const layouts = new Map([
+        ["default", "font-roboto min-h-screen bg-linear-to-br from-orange-500 to-fuchsia-400 text-white flex flex-col items-center"],
+        ["/chat", "font-montserrat flex flex-col items-center justify-center w-full min-h-screen"],
+        ["/plife", "max-w-screen max-h-screen bg-black"],
+        ["/puzzle", "max-w-screen max-h-screen bg-black"],
+        ["/mandelbrot", "max-w-screen max-h-screen bg-black"]
+    ]);
+    return <div className={`${layouts.has(currentPath) ? layouts.get(currentPath) : layouts.get("default")}`}>
         <Routes>
-            {/* portfolio */}
             <Route path="/" element={<Landing/>}/>
-            {/* chess */}
             <Route path="/chess" element={<Chess/>}/>
-            {/* particles */}
-            <Route path="/particles" element={<><Sliders/><ParticleLife/></>}/> 
             <Route path="/plife" element={<><Sliders/><ParticleLife/></>}/> 
-            <Route path="/psim" element={<><Sliders/><ParticleLife/></>}/> 
-            {/* chat  */}
             <Route path="/chat" element={<Chat/>}/>
-            {/* hackathon game */}
             <Route path="/game" element={<Game/>}/>
-            {/* mandelbrot */}
             <Route path="/mandelbrot" element={<Mandelbrot/>}/>
-            <Route path="/mndl" element={<Mandelbrot/>}/>
             {/* 404 Page */}
             <Route path="*" element={<PageNotFound/>}/>
         </Routes>
