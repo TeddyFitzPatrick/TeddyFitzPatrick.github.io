@@ -2,18 +2,20 @@ import '../main.css'
 import Projects from './Projects.tsx';
 import Classes from './Classes.tsx';
 import Hero from './Hero.tsx';
+import History from './History.tsx';
 
 function Landing() {
     return <div className="space-y-14 flex flex-col items-center">
         <Hero/>
         <Projects/>
+        {/* <History/> */}
         <Classes/>
         {/* <Example/> */}
     </div>
 }
 export default Landing
 
-// function Example() {
+// function TestFooter() {
 //     return <>
 //     <footer className="relative overflow-hidden px-6 md:px-16 lg:px-24 xl:px-32 w-full text-sm text-slate-500 bg-white pt-10">
 //         <svg className="hidden md:block absolute -bottom-30 -left-80 opacity-5 w-full h-full pointer-events-none" width="68"

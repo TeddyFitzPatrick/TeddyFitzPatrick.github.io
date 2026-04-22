@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect } from "react";
 // type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
-const MAX_DIVERGENCE_ITERATIONS = 500;
 
+const MAX_DIVERGENCE_ITERATIONS = 500;
+const BRIGHTNESS = 0;
 
 export default function Mandelbrot(){
     const [loading, _setLoading] = useState<boolean>(false);
@@ -43,8 +44,6 @@ uniform vec2 u_offset_lo;
 
 uniform int u_maxIter;
 
-// -------- double-float helpers --------
-
 // add two double-floats
 vec2 df_add(vec2 a, vec2 b) {
     float s = a.x + b.x;
@@ -79,8 +78,6 @@ void complex_square(
     // imag: 2xy
     ry = df_add(xy, xy);
 }
-
-// -------- Mandelbrot --------
 
 float mandelbrot(vec2 cx, vec2 cy) {
     vec2 zx = vec2(0.0);
@@ -176,8 +173,6 @@ function Canvas() {
         const uMaxIter = gl.getUniformLocation(program, "u_maxIter");
 
         gl.uniform2f(uResolution, canvas.width, canvas.height);
-        
-        gl.uniform1i(uMaxIter, MAX_DIVERGENCE_ITERATIONS);
 
         gl.clearColor(0, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
@@ -196,12 +191,7 @@ function Canvas() {
 
             gl.uniform2f(uOffsetHi, hiX, hiY);
             gl.uniform2f(uOffsetLo, loX, loY);
-
-            const zoom = 1 / scaleRef.current;
-            let iter = Math.floor(50 + Math.log2(zoom) * 25);
-            iter = Math.min(2000, Math.max(100, iter));
-
-            gl.uniform1i(uMaxIter, iter);
+            gl.uniform1i(uMaxIter, MAX_DIVERGENCE_ITERATIONS);
 
             gl.drawArrays(gl.TRIANGLES, 0, 6);
         }
@@ -254,7 +244,6 @@ function Canvas() {
 }
 
 
-
 function createShader(gl: WebGLRenderingContext, type: number, src: string) {
     const shader = gl.createShader(type)!;
     gl.shaderSource(shader, src);
@@ -288,70 +277,3 @@ function Controls(){
         </div>
     </>
 }
-
-// function render(ctx: CanvasRenderingContext2D, image: ImageData, setLoading: Setter<boolean>, size: number){
-//     const data = image.data;
-
-//     const scale = 5; // tbh
-//     const xOffset = 0; //tbh
-//     const yOffset = 0; //tbh
-//     const brightness = 7; // tbh
-    
-//     for (let y = 0; y < size; y++) {
-//         for (let x = 0; x < size; x++) {
-//             const index = (x + y * size) * 4;
-//             const escapedIteration = isInMandelbrot(
-//                 scale * (x / size) - scale / 2 + xOffset,
-//                 scale * (y / size) - scale / 2 + yOffset
-//             );
-//             if (escapedIteration === -1){
-//                 data[index] = 0; 
-//                 data[index+1] = 0;   
-//                 data[index+2] = 0;   
-//                 data[index+3] = 255; 
-//             } else {
-//                 const shade = 255 - escapedIteration * brightness;
-//                 data[index] = shade;
-//                 data[index+1] = shade;   
-//                 data[index+2] = shade;   
-//                 data[index+3] = 255; 
-//             }
-//         }
-//     }
-//     ctx.putImageData(image, 0, 0);
-
-//     // setLoading(false);
-// }
-
-// /*
-//     determines if a complex number z, passed as components a, b, representing z = a + b*i, falls within the Mandelbrot set.
-//     returns -1 if the complex coordinate is in the Mandelbrot set, or the iteration it was found to diverge in testing
-// */
-// function isInMandelbrot(a: number, b: number) {
-//     let z = {
-//         a: 0,
-//         b: 0
-//     };
-//     for (let iteration = 1; iteration <= MAX_DIVERGENCE_ITERATIONS; iteration++) {
-//         /* 
-//             Expanded form for when I forget what I was doing
-//             f(z) = z^2 + c
-//             f(z) = (z.a + z.b * i)^2 + (a + b * i)
-//             f(z) = (z.a^2 - z.b^2 + a) <- Real component
-//             f(z) = (2 * z.a * z.b + b) * i <- Imaginary component
-//         */
-//         // Apparently z.a * z.a is marginally faster than z.a ** 2
-//         const newA = z.a * z.a - z.b * z.b + a;
-//         const newB = 2 * z.a * z.b + b;
-//         // divergence testing: |z| = sqrt(x^2 + y^2) > 2
-//         // optimization: x^2 + y^2 > 4 
-//         if (newA * newA + newB * newB > 4) {
-//             return iteration;
-//         }
-//         // divergence test the next complex cord
-//         z.a = newA
-//         z.b = newB;
-//     }
-//     // the complex cord is in the mandelbrot set
-//     return -1;
-// }

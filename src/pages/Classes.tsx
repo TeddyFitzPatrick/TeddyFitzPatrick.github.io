@@ -62,7 +62,7 @@ function Classes() {
         ]
     }
     return <div className="flex flex-col">
-        <p className="text-4xl text-white text-center w-full font-extrabold pb-6">
+        <p className="text-4xl text-white text-start pl-[2vw] w-full font-extrabold pb-6">
             Coursework <span className="text-nowrap">(3.9 GPA)</span>
         </p>
       

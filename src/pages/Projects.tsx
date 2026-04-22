@@ -49,7 +49,7 @@ export default function Projects(){
     return <>
     <section className="dark:bg-gray-900 w-full h-full flex-col flex justify-center items-center">
         <div className="w-full px-6">
-            <h1 className="text-4xl text-center capitalize font-extrabold text-white">
+            <h1 className="text-4xl text-start pl-[2vw] capitalize font-extrabold text-white">
                 Things I've Made
             </h1>
 
