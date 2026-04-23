@@ -454,7 +454,7 @@ function Board({pageContext}: {pageContext: PageContext}){
 
 function MoveList({moveHistory}: {moveHistory: Move[]}){
     return <>
-    <div className="bg-slate-600 w-60 h-full rounded-lg p-4 hidden md:flex z-20">
+    <div className="bg-slate-600 w-60 h-full rounded-lg p-4 hidden md:flex z-20 flex-col">
         <h1 className="font-extrabold text-2xl pb-4">Move History</h1>
         <ul className="space-y-2 font-bold text-xl overflow-y-auto scroll-smooth h-fit max-h-[90vh]">
             {moveHistory.map((move, index) => (

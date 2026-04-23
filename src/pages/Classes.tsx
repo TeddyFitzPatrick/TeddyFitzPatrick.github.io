@@ -61,12 +61,11 @@ function Classes() {
             "VISL 120 (Intro to Film)"
         ]
     }
-    return <div className="flex flex-col">
-        <p className="text-4xl text-white text-start pl-[2vw] w-full font-extrabold pb-6">
+    return <div className="flex flex-col p-6 space-y-2">
+        <p className="text-4xl text-white text-start w-full font-extrabold">
             Coursework <span className="text-nowrap">(3.9 GPA)</span>
         </p>
-      
-        <div className="flex flex-wrap items-center gap-4 p-4 w-full h-auto">
+        <div className="flex flex-wrap items-center gap-4 w-full h-auto">
             {Object.keys(classes).map((semester, index) =>
                 // this div makes react happy 
                 <div key={index}> 
@@ -79,7 +78,7 @@ function Classes() {
 
 function Semester({title, classList}: {title: string, classList: string[]}){
     return <>
-        <div className="rounded-2xl shadow-2xl bg-slate-900 p-8 sm:p-10 shrink-0">
+        <div className="rounded-2xl bg-slate-900 p-8 sm:p-10 shrink-0 shadow-2xl shadow-purple-900">
             <h1 className="w-auto italic text-4xl font-bold">{title}</h1>
             <ul className="text-lg text-white pt-4 space-y-2">
                 {classList.map((className, index) => (

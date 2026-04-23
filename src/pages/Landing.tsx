@@ -2,15 +2,15 @@ import '../main.css'
 import Projects from './Projects.tsx';
 import Classes from './Classes.tsx';
 import Hero from './Hero.tsx';
-import History from './History.tsx';
+import Experience from './Experience.tsx';
 
 function Landing() {
     return <div className="space-y-14 flex flex-col items-center">
         <Hero/>
         <Projects/>
-        {/* <History/> */}
+        <Experience/>
         <Classes/>
-        {/* <Example/> */}
+        {/* <TestFooter/> */}
     </div>
 }
 export default Landing
@@ -52,7 +52,6 @@ export default Landing
 //                     <a className="hover:text-slate-600 transition" href="#">Privacy policy</a>
 //                 </div>
 //             </div>
-
 //         </div>
 //         <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-4 border-t mt-6 border-slate-200">
 //             <p className="text-center">
