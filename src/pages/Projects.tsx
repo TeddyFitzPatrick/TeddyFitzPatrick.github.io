@@ -47,13 +47,16 @@ export default function Projects(){
     ];
 
     return <>
-    <section className="dark:bg-gray-900 w-full h-full flex-col flex justify-center items-center">
+    <section className="dark:bg-gray-900 w-full h-full flex-col flex justify-center items-center" id="projects">
         <div className="w-full px-6">
             <h1 className="text-4xl text-start capitalize font-extrabold text-white">
                 Things I've Made
             </h1>
+            <p className="xl">
+                (You can click these)
+            </p>
 
-            <div className="grid grid-cols-1 gap-8 mt-8 xl:mt-12 xl:gap-12 lg:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-8 mt-4 xl:gap-12 lg:grid-cols-2 xl:grid-cols-3">
                 {projects.map((project, index) => 
                     (<Project  project={project} key={index}/>)
                 )}

@@ -23,6 +23,7 @@ function App(){
         ["/puzzle", "max-w-screen max-h-screen bg-black"],
         ["/mandelbrot", "max-w-screen max-h-screen bg-black"]
     ]);
+
     return <div className={`${layouts.has(currentPath) ? layouts.get(currentPath) : layouts.get("default")}`}>
         <Routes>
             <Route path="/" element={<Landing/>}/>
@@ -36,6 +37,8 @@ function App(){
         </Routes>
     </div>
 }
+
+
 
 createRoot(document.getElementById('root')!).render(
     <BrowserRouter>

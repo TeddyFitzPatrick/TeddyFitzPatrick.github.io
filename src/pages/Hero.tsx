@@ -2,7 +2,7 @@ import ParticleLife from "@/util/particleLife/particleLife"
 
 export default function Hero(){
     return <>
-    <div className="absolute flex flex-col text-center h-full pointer-events-none items-center justify-evenly">
+    <div className="absolute flex flex-col text-center h-full pointer-events-none items-center justify-evenly" id="home">
         <div className="text-center text-4xl md:text-7xl lg:text-8xl rounded-2xl text-white opacity-100 shadow-2xl border-black px-4 py-2">
             <h1 style={{ userSelect: "none" }}
                 className="bg-black/50 backdrop-blur-sm p-4 rounded-2xl">
@@ -14,8 +14,9 @@ export default function Hero(){
     </div>
 
     {/* Particle Backdrop */}
-    <div className="w-full h-screen">
+    <div className="w-full h-[95vh] mt-[5vh]">
         <ParticleLife/>
     </div>
+
     </>
 }

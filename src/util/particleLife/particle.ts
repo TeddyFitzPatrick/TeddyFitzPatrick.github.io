@@ -99,7 +99,13 @@ export class Particle{
     }
     // Draw the particle on the screen
     render(){
+
+        ctx.fillStyle = "black";
+        ctx.beginPath();
+        ctx.arc(this.position[0], this.position[1], simulationVariables.particleSize+0.5, 0, 2 * Math.PI);
+        ctx.fill();
         ctx.fillStyle = this.color;
+
         ctx.beginPath();
         ctx.arc(this.position[0], this.position[1], simulationVariables.particleSize, 0, 2 * Math.PI);
         ctx.fill();

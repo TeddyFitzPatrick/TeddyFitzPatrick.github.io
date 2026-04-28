@@ -4,8 +4,9 @@ import Classes from './Classes.tsx';
 import Hero from './Hero.tsx';
 import Experience from './Experience.tsx';
 
-function Landing() {
+export default function Landing() {
     return <div className="space-y-14 flex flex-col items-center">
+        <Nav/>
         <Hero/>
         <Projects/>
         <Experience/>
@@ -13,8 +14,32 @@ function Landing() {
         {/* <TestFooter/> */}
     </div>
 }
-export default Landing
 
+
+function Nav(){
+    return <nav className="bg-white w-screen h-[5vh] sm:px-4 sm:py-4 flex flex-row justify-evenly z-100 fixed">
+        <NavButton name={"home"}/>
+        <NavButton name={"projects"}/>
+        <NavButton name={"classes"}/>
+    </nav>
+}
+
+function NavButton({name}: {name: string}){
+    const scroll = () => {
+        const navigableSection = document.getElementById(name);
+        if (!navigableSection) throw new Error(`Could not find div with id ${name}`);
+        let offsetTop  = navigableSection.offsetTop;
+
+        window.scrollTo({
+            top: offsetTop-100, 
+            behavior: "smooth"
+        });
+    }
+
+    return <button onClick={scroll} className="text-xl underline text-purple-800">
+        {name}
+    </button>
+}
 // function TestFooter() {
 //     return <>
 //     <footer className="relative overflow-hidden px-6 md:px-16 lg:px-24 xl:px-32 w-full text-sm text-slate-500 bg-white pt-10">

@@ -2,7 +2,6 @@ import { useRef, useState, useEffect } from "react";
 // type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
 
 const MAX_DIVERGENCE_ITERATIONS = 500;
-const BRIGHTNESS = 0;
 
 export default function Mandelbrot(){
     const [loading, _setLoading] = useState<boolean>(false);

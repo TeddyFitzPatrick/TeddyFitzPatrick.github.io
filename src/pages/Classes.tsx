@@ -61,7 +61,7 @@ function Classes() {
             "VISL 120 (Intro to Film)"
         ]
     }
-    return <div className="flex flex-col p-6 space-y-2">
+    return <div className="flex flex-col p-6" id="classes">
         <p className="text-4xl text-white text-start w-full font-extrabold">
             Coursework <span className="text-nowrap">(3.9 GPA)</span>
         </p>
