@@ -28,7 +28,7 @@ function App(){
         <Routes>
             <Route path="/" element={<Landing/>}/>
             <Route path="/chess" element={<Chess/>}/>
-            <Route path="/plife" element={<><Sliders/><ParticleLife/></>}/> 
+            <Route path="/plife" element={<><Sliders/><ParticleLife canvasClasses='h-screen'/></>}/> 
             <Route path="/chat" element={<Chat/>}/>
             <Route path="/game" element={<Game/>}/>
             <Route path="/mandelbrot" element={<Mandelbrot/>}/>

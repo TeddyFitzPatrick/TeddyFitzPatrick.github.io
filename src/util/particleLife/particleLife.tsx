@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 
 // Canvas variables
 export let canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D;
+const FRAME_RATE = 50;
 
 // Particle life variables
 export const COLORS: string[] = ["red", "orange", "yellow", "green", "blue", "purple"];
@@ -40,15 +41,27 @@ function loadSimulation(particleCount: number, forceMatrixRef: Ref<colorMatrix>,
     generateParticles(particleCount);
 
     // Start the particle life rendering
+    // let iterations = 0;
+    // let totalUpdate = 0.0;
+    // let totalRender = 0.0;
+
+    const timeBetweenFrames = 1000 / FRAME_RATE;
     const intervalId: NodeJS.Timeout = setInterval(() => {
         if (!forceMatrixRef || !forceMatrixRef.current || Array.from(forceMatrixRef.current.keys()).length === 0){
             // for when react is asynchronously updating forceMatrix state
-            gameLoop(initMatrix);
+            const {updateTime: _u, renderTime: _r} = gameLoop(initMatrix);
         } else{
-            gameLoop(forceMatrixRef.current);
+            // performance indicators
+            const {updateTime: _u, renderTime: r} = gameLoop(forceMatrixRef.current);
+            // totalUpdate += u;
+            // totalRender += r;
+            // iterations += 1;
         }
-        // gameLoop((!forceMatrix ||  ? initMatrix : forceMatrix);
-    }, 20);
+        // if (iterations !== 0) {
+        //     console.log("avg_update: " + (totalUpdate / iterations));
+        //     console.log("avg_render: " + (totalRender / iterations));
+        // }
+    }, timeBetweenFrames);
     return intervalId;
 }
 
@@ -78,18 +91,29 @@ function generateForceMatrix(){
     return forceMatrix
 }
 
+
 // Clear the screen, apply particle logic, and then render the particles
 function gameLoop(forceMatrix: colorMatrix){
-    // Clear screen
-    ctx.fillStyle = `rgba(0, 0, 0, ${simulationVariables.opacity})`;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const t0 = performance.now();
     // Apply particle forces, updating positions and velocities
     for (let particle of particles){
         particle.update(forceMatrix);
     }
+    const updateTime = performance.now() - t0;
+
+    const t1 = performance.now();
     // Render particle(s)
+    ctx.fillStyle = `rgba(0, 0, 0, ${simulationVariables.opacity})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     for (let particle of particles){
         particle.render();
+    }
+    const renderTime = performance.now() - t1;
+
+    return {
+        updateTime,
+        renderTime
     }
 }
 

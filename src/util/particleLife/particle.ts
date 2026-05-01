@@ -1,5 +1,8 @@
 import { simulationVariables, canvas, ctx, particles, type colorMatrix } from './particleLife.tsx';
 
+// performance
+const PRUNING_DISTANCE = 100;
+
 export class Particle{
     position: number[];
     velocity: number[];
@@ -12,35 +15,28 @@ export class Particle{
     }
 
     applyForces(forceMatrix: colorMatrix){
-        let deltaX, deltaY, distance, angle, forceMagnitude,xDir, yDir
-        const minRadius = simulationVariables["minRadius"];
-        const maxRadius = simulationVariables["maxRadius"];
+        const minRadius = simulationVariables.minRadius;
+        const maxRadius = simulationVariables.maxRadius;
         const middleRadius = (minRadius + maxRadius) / 2;
-        for (let otherParticle of particles){
+        for (const otherParticle of particles){
             // A particle should not attract or repel itself
             if (otherParticle == this){
                 continue;
             }
             // Calculate deltaX and deltaY between particles
-            deltaX = otherParticle.position[0] - this.position[0];
-            deltaY = otherParticle.position[1] - this.position[1];
+            const deltaX = otherParticle.position[0] - this.position[0];
+            const deltaY = otherParticle.position[1] - this.position[1];
             // Pruning
-            if (deltaX > 100 || deltaY > 100){
+            if (Math.abs(deltaX) > 100 || Math.abs(deltaY) > 100){
                 continue;
             }
-            // Calculate distance between particles
-            distance = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
             // Only particles within a certain radius apply a force
-            if (distance > 100){
+            if (deltaX * deltaX + deltaY * deltaY > PRUNING_DISTANCE * PRUNING_DISTANCE){
                 continue;
             }
-            // Calculcate the angle of the force and apply it to the velocity
-            angle = Math.atan2(deltaY, deltaX);
-            xDir = Math.cos(angle);
-            yDir = Math.sin(angle);
-
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
             // Calculating the magnitude of force based on distance between particle nuclei
-            forceMagnitude = 0
+            let forceMagnitude = 0
             // 0 to minRadius (universally repulsive)
             if (distance < minRadius){
                 forceMagnitude = distance / minRadius - 1;
@@ -58,6 +54,12 @@ export class Particle{
                 const forceMultiplier = forceMatrix.get(this.color)?.get(otherParticle.color);
                 if (forceMultiplier === undefined) throw new Error("Undefined particle color force interaction");
                 forceMagnitude *= forceMultiplier
+            }
+            // Calculate the direction of the force      
+            let xDir = 0; let yDir = 0;
+            if (distance !== 0){
+                xDir = deltaX / distance
+                yDir = deltaY / distance
             }
             // Apply acceleration to the particle's velocity
             this.velocity[0] += forceMagnitude * xDir;
