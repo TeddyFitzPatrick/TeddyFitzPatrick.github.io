@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { WaitFor, GET, UPDATE, REMOVE } from "./networking.js";
 import { pieceImages, pieceMovements, Piece, Color } from "./consts.js";
-import { Move, getAlgebraicNotation } from "./move.js";
+import { Move } from "./move.js";
 
 /* Rendering */
 const LIGHT_SQUARE_COLOR = "rgb(173, 189, 143)";
@@ -11,7 +11,9 @@ const DARK_SQUARE_COLOR = "rgb(111, 143, 114)";
 // const DARK_SQUARE_COLOR = "rgb(184, 139, 74)";
 const LIGHT_HIGHLIGHT_COLOR = "rgba(173, 216, 230, 0.8)";
 const DARK_HIGHLIGHT_COLOR = "rgba(4, 2, 115, 0.5)";
-const MOVE_INDICATOR_COLOR = "rgba(254, 57, 57, 0.5)";
+const MOVE_INDICATOR_COLOR = "rgba(57, 220, 57, 0.5)";
+const PREMOVE_INDICATOR_COLOR = "rgba(254, 57, 57, 0.5)";
+const TIME_BETWEEN_FRAMES = 1_000 / 33;
 
 /**
 * NOTE TO SELF: CONSIDER DOING SOME PERFT TESTING
@@ -44,7 +46,7 @@ export type PageContext = {
 type ChessContext = {
     isMultiplayer: boolean,
     roomCode: string,
-    color: number
+    color: Color
 }
 let chessContext: ChessContext = {
     isMultiplayer: false,
@@ -60,24 +62,14 @@ let ctx: CanvasRenderingContext2D,
     moveIndicators: Move[],
     moveHighlights: Move[],
     moveHistoryIndex = -1,
+    premove: Move | null = null,
     promotionSelection: number | null = null,
-    turnToMove: number;
+    turnToMove: number = Color.WHITE;
 
-/* Castling Rights */
-export const castlingRights = {
-    white: {
-        kingMoved: false,
-        shortRookMoved: false,
-        longRookMoved: false
-    },
-    black: {
-        kingMoved: false,
-        shortRookMoved: false,
-        longRookMoved: false,
-    }
-}
-/* En Passant Rights */
-export let enPassant = Array.from({ length: 8 }, () => Array(8).fill(false));
+/* Castling Rights (WK, WQ, BK, BQ) */
+export let castlingRights = 0b1111;
+/* En Passant Rights (a5,b5,c5,d5_e5,f5,g5,h5_a4,b4,c4,d4_e4,f4,g4,h4)*/
+export let enPassant = 0b0000_0000_0000_0000;
 /* Piece Held */
 type HeldPiece = {
     rank: number;
@@ -140,7 +132,7 @@ export default function Chess(){
             <Board pageContext={pageContext} />
     }
     return <>
-    <div className="flex justify-center items-center w-screen h-screen bg-slate-800 m-0 p-0" id="body">
+    <div className="flex justify-center items-center w-screen h-screen overflow-y-auto bg-slate-800 m-0 p-0" id="body">
         {pages[selected]}
     </div>
     </>;
@@ -154,7 +146,6 @@ function SelectGamemode({pageContext}: {pageContext: PageContext}){
             roomCode: "lol it's local",
             color: Color.WHITE
         }
-        initChess(pageContext);
     }
     const gotoMultiplayerConfiguration = (): void => {
         pageContext.setSelected("MultiplayerConfiguration");
@@ -179,39 +170,33 @@ function SelectGamemode({pageContext}: {pageContext: PageContext}){
 }
 
 function MultiplayerConfiguration({pageContext}: {pageContext: PageContext}){
-    let isHosting: boolean = false;
-    let hostColor: number | undefined;
-    let hostRoomCode: string | undefined;
-    const roomDisplayRef = useRef<HTMLParagraphElement | null>(null);
-    const selectWhiteRef = useRef<HTMLButtonElement | null>(null);
-    const selectBlackRef = useRef<HTMLButtonElement | null>(null);
+    const [hostRoomCode, setHostRoomCode] = useState<string>("...");
+    const [isHosting, setIsHosting] = useState<boolean>(false);
+    const [hostColor, setHostColor] = useState<Color | null>(null);
+
     const enterRoomCodeRef = useRef<HTMLInputElement | null>(null);
 
-    const selectWhite = (): void => {
-        if (!selectWhiteRef.current || !selectBlackRef.current) return;
-        selectWhiteRef.current.classList.add("border-cyan-500", "border-8", "scale-105");
-        selectBlackRef.current.classList.remove("border-cyan-500", "border-8", "scale-105");
-        hostColor = 1;
+    const selectHostColor = function(colorForHost: Color){
+        if (isHosting) return;  // can't change host color after creating the lobby
+        setHostColor(colorForHost);
     }
-    const selectBlack  = async function(){
-        if (!selectBlackRef.current || !selectWhiteRef.current) return;
-        selectBlackRef.current.classList.add("border-cyan-500", "border-8", "scale-105");
-        selectWhiteRef.current.classList.remove("border-cyan-500", "border-8", "scale-105");
-        hostColor = -1;
-        if (isHosting && hostRoomCode) await UPDATE(hostRoomCode, {"joined": 0, "hostColor": hostColor})
-    }
+
     const hostRoom = async function(){
-        isHosting = true;
+        if (isHosting) return;
+        if (!hostColor) {
+            alert("Pick a host color first!");
+            return;
+        }
+        setIsHosting(true);
         // Generate a random 4-letter room code
-        hostRoomCode = generateRoomCode();
-        // Automatically copy the room code to clipboard
+        const hostRoomCode = generateRoomCode();
+        setHostRoomCode(hostRoomCode);
+        // copy the room code to clipboard
         navigator.clipboard.writeText(hostRoomCode);
-        // Display the code 
-        roomDisplayRef.current!.textContent = hostRoomCode;
-        // If a color has not been picked, then choose one randomly
-        hostColor ??= Math.random() >= 0.5 ? 1 : -1;
+        console.log("Publishing new room to database");
         // Put the room on firebase
         await UPDATE(hostRoomCode, {"joined": 0, "hostColor": hostColor})
+        console.log("Published room, waiting for other player")
         // Wait for the opponent to update the joined status to start the game
         await WaitFor(`${hostRoomCode}/joined`, 1);
         // Player has joined, start the game
@@ -221,11 +206,12 @@ function MultiplayerConfiguration({pageContext}: {pageContext: PageContext}){
             roomCode: hostRoomCode,
             color: hostColor
         }
-        initChess(pageContext);
+        console.log("Other player joined, starting game");
     }
     const joinRoom = async function(){
+        if (!enterRoomCodeRef || !enterRoomCodeRef.current) throw new Error(`Could not access the enter room code input ref`);
         // Read the room code
-        const joinRoomCode = enterRoomCodeRef.current!.value.toUpperCase();
+        const joinRoomCode = enterRoomCodeRef.current.value.toUpperCase();
         // Block joining a room while hosting
         if (isHosting) {
             alert("Can not join a game while hosting!")
@@ -238,15 +224,15 @@ function MultiplayerConfiguration({pageContext}: {pageContext: PageContext}){
         // Update the joined field to signal to the host the game has started
         await UPDATE(joinRoomCode, {"joined": 1});
         // Host chooses their color first
-        const hostColor = await GET(`${joinRoomCode}/hostColor`)
+        const hostColor: Color = await GET(`${joinRoomCode}/hostColor`)
         // Start the game
         pageContext.setSelected("Board");
         chessContext = {
             isMultiplayer: true,
             roomCode: joinRoomCode,
-            color: -hostColor
+            // type Color != type Number, so (-hostColor) wouldn't work
+            color: (hostColor === Color.BLACK) ? Color.WHITE : Color.BLACK
         }
-        initChess(pageContext);
     }
     return <>
     <div className="text-black flex flex-col lg:flex-row space-y-6 lg:space-y-0 bg-white w-[90%] sm:w-3/4 xl:w-3/5 h-fit lg:h-3/5 text-2xl font-bold border-black p-4 sm:p-8 rounded-2xl shadow-2xl">
@@ -254,17 +240,30 @@ function MultiplayerConfiguration({pageContext}: {pageContext: PageContext}){
         <div className="flex items-center mr-0 lg:mr-6 space-y-4 flex-col w-full lg:w-1/2 h-full border-4 border-black rounded-xl p-4">
             <h1 className="font-bold text-4xl italic underline">Host Room</h1>
             <div className="w-fit h-fit text-center space-y-4">
-                <h1 className="italic">Pick Color (default random)</h1>
+                <h1 className="italic">Pick a color before hosting</h1>
                 <div className="flex flex-row w-full h-full justify-around">
-                    <button ref={selectWhiteRef} onClick={selectWhite} className="w-36 h-36 bg-white rounded-xl border-4 border-aqua hover:scale-105"></button>
-                    <button ref={selectBlackRef} onClick={selectBlack} className="w-36 h-36 bg-black rounded-xl border-4 hover:scale-105"></button>
+                    <button 
+                        onClick={() => selectHostColor(Color.WHITE)}
+                        className={(hostColor === Color.WHITE) ?
+                            `w-36 h-36 bg-white rounded-xl border-cyan-500 border-6 scale-103` :
+                            `w-36 h-36 bg-white rounded-xl border-4 border-aqua hover:scale-101`}>
+                    </button>
+                    <button 
+                        onClick={() => selectHostColor(Color.BLACK)} 
+                        className={(hostColor === Color.BLACK) ?
+                            `w-36 h-36 bg-black rounded-xl border-cyan-500 border-6 scale-103` :
+                            `w-36 h-36 bg-black rounded-xl border-4 hover:scale-101`}>
+                    </button>
                 </div>
             </div>
-            <button onClick={hostRoom} className="rounded-xl bg-blue-500 text-white hover:scale-110 shadow-lg p-4 sm:p-6">
-                Host Room
+            <button 
+                disabled={isHosting}
+                onClick={hostRoom} 
+                className="disabled:hover:scale-100 disabled:bg-red-500 rounded-xl bg-blue-500 text-white hover:scale-102 shadow-lg p-4 sm:p-6">
+                {isHosting ? "Currently Hosting" : "Host"}
             </button>
             <div className="flex flex-col bg-gray-300 rounded-xl w-full p-6">
-                <b>Your room code: </b> <p ref={roomDisplayRef} className="text-3xl font-extrabold"> .... </p>
+                <b>Your room code: </b> <p className="text-3xl font-extrabold"> {hostRoomCode} </p>
             </div>
         </div>
         {/* <!-- JOIN --> */}
@@ -272,13 +271,15 @@ function MultiplayerConfiguration({pageContext}: {pageContext: PageContext}){
             <h1 className="font-bold italic text-4xl underline">Join Room</h1>
             <div className="flex flex-col space-y-2 w-full">
                 <input type="text" 
+                    disabled={isHosting}
                     ref={enterRoomCodeRef}
                     placeholder="Enter Room Code..." 
                     className="bg-white text-lg border-4 p-2 w-full max-w-full h-16 rounded-xl border-black"/>
                 <input type="submit" 
+                    disabled={isHosting}
                     onClick={joinRoom} 
                     value="Enter"
-                    className="w-28 h-12 bg-blue-500 shadow-xl text-white rext-2xl p-2 rounded-xl hover:scale-105"/>
+                    className="disabled:bg-red-500 disabled:hover-scale-100 w-28 h-12 bg-blue-500 shadow-xl text-white rext-2xl p-2 rounded-xl hover:scale-102"/>
             </div>
         </div>
     </div>
@@ -297,24 +298,20 @@ function generateRoomCode(): string{
 function Board({pageContext}: {pageContext: PageContext}){
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [moveHistory, setMoveHistory] = useState<Move[]>([]);
-    // reset
-    useEffect(()=>{
-        if (pageContext.showRestart && pageContext.gameOverText === "..."){
-            setMoveHistory([]);
-        }
-    },[pageContext.showRestart])
-    //testing
+    const [opponentTimestamp, setOpponentTimestamp] = useState<number>(0);
+    // testing move history navigation
+    /*
     useEffect(() => {
         const navigateMoveHistory = (event: KeyboardEvent): void => {
             if (moveHistory.length <= 1) return;
             const lastPlayedMove: Move = moveHistory.at(-1)!;
             if (event.key === "ArrowLeft"){
                 if (moveHistoryIndex >= 0) moveHistoryIndex--;
-                lastPlayedMove.undo();
+                lastPlayedMove.undo(setCastlingRights);
                 turnToMove *= -1;
             } else if (event.key === "ArrowRight"){
                 if (moveHistoryIndex < moveHistory.length - 1) moveHistoryIndex++;
-                lastPlayedMove.play();
+                lastPlayedMove.play(setCastlingRights);
                 turnToMove *= -1;
             }
             render();
@@ -324,13 +321,17 @@ function Board({pageContext}: {pageContext: PageContext}){
             window.removeEventListener("keydown", navigateMoveHistory);
         }
     }, [moveHistory]);
-    // Canvas 
+    */
+    // initialization
     useEffect(() => {
-        const resizeCanvas = (): void => {
+        let renderInterval: NodeJS.Timeout, timestampInterval: NodeJS.Timeout;
+        const resizeCanvas = async () => {
             const canvas = canvasRef.current;
             if (!canvas) throw new Error("chess canvas not found");
             // Set the 2d context
-            ctx = canvas.getContext("2d")!;
+            const ctxOrNull = canvas.getContext("2d");
+            if (!ctxOrNull) throw new Error(`Could not get 2D rendering context from canvas`);
+            ctx = ctxOrNull
             // Set canvas length to the minimum between the screen width and height
             const body = document.getElementById("body")!;
             boardLength = Math.min(body.offsetWidth, body.offsetHeight) - 32;
@@ -341,111 +342,146 @@ function Board({pageContext}: {pageContext: PageContext}){
         }
         window.addEventListener("resize", resizeCanvas);
         resizeCanvas();
-        return () => {
-            window.removeEventListener("resize", resizeCanvas);
-        };
-    }, []);
-    // Event listeners for Mouse + Tap: Press, Drag, and Release
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) throw new Error("chess canvas not found");
-        const getMousePos = (event: MouseEvent): {mouseX: number, mouseY: number} => {
-            const rect = canvas.getBoundingClientRect();
-            return {
-                mouseX: event.clientX - rect.left,
-                mouseY: event.clientY - rect.top,
-            }
-        }
-        const getTouchPos = (event: TouchEvent): {touchX: number, touchY: number} => {
-            const rect = canvas.getBoundingClientRect();
-            const touch = event.touches[0] || event.changedTouches[0];
-            return {
-                touchX: touch.clientX - rect.left,
-                touchY: touch.clientY - rect.top
-            }
-        }
-        /* Desktop/Mouse */
-        const handleMouseDown = (event: MouseEvent): void => {
-            const { mouseX, mouseY } = getMousePos(event);
-            const file = Math.floor(mouseX / TILE_SIZE);
-            const rank = Math.floor(mouseY / TILE_SIZE);
-            pickupPiece(getFlippedRank(rank), file, pageContext);
-            // Update piece held
-            heldPiece.x = mouseX - 0.5 * TILE_SIZE;
-            heldPiece.y = mouseY - 0.5 * TILE_SIZE;
-        }
-        const handleMouseMove = (event: MouseEvent): void => {
-            if (!heldPiece.isHolding) return;
-            const { mouseX, mouseY } = getMousePos(event);
-            heldPiece.x = mouseX - 0.5 * TILE_SIZE;
-            heldPiece.y = mouseY - 0.5 * TILE_SIZE;
-        }
-        const handleMouseUp = (event: MouseEvent): void => {
-            if (!heldPiece.isHolding) return;
-            heldPiece.isHolding = false;
+        const init = async () => {
+            // initialize game state
             moveHighlights = [];
             moveIndicators = [];
-            const { mouseX, mouseY } = getMousePos(event);
-            const file = Math.floor(mouseX / TILE_SIZE);
-            const rank = Math.floor(mouseY / TILE_SIZE);
-            releasePiece(getFlippedRank(rank), file, pageContext, setMoveHistory);
+            resetBoard();
+            renderInterval = setInterval(() => {
+                render();
+            }, TIME_BETWEEN_FRAMES);
+            // set an interval in multiplayer games to update the latest timestamp connected to the db
+            if (chessContext.isMultiplayer){
+                timestampInterval = setInterval(async () => {
+                    const myColorLabel: string = `${(chessContext.color === Color.WHITE) ? "white" : "black"}Timestamp`;
+                    UPDATE(chessContext.roomCode, {
+                        [myColorLabel]: Date.now()
+                    })
+                    // const opponentColorLabel: string = `${(chessContext.color === Color.WHITE) ? "black" : "white"}Timestamp`;
+                    // const ts = await GET(`${chessContext.roomCode}/${opponentColorLabel}`);
+                    // const timeSinceResponse = Math.floor((Date.now() - ts) / 100) / 10;
+                    // setOpponentTimestamp(timeSinceResponse);
+                }, 1_000);
+            };
+            if (chessContext.isMultiplayer && chessContext.color === Color.BLACK){
+                await receiveMove(pageContext, setMoveHistory);
+                turnToMove *= -1;
+            }
+            //debug
+            // timestampInterval = setInterval(() => {
+            //     console.log(`${enPassant.toString(2).padStart(16, "0").match(/.{1,4}/g)?.join(" ")}`);
+            // }, 500);
         }
-        /* Mobile/Touch */
-        const handleTouchStart = (event: TouchEvent): void => {
-            event.preventDefault();
-            const { touchX, touchY } = getTouchPos(event)
-            const file = Math.floor(touchX / TILE_SIZE);
-            const rank = Math.floor(touchY / TILE_SIZE);
-            pickupPiece(getFlippedRank(rank), file, pageContext);
-            heldPiece.x = touchX - 0.5 * TILE_SIZE;
-            heldPiece.y = touchY - 0.5 * TILE_SIZE;
+        init();
+
+        if (!chessContext.isMultiplayer){
+            const t0 = performance.now();
+            const depth = 2;
+            const p = perft(depth);
+            console.log(`Perft ${p} at depth ${depth}`);
+            const t1 = performance.now();
+            const elapsed = t1 - t0;
+            console.log(`Executed in ${Math.floor(elapsed)} ms`);
         }
-        const handleTouchMove = (event: TouchEvent): void => {
-            if (!heldPiece.isHolding) return;
-            event.preventDefault();
-            const { touchX, touchY } = getTouchPos(event)
-            heldPiece.x = touchX - 0.5 * TILE_SIZE;
-            heldPiece.y = touchY - 0.5 * TILE_SIZE;
-        }
-        const handleTouchEnd = (event: TouchEvent): void => {
-            if (!heldPiece.isHolding) return;
-            event.preventDefault();
-            heldPiece.isHolding = false;
-            moveHighlights = []
-            moveIndicators = []
-            const { touchX, touchY } = getTouchPos(event)
-            const file = Math.floor(touchX / TILE_SIZE);
-            const rank = Math.floor(touchY / TILE_SIZE);
-            releasePiece(getFlippedRank(rank), file, pageContext, setMoveHistory);
-        }
-        canvas.addEventListener("mousedown", handleMouseDown);
-        canvas.addEventListener("mousemove", handleMouseMove);
-        canvas.addEventListener("mouseup", handleMouseUp);
-        canvas.addEventListener("touchstart", handleTouchStart);
-        canvas.addEventListener("touchmove", handleTouchMove);
-        canvas.addEventListener("touchend", handleTouchEnd);
+
+        // clean up on chess board unmount
         return () => {
-            canvas.removeEventListener("mousedown", handleMouseDown);
-            canvas.removeEventListener("mousemove", handleMouseMove);
-            canvas.removeEventListener("mouseup", handleMouseUp);
-            canvas.removeEventListener("touchstart", handleTouchStart);
-            canvas.removeEventListener("touchmove", handleTouchMove);
-            canvas.removeEventListener("touchend", handleTouchEnd);
-        }
+            window.removeEventListener("resize", resizeCanvas);
+            clearInterval(renderInterval);
+            clearInterval(timestampInterval);
+        };
     }, []);
+    // Event listeners for desktop and mobile clicking/dragging
+    const getMousePos = (event: React.MouseEvent): {mouseX: number, mouseY: number} => {
+        const canvas = canvasRef.current;
+        if (!canvas) throw new Error(`Could not get canvas after getMousePos() invokation`);
+        const rect = canvas.getBoundingClientRect();
+        return {
+            mouseX: event.clientX - rect.left,
+            mouseY: event.clientY - rect.top,
+        }
+    }
+    const getTouchPos = (event: React.TouchEvent): {touchX: number, touchY: number} => {
+        const canvas = canvasRef.current;
+        if (!canvas) throw new Error(`Could not get canvas after getTouchPos() invokation`);
+        const rect = canvas.getBoundingClientRect();
+        const touch = event.touches[0] || event.changedTouches[0];
+        return {
+            touchX: touch.clientX - rect.left,
+            touchY: touch.clientY - rect.top
+        }
+    }
+    /* Desktop/Mouse */
+    const handleMouseDown = (event: React.MouseEvent) => {
+        const { mouseX, mouseY } = getMousePos(event);
+        const file = Math.floor(mouseX / TILE_SIZE);
+        const rank = Math.floor(mouseY / TILE_SIZE);
+        pickupPiece(getFlippedRank(rank), file, pageContext);
+        // Update piece held
+        heldPiece.x = mouseX - 0.5 * TILE_SIZE;
+        heldPiece.y = mouseY - 0.5 * TILE_SIZE;
+    }
+    const handleMouseMove = (event: React.MouseEvent) => {
+        if (!heldPiece.isHolding) return;
+        const { mouseX, mouseY } = getMousePos(event);
+        heldPiece.x = mouseX - 0.5 * TILE_SIZE;
+        heldPiece.y = mouseY - 0.5 * TILE_SIZE;
+    }
+    const handleMouseUp = (event: React.MouseEvent) => {
+        if (!heldPiece.isHolding) return;
+        heldPiece.isHolding = false;
+        moveHighlights = [];
+        moveIndicators = [];
+        const { mouseX, mouseY } = getMousePos(event);
+        const file = Math.floor(mouseX / TILE_SIZE);
+        const rank = Math.floor(mouseY / TILE_SIZE);
+        releasePiece(getFlippedRank(rank), file, pageContext, setMoveHistory);
+    }
+    /* Mobile/Touch */
+    const handleTouchStart = (event: React.TouchEvent) => {
+        const { touchX, touchY } = getTouchPos(event)
+        const file = Math.floor(touchX / TILE_SIZE);
+        const rank = Math.floor(touchY / TILE_SIZE);
+        pickupPiece(getFlippedRank(rank), file, pageContext);
+        heldPiece.x = touchX - 0.5 * TILE_SIZE;
+        heldPiece.y = touchY - 0.5 * TILE_SIZE;
+    }
+    const handleTouchMove = (event: React.TouchEvent) => {
+        if (!heldPiece.isHolding) return;
+        const { touchX, touchY } = getTouchPos(event)
+        heldPiece.x = touchX - 0.5 * TILE_SIZE;
+        heldPiece.y = touchY - 0.5 * TILE_SIZE;
+    }
+    const handleTouchEnd = (event: React.TouchEvent) => {
+        if (!heldPiece.isHolding) return;
+        heldPiece.isHolding = false;
+        moveHighlights = []
+        moveIndicators = []
+        const { touchX, touchY } = getTouchPos(event)
+        const file = Math.floor(touchX / TILE_SIZE);
+        const rank = Math.floor(touchY / TILE_SIZE);
+        releasePiece(getFlippedRank(rank), file, pageContext, setMoveHistory);
+    }
 
     return <>
     <div className="flex w-full h-full justify-center items-center">
         {/* Board and move list */}
         <div className="flex space-y-4 sm:space-y-0 sm:space-x-8 flex-col md:flex-row max-w-screen max-h-screen">
             <canvas ref={canvasRef} 
-                width="69" 
-                height="69"
-                className="border-0 sm:border-8 border-amber-950 rounded-0 sm:rounded-xl shadow-2xl"/>
+                width="42" 
+                height="42"
+                className="border-0 sm:border-8 border-amber-950 rounded-0 sm:rounded-xl shadow-2xl"
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                />
             <MoveList moveHistory={moveHistory}/>
         </div>
         {/* <!-- Restart Window --> */}
-        {pageContext.showRestart && <RestartWindow pageContext={pageContext}/>}
+        {pageContext.showRestart && <RestartWindow pageContext={pageContext} setMoveHistory={setMoveHistory}/>}
         {/* <!-- Pawn Promotion Selection --> */}
         {pageContext.showPromotion && <PromotionWindow pageContext={pageContext}/>}
     </div>
@@ -466,16 +502,41 @@ function MoveList({moveHistory}: {moveHistory: Move[]}){
 }
 
 function MoveRecord({index, move}: {index: number, move: Move}){
-    return <li className="w-full flex flex-row text-xl">
-        <div className={`w-7 h-7 shrink-0 shadow-2xl ${Math.sign(move.piece) === 1 ? "bg-white" : "bg-black"}`}/>
-        <div className="w-full flex justify-around"> 
-            <div>{move.algebraicNotation} </div>
-            <div>{index+1}</div>
+    const imageContainerRef = useRef<HTMLDivElement | null>(null);
+    // label the move
+    let moveLabel = "placeholder";
+    if (Math.abs(move.piece) === Piece.WHITE_KING && move.toFile === move.fromFile + 2){
+        moveLabel = "O-O";
+    } else if (Math.abs(move.piece) === Piece.WHITE_KING && move.toFile === move.fromFile - 2){
+        moveLabel = "O-O-O";
+    } else{
+        const fromLabel = getAlgebraicNotation(move.fromRank, move.fromFile);
+        const toLabel = getAlgebraicNotation(move.toRank, move.toFile);
+        moveLabel = `${fromLabel}->${toLabel}`;
+    }
+
+    useEffect(()=>{
+        if (!imageContainerRef) return;
+        const imageContainer = imageContainerRef.current;
+        if (!imageContainer) return;
+        const pieceImage = pieceImages.get(move.piece)
+        if (!pieceImage) throw new Error(`Could not get chess piece image for piece=${move.piece}`);
+        imageContainer.appendChild(pieceImage.cloneNode());
+    },[]);
+
+    return <li className={`w-full flex flex-row text-md tracking-tighter space-x-1 ${(Math.sign(move.piece) === Color.WHITE) ? "text-white" : "text-black"}`}>
+        {/* <div className={`w-7 h-7 shrink-0 shadow-2xl text-red-500 ${Math.sign(move.piece) === 1 ? "bg-white" : "bg-black"}`}/> */}
+        <div ref={imageContainerRef}/>
+        <div className="w-full flex justify-start flex-row items-center"> 
+            <h1 className="w-9">{index+1}: </h1>
+            <p>{moveLabel}</p>
         </div>
     </li>
 }
 
-function RestartWindow({pageContext}: {pageContext: PageContext}){
+function RestartWindow({pageContext, setMoveHistory}: {pageContext: PageContext, setMoveHistory: Setter<Move[]>}){
+    // rest move history
+    setMoveHistory([]);
     const restartButtonRef = useRef<HTMLButtonElement | null>(null);
     const restartGame = (): void => {RestartWindow
         pageContext.setShowRestart(false);
@@ -483,7 +544,6 @@ function RestartWindow({pageContext}: {pageContext: PageContext}){
             ...chessContext,
             color: Color.WHITE
         }
-        initChess(pageContext);
     }
     return <>
     <div className="flex absolute flex-col justify-center items-center space-y-10 opacity-90
@@ -526,33 +586,13 @@ function PromotionOption({filename, promotionPiece, pageContext}: {filename: str
     </>
 }
 
-async function initChess(pageContext: PageContext) {
-    // clear rendering artifacts from prior games
-    moveHighlights = [];
-    moveIndicators = [];
-
-    resetBoard();
-    turnToMove = Color.WHITE; // White moves first
-    if (chessContext.isMultiplayer && chessContext.color === Color.BLACK){
-        await receiveMove(pageContext);
-        turnToMove *= -1;
-    }
-    // Continuous rerendering
-    setInterval(() => {
-        render();
-    }, 30);
-}
-
 function pickupPiece(rank: number, file: number, pageContext: PageContext) {
     if (pageContext.showPromotionRef.current || pageContext.showRestartRef.current) return;
     // Get the piece clicked
     const pieceClicked = board[rank][file];
-    // Moves can't be played if the game's over
-    if (pageContext.showRestartRef.current) return;
-    // Player must wait for opponent's move
-    if (chessContext.isMultiplayer && turnToMove != chessContext.color) return;
-    // Clicked on a piece of the right color
-    if (pieceClicked === Piece.EMPTY || Math.sign(pieceClicked) !== Math.sign(turnToMove)) return;
+    if (pieceClicked === Piece.EMPTY) return;
+    if ((!chessContext.isMultiplayer && Math.sign(pieceClicked) !== Math.sign(turnToMove))||
+        (chessContext.isMultiplayer && Math.sign(pieceClicked) !== Math.sign(chessContext.color))) return;
     // Record the piece being picked up
     heldPiece.isHolding = true;
     heldPiece.rank = rank;
@@ -565,42 +605,37 @@ function pickupPiece(rank: number, file: number, pageContext: PageContext) {
 }
 
 async function releasePiece(rank: number, file: number, pageContext: PageContext, setMoveHistory: Setter<Move[]>){
-    // Played move
-    const playerMove = new Move(heldPiece.rank, heldPiece.file, rank, file);
-    // Play a legal move
-    if (isLegalMove(playerMove)) {
-        // Play the move on the board
-        await playMove(playerMove, pageContext);
-        // Switch the turn (unless the game just ended)
-        if (!pageContext.showRestart) turnToMove *= -1;
-        /* PROMPT OPPONENT RESPONSE */
-        // Multiplayer
-        if (chessContext.isMultiplayer){
-            // Send the move to the DB for the opponent to read
-            sendMove(playerMove);
-            // Wait for the opponent's response
-            await receiveMove(pageContext);
-            turnToMove *= -1;
-        } 
-        // Local
-        else {
-            // Switch the player color to flip the board
-            chessContext.color *= -1;
-        }
-        // Record the move
-        setMoveHistory(moveHistory => [...moveHistory, playerMove]);
+    const move = new Move(heldPiece.rank, heldPiece.file, rank, file);
+    if (!isLegalMove(move)) return;
+    // store a premove
+    if (turnToMove !== chessContext.color){
+        premove = move;
+        return;
+    }
+    await playMove(move, pageContext, setMoveHistory);
+    // if the game isn't over, update turn to move
+    if (!pageContext.showRestart) turnToMove *= -1;
+    // receive and play the opponent's move (multiplayer)
+    if (chessContext.isMultiplayer){
+        sendMove(move);
+        await receiveMove(pageContext, setMoveHistory);
+        turnToMove *= -1;
+    } 
+    // Local
+    else {
+        chessContext.color *= -1;
     }
 }
 
-async function playMove(move: Move, pageContext: PageContext) {
-    /* Promote pawns */
-    if (Math.abs(move.piece) == Piece.WHITE_PAWN && (move.toRank == 0 || move.toRank == 7)) {
-        // Player promotes a pawn, wait for a selection
+async function playMove(move: Move, pageContext: PageContext, setMoveHistory: Setter<Move[]>) {
+    move.play(setCastlingRights, setEnPassant);
+
+    // Store the move highlight
+    moveHighlights.push(move);
+    /* Promote pawns to another piece of the user's choosing */
+    if (Math.abs(move.piece) === Piece.WHITE_PAWN && (move.toRank == 0 || move.toRank == 7)) {
+        // Turn on the promotion window and wait for a selection
         if (Math.sign(move.piece) === chessContext.color) {
-            // Show the pawn being moved up and render before promoting
-            move.play();
-            moveHighlights.push(move);
-            // Turn on the promotion window and wait for a selection
             pageContext.setShowPromotion(true);
             await new Promise<void>((resolve) => {
                 const check = setInterval(() => {
@@ -612,19 +647,16 @@ async function playMove(move: Move, pageContext: PageContext) {
                 }, 50);
             });
         };
-        if (!promotionSelection) throw new Error('Promotion window closed, but no selection was saved')
+        if (!promotionSelection) throw new Error(`Pawn reached promotion square without a promotionSelection`);
         // Apply the promotion by changing the pawn's piece type
-        move.piece = Math.sign(move.piece) * promotionSelection;
+        move.piece = Math.sign(move.piece) * promotionSelection as Piece;
         // Remove the cached promotion 
         promotionSelection = null;
     }
-    /* Apply the move */
-    move.play();
     heldPiece.isHolding = false;
-    // Store the move
+    // Record the move
+    setMoveHistory(moveHistory => [...moveHistory, move]);
     moveHistoryIndex++;
-    // Store the move highlight
-    moveHighlights.push(move);
     /* The move played ended the game */
     if (isGameOver(pageContext)){
         pageContext.setShowRestart(true);
@@ -676,31 +708,45 @@ function isLegalMove(move: Move) {
     return false;
 }
 
-// function getAllLegalMoves(color: number): Move[]{
-//     let allLegalMoves = [];
-//     // Get all legal moves for a given color
-//     for (let rank = 0; rank <= 7; rank++){
-//         for (let file = 0; file <= 7; file++){
-//             if (Math.sign(board[rank][file]) === color){
-//                 allLegalMoves.push(...getLegalMoves(rank, file));
-//             }
-//         }
-//     }
-//     return allLegalMoves;
-// }
+/* PERFT TESTING */
+function perft(depth: number): number {
+    const moveList = getAllLegalMoves((depth % 2 == 1) ? Color.WHITE : Color.BLACK);
+    if (depth === 1) return moveList.length;
+    let nodes = 0;
+    for (const move of moveList){
+        move.play(setCastlingRights, setEnPassant);
+        nodes += perft(depth - 1);
+        move.undo(setCastlingRights, setEnPassant);
+    }
+    return nodes;
+}
+
+
+function getAllLegalMoves(color: number): Move[]{
+    let allLegalMoves = [];
+    // Get all legal moves for a given color
+    for (let rank = 0; rank <= 7; rank++){
+        for (let file = 0; file <= 7; file++){
+            if (Math.sign(board[rank][file]) === color){
+                allLegalMoves.push(...getLegalMoves(rank, file));
+            }
+        }
+    }
+    return allLegalMoves;
+}
 
 function getLegalMoves(fromRank: number, fromFile: number) {
     // Get the set of all moves possible for a piece at a given rank and file
-    let legalMoves = [];
+    const legalMoves = [];
     /* Remove moves that put the king in check */
     const piece = board[fromRank][fromFile];
     for (const move of getPseudoLegalMoves(fromRank, fromFile)) {
         // Temporary play the move
-        move.play();
+        move.play(setCastlingRights, setEnPassant);
         /* Check all legal moves available to the opponent to see if any capture the king */
         if (!isChecked(Math.sign(piece))) legalMoves.push(move);
         // Undo the move
-        move.undo();
+        move.undo(setCastlingRights, setEnPassant);
     }
     return legalMoves;
 }
@@ -709,9 +755,8 @@ function getPseudoLegalMoves(fromRank: number, fromFile: number) {
     // Get the set of all moves of a piece at a given rank and file
     const piece = board[fromRank][fromFile];
     const color = Math.sign(piece);
-    if (piece == Piece.EMPTY) return [];
-    // Generate the set of legal moves
-    let allMoves = [];
+    let allMoves: Move[] = [];
+    if (piece === Piece.EMPTY) return allMoves;
     /* Bishops, Rooks, and Queens have the same sliding-move behavior */
     if (Math.abs(piece) === Piece.WHITE_BISHOP ||
         Math.abs(piece) === Piece.WHITE_ROOK ||
@@ -719,12 +764,12 @@ function getPseudoLegalMoves(fromRank: number, fromFile: number) {
         allMoves.push(...getSlidingMoves(fromRank, fromFile));
     }
     /* Knights and kings don't slide, but move adjacently */
-    if (Math.abs(piece) == Piece.WHITE_KNIGHT ||
-        Math.abs(piece) == Piece.WHITE_KING) {
+    if (Math.abs(piece) === Piece.WHITE_KNIGHT ||
+        Math.abs(piece) === Piece.WHITE_KING) {
         allMoves.push(...getAdjacentMoves(fromRank, fromFile));
     }
     /* Pawns have more complicated moves */
-    if (Math.abs(piece) == Piece.WHITE_PAWN) {
+    if (Math.abs(piece) === Piece.WHITE_PAWN) {
         const forward = (color === Color.WHITE) ? -1 : 1;
         const startRank = (color === Color.WHITE) ? 6 : 1;
         // Move forward 1
@@ -732,40 +777,50 @@ function getPseudoLegalMoves(fromRank: number, fromFile: number) {
             allMoves.push(new Move(fromRank, fromFile, fromRank + forward, fromFile));
         }
         // Move forward 2
-        if (fromRank == startRank &&
-            board[fromRank + forward][fromFile] == Piece.EMPTY &&
-            board[fromRank + 2 * forward][fromFile] == Piece.EMPTY) {
+        if (fromRank === startRank &&
+            board[fromRank + forward][fromFile] === Piece.EMPTY &&
+            board[fromRank + 2 * forward][fromFile] === Piece.EMPTY) {
             allMoves.push(new Move(fromRank, fromFile, fromRank + 2 * forward, fromFile));
         }
         // Captures
         for (const df of [-1, 1]) {
-            if (isInBounds(fromRank + forward, fromFile + df) && Math.sign(board[fromRank + forward][fromFile + df]) === -color) {
+            if (!isInBounds(fromRank + forward, fromFile + df)) continue;
+            // opponent piece diagonal = capture move
+            if (Math.sign(board[fromRank + forward][fromFile + df]) === -color) {
                 allMoves.push(new Move(fromRank, fromFile, fromRank + forward, fromFile + df));
             }
+            // en passant
+            if (color === Color.WHITE &&
+                fromRank === 3 &&
+                board[fromRank][fromFile+df] === Piece.BLACK_PAWN &&
+                (enPassant & 1 << 15-(fromFile+df))){
+                allMoves.push(new Move(fromRank, fromFile, fromRank + forward, fromFile + df))
+            } else if (color === Color.BLACK &&
+                fromRank === 4 &&
+                board[fromRank][fromFile+df] === Piece.WHITE_PAWN &&
+                (enPassant & 1 << 7-(fromFile+df))){
+                allMoves.push(new Move(fromRank, fromFile, fromRank + forward, fromFile + df))
+            }
         }
-        // TODO: En passant
-        
     }
     /* Castling Moves */
-    // WHITE CASTLING
-    if (piece === Piece.WHITE_KING && !castlingRights.white.kingMoved) {
-        // Short Castling
-        if (!castlingRights.white.shortRookMoved && board[7][7] === Piece.WHITE_ROOK && canCastle(Color.WHITE, [[7, 4], [7, 5], [7, 6]], [[7, 5], [7, 6]])){
+    if (piece === Piece.WHITE_KING) {
+        // White Kingside Castling (O-O)
+        if ((castlingRights & 0b1000) && board[7][7] === Piece.WHITE_ROOK && canCastle(Color.WHITE, [[7, 4], [7, 5], [7, 6]], [[7, 5], [7, 6]])){
             allMoves.push(new Move(fromRank, fromFile, 7, 6));
         }
-        // Long castling
-        if (!castlingRights.white.longRookMoved && board[7][0] === Piece.WHITE_ROOK && canCastle(Color.WHITE, [[7, 2], [7, 3], [7, 4]], [[7, 1], [7, 2], [7, 3]])){
+        // White Queenside Castling (O-O-O)
+        if ((castlingRights & 0b100) && board[7][0] === Piece.WHITE_ROOK && canCastle(Color.WHITE, [[7, 2], [7, 3], [7, 4]], [[7, 1], [7, 2], [7, 3]])){
             allMoves.push(new Move(fromRank, fromFile, 7, 2));
         }
     }
-    // BLACK CASTLING
-    if (piece === Piece.BLACK_KING && !castlingRights.black.kingMoved){
-        // Short castling
-        if (!castlingRights.black.shortRookMoved && board[0][7] === Piece.BLACK_ROOK && canCastle(Color.BLACK, [[0, 4], [0, 5], [0, 6]], [[0, 5], [0, 6]])){
+    if (piece === Piece.BLACK_KING){
+        // Black Kingside Castling (O-O)
+        if ((castlingRights & 0b10) && board[0][7] === Piece.BLACK_ROOK && canCastle(Color.BLACK, [[0, 4], [0, 5], [0, 6]], [[0, 5], [0, 6]])){
             allMoves.push(new Move(fromRank, fromFile, 0, 6));
         }
-        // Long castling
-        if (!castlingRights.black.longRookMoved && board[0][0] === Piece.BLACK_ROOK && canCastle(Color.BLACK, [[0, 2], [0, 3], [0, 4]], [[0, 1], [0, 2], [0, 3]])){
+        // Black Queenside Castling (O-O-O)
+        if ((castlingRights & 0b1) && board[0][0] === Piece.BLACK_ROOK && canCastle(Color.BLACK, [[0, 2], [0, 3], [0, 4]], [[0, 1], [0, 2], [0, 3]])){
             allMoves.push(new Move(fromRank, fromFile, 0, 2));
         }
     }
@@ -855,23 +910,31 @@ function findPiece(piece: number) {
     return [];
 }
 
+function setCastlingRights(newCastlingRights: number){
+    castlingRights = newCastlingRights;
+}
+
+function setEnPassant(newEnPassant: number){
+    enPassant = newEnPassant;
+}
+
 type MoveData = {
     [color: string]: {
         from: [number, number];
         to: [number, number];
-        promote: string;
+        promote: number;
     };
 };
 /* Database Communication */
 async function sendMove(move: Move){
     if (!chessContext.roomCode) throw new Error('Error sending move, room code is null');
     // Send the move to the opponent
-    const playerColorStr = (chessContext.color == Color.WHITE) ? "whiteMove" : "blackMove";
+    const playerColorStr = (chessContext.color === Color.WHITE) ? "whiteMove" : "blackMove";
     const moveData: MoveData = {
         [playerColorStr]: {
             from: [move.fromRank, move.fromFile],
             to: [move.toRank, move.toFile],
-            promote: (promotionSelection == null) ? "" : String(promotionSelection)
+            promote: (promotionSelection === null) ? 42 : promotionSelection
         }
     }
     // Update the move to the DB
@@ -880,74 +943,144 @@ async function sendMove(move: Move){
     promotionSelection = null;
 }
 
-async function receiveMove(pageContext: PageContext) {
+async function receiveMove(pageContext: PageContext, setMoveHistory: Setter<Move[]>) {
     // Wait to receive the opponent's response
     const opponentMovePath = `${chessContext.roomCode}/${
-        chessContext.color == 1 ? "black" : "white"
+        chessContext.color === Color.WHITE ? "black" : "white"
     }Move`;
     const moveData = await WaitFor(opponentMovePath) as {
         from: [number, number];
         to: [number, number];
-        promote: string;
+        promote: number;
     };
     const from: [number, number] = moveData.from;
     const to: [number, number]  = moveData.to;
-    promotionSelection = +moveData.promote;
-    // Clear the opponent's move from the database after storing it
+    promotionSelection = moveData.promote;
+    if (promotionSelection === 42) promotionSelection = null;
+    // Clear the opponent's move from the database after reading it
     REMOVE(opponentMovePath);
     // Play the move on the board
-    await playMove(new Move(from[0], from[1], to[0], to[1]), pageContext);
+    await playMove(new Move(from[0], from[1], to[0], to[1]), pageContext, setMoveHistory);
+    // Automatically respond with the premove, if one exists
+    if (premove){
+        // make sure the premove is still legal
+        if (isLegalMove(premove)){
+            await playMove(premove, pageContext, setMoveHistory);
+            await sendMove(premove);
+            premove = null;
+            turnToMove *= -1;
+        } else{
+            premove = null;
+        }
+    }
 }
 
 /* Board Utilities */
-function resetBoard() {
-    board = 
-    [
-        [-4, -2, -3, -5, -6, -3, -2, -4],
-        [-1, -1, -1, -1, -1, -1, -1, -1],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1],
-        [4, 2, 3, 5, 6, 3, 2, 4]
-    ];
-    // DEFAULT GAME BOARD
-    // [
-    //     [-4, -2, -3, -5, -6, -3, -2, -4],
-    //     [-1, -1, -1, -1, -1, -1, -1, -1],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [1, 1, 1, 1, 1, 1, 1, 1],
-    //     [4, 2, 3, 5, 6, 3, 2, 4]
-    // ]
-    // DEBUG BOARD
-    // [
-    //     [0, 0, -3, -5, -6, -3, -2, -4],
-    //     [1, 0, -1, -1, -1, -1, -1, -1],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [-1, 0, 1, 1, 1, 1, 1, 1],
-    //     [0, 0, 3, 5, 6, 3, 2, 4]
-    // ];
-    // ONE-MOVE CHECKMATE BOARD
-    // [
-    //     [0, 0, 0, 0, -6, -3, -2, -4],
-    //     [5, -1, -1, -1, -1, -1, -1, -1],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [0, 0, 0, 0, 0, 0, 0, 0],
-    //     [5, 0, 3, 5, 6, 3, 2, 4]
-    // ];
+function loadFEN(fen: string){
+    const fields = fen.trim().split(" ");
+    if (fields.length !== 4 && fields.length !== 6) throw new Error(`Illegal argument content in FEN string. Must have 4 or 6 fields.`);
+    // 1. placement
+    const placements = fields[0];
+    const ranks = placements.trim().split("/");
+    if (ranks.length !== 8) throw new Error(`FEN notation expects 8 ranks, given ${ranks.length}`);
+    for (let rank = 0; rank < 8; rank++){
+        let file = 0;
+        for (const pieceChar of ranks[rank]){
+            if (/^\d$/.test(pieceChar)){
+                file += +pieceChar;
+                continue;
+            }
+            let piece = 42;
+            switch (pieceChar) {
+                case "P":
+                    piece = Piece.WHITE_PAWN;
+                    break;
+                case "p":
+                    piece = Piece.BLACK_PAWN;
+                    break;
+                case "N":
+                    piece = Piece.WHITE_KNIGHT;
+                    break;
+                case "n":
+                    piece = Piece.BLACK_KNIGHT;
+                    break;
+                case "B":
+                    piece = Piece.WHITE_BISHOP;
+                    break;
+                case "b":
+                    piece = Piece.BLACK_BISHOP;
+                    break;
+                case "R":
+                    piece = Piece.WHITE_ROOK;
+                    break;
+                case "r":
+                    piece = Piece.BLACK_ROOK;
+                    break;
+                case "Q":
+                    piece = Piece.WHITE_QUEEN;
+                    break;
+                case "q":
+                    piece = Piece.BLACK_QUEEN;
+                    break;
+                case "K":
+                    piece = Piece.WHITE_KING;
+                    break;
+                case "k":
+                    piece = Piece.BLACK_KING;
+                    break;
+                default:
+                    throw new Error(`Invalid piece notation: ${pieceChar} in FEN string`);
+            }
+            board[rank][file] = piece;
+            file += 1;
+        }
+    }
+    // 2. active
+    turnToMove = (fields[1].toLowerCase() === "w") ? Color.WHITE : Color.BLACK;
+    // 3. castling availability
+    castlingRights = 0b0000;
+    for (const castlingRight of fields[2]){
+        switch (castlingRight){
+            case "K":  // white kingside
+                castlingRights |= 0b1000;
+                break;
+            case "Q":  // white queenside
+                castlingRights |= 0b0100;
+                break;
+            case "k":  // black kingside
+                castlingRights |= 0b0010;
+                break; 
+            case "q":  // black queenside
+                castlingRights |= 0b0001;
+                break;
+            case "-":  // no castling rights
+                break; 
+        }
+    }
+    // 4. en passant target square
+    const targetSquare = fields[3];
+    enPassant = 0b0000_0000_0000_0000;
+    if (targetSquare === "-") return;  // no en passant target square
+    const rank = +fields[3].charAt(1);
+    const file = 7 - (fields[3].charCodeAt(0) - 'a'.charCodeAt(0));
+    if (rank === 3){
+        enPassant = 1 << file;
+    } else if (rank === 6){
+        enPassant = 1 << (8 + file);
+    } else{
+        throw new Error(`Invalid FEN string: invalid en passant target square rank: ${rank}`);
+    }
 }
 
-function isInBounds(rank: number, file: number) {
+function resetBoard() {
+    board = Array.from({ length: 8 }, () => Array(8).fill(0));
+    // default board
+    loadFEN(`rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1`);
+    // kiwipete position (for perft testing)
+    // loadFEN(`r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -`);
+}
+
+export function isInBounds(rank: number, file: number) {
     return rank >= 0 && rank <= 7 && file >= 0 && file <= 7;
 }
 
@@ -955,8 +1088,13 @@ function getFlippedRank(rank: number) {
     return chessContext.color === Color.WHITE ? rank : 7 - rank;
 }
 
+function getAlgebraicNotation(rank: number, file: number): string{
+    return `${String.fromCharCode('a'.charCodeAt(0) + file)}${8 - rank}`;
+}
+
 /* Rendering */
 function render() {
+    if (!ctx) throw new Error(`Couldn't find the canvas ctx on render() invokation`);
     // Render the squares
     let isWhite: boolean = (chessContext.color == Color.WHITE);
     for (let rank = 0; rank <= 7; rank++) {
@@ -989,15 +1127,21 @@ function render() {
             TILE_SIZE
         );
     }
-    // Render move indicators
-    if (moveIndicators !== null && moveIndicators.length !== 0){
-        ctx.fillStyle = MOVE_INDICATOR_COLOR;
-        // Draw a circular move indicator for each legal move available
-        for (const move of moveIndicators) {
-            const rank = move.toRank, file = move.toFile;
-            ctx.fillRect(file * TILE_SIZE, getFlippedRank(rank) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            ctx.fill();
-        }
+    // Render premove
+    if (premove){
+        ctx.fillStyle = PREMOVE_INDICATOR_COLOR;
+        ctx.fillRect(
+            premove.fromFile * TILE_SIZE,
+            getFlippedRank(premove.fromRank) * TILE_SIZE,
+            TILE_SIZE,
+            TILE_SIZE
+        );
+        ctx.fillRect(
+            premove.toFile * TILE_SIZE,
+            getFlippedRank(premove.toRank) * TILE_SIZE,
+            TILE_SIZE,
+            TILE_SIZE
+        );
     }
     // Render static pieces
     for (let rank = 0; rank <= 7; rank++) {
@@ -1007,10 +1151,39 @@ function render() {
             if (piece === Piece.EMPTY) continue;
             // Ignore the held piece
             if (heldPiece.isHolding && heldPiece.rank == rank && heldPiece.file == file) continue;
-            // Render the piece
-            ctx.drawImage(
-                pieceImages.get(piece)!, file * TILE_SIZE, getFlippedRank(rank) * TILE_SIZE, TILE_SIZE, TILE_SIZE
-            );
+            const pieceImage = pieceImages.get(piece)
+            if (!pieceImage) throw new Error(`Could not get chess piece image for piece=${piece}`);
+            // Render the piece (after playing a premove, if one exists)
+            if (premove && premove.fromFile === file && premove.fromRank === rank){
+                ctx.drawImage(
+                    pieceImage, premove.toFile * TILE_SIZE, getFlippedRank(premove.toRank) * TILE_SIZE, TILE_SIZE, TILE_SIZE
+                );
+            } else {
+                ctx.drawImage(
+                    pieceImage, file * TILE_SIZE, getFlippedRank(rank) * TILE_SIZE, TILE_SIZE, TILE_SIZE
+                );
+            }
+        }
+    }
+    // Render move indicators
+    if (moveIndicators !== null && moveIndicators.length !== 0){
+        ctx.fillStyle = MOVE_INDICATOR_COLOR;
+        // Draw a circular move indicator for each legal move available
+        for (const move of moveIndicators) {
+            const rank = move.toRank, file = move.toFile;
+            // ctx.beginPath();
+            // ctx.arc(
+            //     file*TILE_SIZE + TILE_SIZE/2,
+            //     getFlippedRank(rank)*TILE_SIZE + TILE_SIZE/2,
+            //     TILE_SIZE/12,
+            //     0,
+            //     2 * Math.PI
+            // );
+            // ctx.strokeStyle = MOVE_INDICATOR_COLOR;
+            // ctx.lineWidth = TILE_SIZE/6;
+            // ctx.stroke(); 
+            ctx.fillRect(file * TILE_SIZE, getFlippedRank(rank) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            ctx.fill();
         }
     }
     // Render square coordinates

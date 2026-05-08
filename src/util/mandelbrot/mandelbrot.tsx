@@ -23,8 +23,12 @@ function Loading() {
 
 function Controls() {
     return <>
-        <div className="max-h-screen w-full bg-slate-950 border-2 border-white text-center flex items-center justify-center flex-col px-0 sm:px-4 text-xl">
+        <div className="max-h-screen w-full bg-slate-950 border-2 border-white space-y-2 text-center flex items-center justify-center text-white flex-col px-0 sm:p-4 text-xl">
+            <h1 className="font-extrabold text-2xl max-w-60">
+                Mandelbrot Zoom
+            </h1>
             <div className="text-wrap max-w-60">
+                Reload to reset.
                 If your device doesn't support WebGL2.0,
                 you might not see anything.
             </div>
@@ -45,17 +49,17 @@ const fragmentShaderSource = `#version 300 es
 precision highp float;
 
 out vec4 outColor;
-uniform int u_max_iter;      // ...not sure if this is viable
-uniform float u_scale;       // how "zoomed in"
-uniform vec2 u_resolution;   // canvas display size
-uniform vec2 u_offset;       // shifts the mandelbrot x and y
+uniform int u_max_iter;            // ...not sure if this is viable
+uniform highp float u_scale;       // how "zoomed in"
+uniform highp vec2 u_resolution;   // canvas display size
+uniform highp vec2 u_offset;       // shifts the mandelbrot x and y
 
 // look how good this is
 int mandelbrot(vec2 offset){
-  vec2 cords = vec2(0.0, 0.0);
-  for (int iter=0; iter<1000; iter++){
-    float new_x = cords.x * cords.x - cords.y * cords.y + offset.x;
-    float new_y = 2.0 * cords.x * cords.y + offset.y;
+  highp vec2 cords = vec2(0.0, 0.0);
+  for (int iter=0; iter<2500; iter++){
+    highp float new_x = cords.x * cords.x - cords.y * cords.y + offset.x;
+    highp float new_y = 2.0 * cords.x * cords.y + offset.y;
     // diverges
     if (new_x * new_x + new_y * new_y > 4.0){
       return iter;
@@ -68,10 +72,10 @@ int mandelbrot(vec2 offset){
 }
 
 void main(){
-  vec2 uv = gl_FragCoord.xy / u_resolution;
-  vec2 complex = uv * u_scale - vec2(0.5 * u_scale) + u_offset;
+  highp vec2 uv = gl_FragCoord.xy / u_resolution;
+  highp vec2 complex = uv * u_scale - vec2(0.5 * u_scale) + u_offset;
   // fix for aspect ratio
-  float aspect = u_resolution.x / u_resolution.y;
+  highp float aspect = u_resolution.x / u_resolution.y;
   // width > height (desktop)
   if (aspect >= 1.0){
     complex.x *= aspect;
@@ -92,8 +96,12 @@ void main(){
 
 function Canvas() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    let scale = 4.0;
     let maxIter = 1000;
+
+    let scale = 4.0;
+    let xOffset = 0;
+    let yOffset = 0;
+
     let gl: WebGL2RenderingContext | null = null;
     const locs: Record<string, WebGLUniformLocation | number | null> = {};
     useEffect(() => {
@@ -152,21 +160,13 @@ function Canvas() {
             gl.STATIC_DRAW
         );
         render(gl);
-
-        window.addEventListener("resize", ()=>{
-            if (!gl) return;
-            render(gl);
-        })
     }, []);
     const render = (gl: WebGL2RenderingContext) => {
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
     let startDrag: { x: number, y: number } | undefined;
-    let xOffset = 0;
-    let yOffset = 0;
     let isDragging = false;
-
     const zoom = (event: React.WheelEvent<HTMLCanvasElement>) => {
         if (!gl) throw new Error(`No WebGL on zoom`);
         // mouse coordinates to zoom into
@@ -175,8 +175,8 @@ function Canvas() {
         const before_x = (x / gl.canvas.width) * scale - 0.5 * scale + xOffset;
         const before_y = (flippedy / gl.canvas.height) * scale - 0.5 * scale + yOffset;
         // change the scale
-        scale *= Math.exp(-event.deltaY * 0.001);
-        scale = Math.min(scale, 4.0);
+        scale = (Math.min(scale * Math.exp(-event.deltaY * 0.001), 4.0));
+        
         gl.uniform1f(locs.scale, scale);
         xOffset = before_x - (x / gl.canvas.width) * scale + 0.5 * scale;
         yOffset = before_y - (flippedy / gl.canvas.height) * scale + 0.5 * scale;
@@ -262,7 +262,7 @@ function Canvas() {
             onTouchMove={(e) => handleTouchMove(e)}
             onTouchEnd={(e) => handleTouchRelease(e)}
             onTouchCancel={(e) => handleTouchRelease(e)}
-            className="bg-black w-full h-full" ref={canvasRef} />
+            className="bg-black w-full h-full max-w-screen max-h-screen" ref={canvasRef} />
     </>
 }
 

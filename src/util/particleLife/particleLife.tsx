@@ -49,10 +49,10 @@ function loadSimulation(particleCount: number, forceMatrixRef: Ref<colorMatrix>,
     const intervalId: NodeJS.Timeout = setInterval(() => {
         if (!forceMatrixRef || !forceMatrixRef.current || Array.from(forceMatrixRef.current.keys()).length === 0){
             // for when react is asynchronously updating forceMatrix state
-            const {updateTime: _u, renderTime: _r} = gameLoop(initMatrix);
+            gameLoop(initMatrix);
         } else{
             // performance indicators
-            const {updateTime: _u, renderTime: r} = gameLoop(forceMatrixRef.current);
+            gameLoop(forceMatrixRef.current);
             // totalUpdate += u;
             // totalRender += r;
             // iterations += 1;
@@ -95,26 +95,25 @@ function generateForceMatrix(){
 // Clear the screen, apply particle logic, and then render the particles
 function gameLoop(forceMatrix: colorMatrix){
 
-    const t0 = performance.now();
+    // const t0 = performance.now();
     // Apply particle forces, updating positions and velocities
     for (let particle of particles){
         particle.update(forceMatrix);
     }
-    const updateTime = performance.now() - t0;
+    // const updateTime = performance.now() - t0;
 
-    const t1 = performance.now();
+    // const t1 = performance.now();
     // Render particle(s)
     ctx.fillStyle = `rgba(0, 0, 0, ${simulationVariables.opacity})`;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     for (let particle of particles){
         particle.render();
     }
-    const renderTime = performance.now() - t1;
-
-    return {
-        updateTime,
-        renderTime
-    }
+    // const renderTime = performance.now() - t1;
+    // return {
+    //     updateTime,
+    //     renderTime
+    // }
 }
 
 function getRandomNumber(min: number, max: number){

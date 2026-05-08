@@ -23,10 +23,12 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     /* Stuff that DiceUI said I need */
-    "baseUrl": ".",
+    // "baseUrl": ".",  // red?
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    // this removed the namespace conflict of NodeJS.Timeout in particleLife.tsx
+    "types": ["node"],
   },
   "include": ["src", "src/pages/Projects.tsx"]
 }

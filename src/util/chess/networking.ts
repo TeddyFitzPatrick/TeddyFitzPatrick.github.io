@@ -39,16 +39,18 @@ export async function UPDATE(path: string, data: any) {
 }
 
 /* Wait on a value to be updated to a specified value in the database */
-export async function WaitFor(path: string, resolutionValue: any | null = null){
+export async function WaitFor<T>(path: string, resolutionValue: T | undefined = undefined): Promise<T>{
     return await new Promise((resolve) => {
-        onValue(ref(database, path), (snapshot: any) => {
+        const unsubscribe = onValue(ref(database, path), (snapshot: any) => {
             const data = snapshot.val();
             // Resolve when data takes any value
-            if (resolutionValue === null && data !== null){
+            if (resolutionValue === undefined && data !== null){
+                unsubscribe();
                 resolve(data);
             }
             // Resolve when data has specific value
-            if (resolutionValue !== null && data === resolutionValue){
+            if (resolutionValue !== undefined && data === resolutionValue){
+                unsubscribe();
                 resolve(data); 
             }
         });

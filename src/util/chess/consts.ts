@@ -86,7 +86,11 @@ export const Piece = {
     BLACK_KING: -6,
 } as const;
 
+export type Piece = typeof Piece[keyof typeof Piece];
+
 export const Color = {
     WHITE: 1,
     BLACK: -1,
 } as const;
+
+export type Color = typeof Color[keyof typeof Color];
