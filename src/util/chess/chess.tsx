@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { WaitFor, GET, UPDATE, REMOVE } from "./networking.js";
 import { pieceImages, pieceMovements, Piece, Color } from "./consts.js";
 import { Move } from "./move.js";
+import { Turntable } from "lucide-react";
 
 /* Rendering */
 const LIGHT_SQUARE_COLOR = "rgb(173, 189, 143)";
@@ -150,23 +151,23 @@ function SelectGamemode({pageContext}: {pageContext: PageContext}){
     const gotoMultiplayerConfiguration = (): void => {
         pageContext.setSelected("MultiplayerConfiguration");
     }
-    return (
-        <div className="flex justify-evenly flex-col space-y-3 text-center items-center p-12 w-4/5 sm:w-1/2 h-3/4 min-h-fit sm:h-1/2 bg-white rounded-2xl shadow-2xl">
-            {/* <!-- Back to Home --> */}
-            <Link to="/">
-                <button className="text-xl sm:text-4xl bg-blue-400 text-white shadow-2xl p-6 rounded-2xl hover:scale-101 absolute left-6 top-4">
-                    Back to Home
-                </button>
-            </Link>
-            <h1 className="text-4xl sm:text-5xl font-bold">Teddy Chess</h1>
-            <button onClick={startLocalGame} className="p-4 w-full h-1/2 rounded-2xl shadow-2xl text-3xl bg-black font-bold text-white hover:scale-[102%]">
-                LOCAL
+    return <>
+    <div className="flex justify-evenly flex-col space-y-3 text-center items-center p-12 w-4/5 sm:w-1/2 h-3/4 min-h-fit sm:h-1/2 bg-white rounded-2xl shadow-2xl">
+        {/* <!-- Back to Home --> */}
+        <Link to="/">
+            <button className="text-xl sm:text-4xl bg-blue-400 text-white shadow-2xl p-6 rounded-2xl hover:scale-101 absolute left-6 top-4">
+                Back to Home
             </button>
-            <button onClick={gotoMultiplayerConfiguration} className="p-4 w-full h-1/2 rounded-2xl shadow-2xl text-3xl bg-black font-bold text-white hover:scale-[102%]">
-                ONLINE
-            </button>
-        </div>
-    );
+        </Link>
+        <h1 className="text-4xl sm:text-5xl font-bold">Teddy Chess</h1>
+        <button onClick={startLocalGame} className="p-4 w-full h-1/2 rounded-2xl shadow-2xl text-3xl bg-black font-bold text-white hover:scale-101">
+            LOCAL
+        </button>
+        <button onClick={gotoMultiplayerConfiguration} className="p-4 w-full h-1/2 rounded-2xl shadow-2xl text-3xl bg-black font-bold text-white hover:scale-101">
+            ONLINE
+        </button>
+    </div>
+    </>
 }
 
 function MultiplayerConfiguration({pageContext}: {pageContext: PageContext}){
@@ -298,7 +299,6 @@ function generateRoomCode(): string{
 function Board({pageContext}: {pageContext: PageContext}){
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [moveHistory, setMoveHistory] = useState<Move[]>([]);
-    const [opponentTimestamp, setOpponentTimestamp] = useState<number>(0);
     // testing move history navigation
     /*
     useEffect(() => {
@@ -363,26 +363,28 @@ function Board({pageContext}: {pageContext: PageContext}){
                     // setOpponentTimestamp(timeSinceResponse);
                 }, 1_000);
             };
+            // debug
+            // timestampInterval = setInterval(() => {
+            //     console.log(`ttm: ${turnToMove}`);
+            // }, 500);
+
             if (chessContext.isMultiplayer && chessContext.color === Color.BLACK){
                 await receiveMove(pageContext, setMoveHistory);
-                turnToMove *= -1;
             }
-            //debug
-            // timestampInterval = setInterval(() => {
-            //     console.log(`${enPassant.toString(2).padStart(16, "0").match(/.{1,4}/g)?.join(" ")}`);
-            // }, 500);
+
         }
         init();
 
-        if (!chessContext.isMultiplayer){
-            const t0 = performance.now();
-            const depth = 2;
-            const p = perft(depth);
-            console.log(`Perft ${p} at depth ${depth}`);
-            const t1 = performance.now();
-            const elapsed = t1 - t0;
-            console.log(`Executed in ${Math.floor(elapsed)} ms`);
-        }
+        // perft testing
+        // if (!chessContext.isMultiplayer){
+        //     const t0 = performance.now();
+        //     const depth = 2;
+        //     const p = perft(depth);
+        //     console.log(`Perft ${p} at depth ${depth}`);
+        //     const t1 = performance.now();
+        //     const elapsed = t1 - t0;
+        //     console.log(`Executed in ${Math.floor(elapsed)} ms`);
+        // }
 
         // clean up on chess board unmount
         return () => {
@@ -466,11 +468,11 @@ function Board({pageContext}: {pageContext: PageContext}){
     return <>
     <div className="flex w-full h-full justify-center items-center">
         {/* Board and move list */}
-        <div className="flex space-y-4 sm:space-y-0 sm:space-x-8 flex-col md:flex-row max-w-screen max-h-screen">
+        <div className="flex space-y-4 sm:space-y-0 space-x-0 sm:space-x-8 flex-col md:flex-row max-w-screen max-h-screen">
             <canvas ref={canvasRef} 
                 width="42" 
                 height="42"
-                className="border-0 sm:border-8 border-amber-950 rounded-0 sm:rounded-xl shadow-2xl"
+                className="border-6 sm:border-8 border-amber-950 rounded-xl shadow-2xl"
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
@@ -588,6 +590,10 @@ function PromotionOption({filename, promotionPiece, pageContext}: {filename: str
 
 function pickupPiece(rank: number, file: number, pageContext: PageContext) {
     if (pageContext.showPromotionRef.current || pageContext.showRestartRef.current) return;
+    if (premove && premove.toRank === rank && premove.toFile === file){
+        premove = null;
+        return;
+    }
     // Get the piece clicked
     const pieceClicked = board[rank][file];
     if (pieceClicked === Piece.EMPTY) return;
@@ -610,16 +616,14 @@ async function releasePiece(rank: number, file: number, pageContext: PageContext
     // store a premove
     if (turnToMove !== chessContext.color){
         premove = move;
+        heldPiece.isHolding = false;
         return;
     }
     await playMove(move, pageContext, setMoveHistory);
-    // if the game isn't over, update turn to move
-    if (!pageContext.showRestart) turnToMove *= -1;
     // receive and play the opponent's move (multiplayer)
     if (chessContext.isMultiplayer){
-        sendMove(move);
+        await sendMove(move);
         await receiveMove(pageContext, setMoveHistory);
-        turnToMove *= -1;
     } 
     // Local
     else {
@@ -629,7 +633,7 @@ async function releasePiece(rank: number, file: number, pageContext: PageContext
 
 async function playMove(move: Move, pageContext: PageContext, setMoveHistory: Setter<Move[]>) {
     move.play(setCastlingRights, setEnPassant);
-
+    turnToMove *= -1;
     // Store the move highlight
     moveHighlights.push(move);
     /* Promote pawns to another piece of the user's choosing */
@@ -938,7 +942,7 @@ async function sendMove(move: Move){
         }
     }
     // Update the move to the DB
-    UPDATE(chessContext.roomCode, moveData);
+    await UPDATE(chessContext.roomCode, moveData);
     // Reset for future pawn promotions
     promotionSelection = null;
 }
@@ -950,17 +954,18 @@ async function receiveMove(pageContext: PageContext, setMoveHistory: Setter<Move
     }Move`;
     const moveData = await WaitFor(opponentMovePath) as {
         from: [number, number];
-        to: [number, number];
         promote: number;
+        to: [number, number];
     };
     const from: [number, number] = moveData.from;
     const to: [number, number]  = moveData.to;
     promotionSelection = moveData.promote;
     if (promotionSelection === 42) promotionSelection = null;
+    const receivedMove = new Move(from[0], from[1], to[0], to[1]);
     // Clear the opponent's move from the database after reading it
     REMOVE(opponentMovePath);
     // Play the move on the board
-    await playMove(new Move(from[0], from[1], to[0], to[1]), pageContext, setMoveHistory);
+    await playMove(receivedMove, pageContext, setMoveHistory);
     // Automatically respond with the premove, if one exists
     if (premove){
         // make sure the premove is still legal
@@ -968,7 +973,7 @@ async function receiveMove(pageContext: PageContext, setMoveHistory: Setter<Move
             await playMove(premove, pageContext, setMoveHistory);
             await sendMove(premove);
             premove = null;
-            turnToMove *= -1;
+            await receiveMove(pageContext, setMoveHistory);
         } else{
             premove = null;
         }
@@ -1127,22 +1132,6 @@ function render() {
             TILE_SIZE
         );
     }
-    // Render premove
-    if (premove){
-        ctx.fillStyle = PREMOVE_INDICATOR_COLOR;
-        ctx.fillRect(
-            premove.fromFile * TILE_SIZE,
-            getFlippedRank(premove.fromRank) * TILE_SIZE,
-            TILE_SIZE,
-            TILE_SIZE
-        );
-        ctx.fillRect(
-            premove.toFile * TILE_SIZE,
-            getFlippedRank(premove.toRank) * TILE_SIZE,
-            TILE_SIZE,
-            TILE_SIZE
-        );
-    }
     // Render static pieces
     for (let rank = 0; rank <= 7; rank++) {
         for (let file = 0; file <= 7; file++) {
@@ -1154,16 +1143,37 @@ function render() {
             const pieceImage = pieceImages.get(piece)
             if (!pieceImage) throw new Error(`Could not get chess piece image for piece=${piece}`);
             // Render the piece (after playing a premove, if one exists)
-            if (premove && premove.fromFile === file && premove.fromRank === rank){
-                ctx.drawImage(
-                    pieceImage, premove.toFile * TILE_SIZE, getFlippedRank(premove.toRank) * TILE_SIZE, TILE_SIZE, TILE_SIZE
-                );
-            } else {
+            if (!premove || premove.fromFile !== file || premove.fromRank !== rank){
                 ctx.drawImage(
                     pieceImage, file * TILE_SIZE, getFlippedRank(rank) * TILE_SIZE, TILE_SIZE, TILE_SIZE
                 );
             }
         }
+    }
+    // Render premove
+    if (premove){
+        ctx.fillStyle = PREMOVE_INDICATOR_COLOR;
+        // previous square
+        ctx.fillRect(
+            premove.fromFile * TILE_SIZE,
+            getFlippedRank(premove.fromRank) * TILE_SIZE,
+            TILE_SIZE,
+            TILE_SIZE
+        );
+        // to square
+        ctx.fillRect(
+            premove.toFile * TILE_SIZE,
+            getFlippedRank(premove.toRank) * TILE_SIZE,
+            TILE_SIZE,
+            TILE_SIZE
+        );
+        // piece image
+        const piece = board[premove.fromRank][premove.fromFile];
+        const pieceImage = pieceImages.get(piece);
+        if (!pieceImage) throw new Error(`Could not get chess piece image for piece=${piece}`);
+        ctx.drawImage(
+            pieceImage, premove.toFile * TILE_SIZE, getFlippedRank(premove.toRank) * TILE_SIZE, TILE_SIZE, TILE_SIZE
+        );
     }
     // Render move indicators
     if (moveIndicators !== null && moveIndicators.length !== 0){

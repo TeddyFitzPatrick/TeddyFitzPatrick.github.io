@@ -1,4 +1,4 @@
-import { board, castlingRights, enPassant, isInBounds  } from "./chess.tsx";
+import { board, castlingRights, enPassant  } from "./chess.tsx";
 import { Color, Piece } from "./consts.ts";
 
 export class Move {
@@ -36,7 +36,6 @@ export class Move {
     play(setCastlingRights: (newCastlingRights: number) => void, setEnPassant: (newEnPassant: number) => void){  
         // update rights
         if (Math.abs(this.piece) === Piece.WHITE_PAWN){
-            const opponentPawn = -Math.sign(this.piece) * Piece.WHITE_PAWN;
             // pawn up two enables en passant (expires after next turn)
             if (Math.abs(this.fromRank - this.toRank) === 2){
                 const shamt = ((Math.sign(this.piece) === Color.WHITE) ? 7 : 15) - this.toFile;
