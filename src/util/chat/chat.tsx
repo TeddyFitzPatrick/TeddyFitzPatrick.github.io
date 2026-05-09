@@ -203,10 +203,9 @@ function Login(){
             </div>
             <ul className="appearance-auto list-disc">
                 <li>you are anonymous to other users</li>
-                <li>some posts are restricted to @rit.edu emails</li>
                 <li>content provided on an 'as-is' basis + use at your own risk</li>
                 <li>i'm not responsible for what links you click; exercise caution</li>
-                <li>excuse any bugs, this is experimental</li>
+                <li>have fun</li>
             </ul>
         </div>
         <button onClick={signInWithGoogle} className="flex items-center justify-center rounded-full border border-gray-200 py-2.5 hover:bg-gray-50 focus:border-gray-300 cursor-pointer">

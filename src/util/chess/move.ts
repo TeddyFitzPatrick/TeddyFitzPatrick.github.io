@@ -10,6 +10,11 @@ export class Move {
     capturedPiece: number;
     priorEnPassant: number;
     priorCastlingRights: number;
+
+    // debug
+    isCapture: boolean;
+    isEnPassant: boolean;
+    isCastle: boolean;
     constructor(fromRank: number, fromFile: number, toRank: number, toFile: number) {
         // enPassant/castling rights
         this.priorCastlingRights = castlingRights;
@@ -21,7 +26,12 @@ export class Move {
         this.toFile = toFile;
         this.piece = board[fromRank][fromFile];
         this.capturedPiece = board[toRank][toFile];
+
+        this.isEnPassant = isEnPassant(this);
+        this.isCapture = (this.capturedPiece !== Piece.EMPTY);
+        this.isCastle = isKingsideCastle(this) || isQueensideCastle(this);
     }
+
     
     /**
      * 1. Updates en passant rights (if applicable)
@@ -71,14 +81,14 @@ export class Move {
         } else if (this.piece === Piece.BLACK_KING){
             setCastlingRights(castlingRights & 0b1100);
         } else if (this.piece === Piece.WHITE_ROOK) {
-            if (this.fromRank == 7 && this.fromFile  == 7) setCastlingRights(castlingRights & 0b0111);
-            if (this.fromRank == 7 && this.fromFile  == 0) setCastlingRights(castlingRights & 0b1011);
+            if (this.fromRank == 7 && this.fromFile == 7) setCastlingRights(castlingRights & 0b0111);
+            if (this.fromRank == 7 && this.fromFile == 0) setCastlingRights(castlingRights & 0b1011);
         } else if (this.piece === Piece.BLACK_ROOK) {
-            if (this.fromRank == 0 && this.fromFile  == 7) setCastlingRights(castlingRights & 0b1101);
-            if (this.fromRank == 0 && this.fromFile  == 0) setCastlingRights(castlingRights & 0b1110);
+            if (this.fromRank == 0 && this.fromFile == 7) setCastlingRights(castlingRights & 0b1101);
+            if (this.fromRank == 0 && this.fromFile == 0) setCastlingRights(castlingRights & 0b1110);
         }
         // move rook during a castling move
-        if (this.fromFile + 2 === this.toFile){  /* Kingside castling */
+        if (isKingsideCastle(this)){  /* Kingside castling */
             if (this.piece === Piece.WHITE_KING){
                 board[7][5] = Piece.WHITE_ROOK;
                 board[7][7] = Piece.EMPTY;
@@ -88,7 +98,7 @@ export class Move {
                 board[0][7] = Piece.EMPTY;
             }
         }
-        if (this.fromFile - 2 === this.toFile){  /* Queenside castling */
+        if (isQueensideCastle(this)){  /* Queenside castling */
             if (this.piece === Piece.WHITE_KING){
                 board[7][3] = Piece.WHITE_ROOK;
                 board[7][0] = Piece.EMPTY;
@@ -116,7 +126,7 @@ export class Move {
     undo(setCastlingRights: (newCastlingRights: number) => void, setEnPassant: (newEnPassant: number) => void){
         // Move rook back to original position before castling
         /* Kingside Castling */
-        if (this.fromFile + 2 === this.toFile){
+        if (isKingsideCastle(this)){
             if (this.piece === Piece.WHITE_KING){
                 board[7][7] = Piece.WHITE_ROOK;
                 board[7][5] = Piece.EMPTY;
@@ -127,7 +137,7 @@ export class Move {
             }
         }
         /* Queenside Castling */
-        if (this.fromFile - 2 === this.toFile){
+        if (isQueensideCastle(this)){
             if (this.piece === Piece.WHITE_KING){
                 board[7][0] = Piece.WHITE_ROOK;
                 board[7][3] = Piece.EMPTY;
@@ -141,11 +151,23 @@ export class Move {
         setCastlingRights(this.priorCastlingRights);
         setEnPassant(this.priorEnPassant);
         // restore pawn captured during an en passant
-        if (Math.abs(this.piece) === Piece.WHITE_PAWN && this.fromFile !== this.toFile && this.capturedPiece === Piece.EMPTY){
+        if (isEnPassant(this)){
             board[this.fromRank][this.toFile] = -this.piece;
         }
         // move piece back and restore captured piece
         board[this.toRank][this.toFile] = this.capturedPiece;
         board[this.fromRank][this.fromFile] = this.piece;
     }
+}
+
+function isQueensideCastle(move: Move): boolean {
+    return Math.abs(move.piece) === Piece.WHITE_KING && move.fromFile - 2 === move.toFile;
+}
+
+function isKingsideCastle(move: Move): boolean {
+    return Math.abs(move.piece) === Piece.WHITE_KING && move.fromFile + 2 === move.toFile;
+}
+
+function isEnPassant(move: Move): boolean {
+    return Math.abs(move.piece) === Piece.WHITE_PAWN && move.fromFile !== move.toFile && move.capturedPiece === Piece.EMPTY;
 }
