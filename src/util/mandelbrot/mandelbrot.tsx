@@ -27,10 +27,11 @@ function Controls() {
             <h1 className="font-extrabold text-2xl max-w-60">
                 Mandelbrot Zoom
             </h1>
-            <div className="text-wrap max-w-60">
-                Reload to reset.
-                If your device doesn't support WebGL2.0,
-                you might not see anything.
+            <div className="text-wrap text-md max-w-60">
+                Reload to reset. 
+                Double click to zoom on mobile.
+                Mouse wheel or trackpad zoom to zoom.
+                If you're device must support WebGL2.0 (it probably does).
             </div>
         </div>
     </>
@@ -176,7 +177,7 @@ function Canvas() {
         const before_y = (flippedy / gl.canvas.height) * scale - 0.5 * scale + yOffset;
         // change the scale
         scale = (Math.min(scale * Math.exp(-event.deltaY * 0.001), 4.0));
-        
+
         gl.uniform1f(locs.scale, scale);
         xOffset = before_x - (x / gl.canvas.width) * scale + 0.5 * scale;
         yOffset = before_y - (flippedy / gl.canvas.height) * scale + 0.5 * scale;
@@ -184,13 +185,23 @@ function Canvas() {
         render(gl);
     };
     /* web */
-    const getMouseCords = (e: React.MouseEvent<HTMLCanvasElement> | React.WheelEvent<HTMLCanvasElement>): { x: number, y: number } => {
+    const getMouseCords = (event: React.MouseEvent<HTMLCanvasElement> | React.WheelEvent<HTMLCanvasElement>): { x: number, y: number } => {
         const canvas = canvasRef.current;
         if (!canvas) throw new Error(`No canvas, couldn't get mouse coordinates`);
         const rect = canvas.getBoundingClientRect();
         return {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top,
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top,
+        };
+    };
+    const getTouchCoords = (event: React.TouchEvent<HTMLCanvasElement>): { x: number; y: number } => {
+        const canvas = canvasRef.current;
+        if (!canvas) throw new Error(`No canvas, couldn't get touch coordinates`);
+        const rect = canvas.getBoundingClientRect();
+        const touch = event.touches[0];
+        return {
+            x: touch.clientX - rect.left,
+            y: touch.clientY - rect.top,
         };
     };
     const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -230,9 +241,34 @@ function Canvas() {
             y: e.touches[0].clientY - rect.top,
         };
     };
+    let lastMobileTouch = 0;
+    const MAX_DOUBLE_CLICK_DELAY = 300;
     const handleTouchStart = (event: React.TouchEvent<HTMLCanvasElement>) => {
         isDragging = true;
         startDrag = getTouchCords(event);
+        const now = performance.now();
+        const timeSinceLastClick = now - lastMobileTouch;
+        lastMobileTouch = now;
+        if (timeSinceLastClick > MAX_DOUBLE_CLICK_DELAY){
+            return;
+        } 
+        // prevent zooming twice with a triple click
+        lastMobileTouch -= MAX_DOUBLE_CLICK_DELAY;
+        if (!gl) throw new Error(`No WebGL on zoom`);
+        // mouse coordinates to zoom into
+        const { x, y } = getTouchCoords(event);
+        const flippedy = gl.canvas.height - y;
+        const before_x = (x / gl.canvas.width) * scale - 0.5 * scale + xOffset;
+        const before_y = (flippedy / gl.canvas.height) * scale - 0.5 * scale + yOffset;
+        // change the scale
+        // scale = (Math.min(scale * Math.exp(MOBILE_ZOOM_SPEED * 0.001), 4.0));
+        scale = Math.min(scale * 0.5, 4.0);
+
+        gl.uniform1f(locs.scale, scale);
+        xOffset = before_x - (x / gl.canvas.width) * scale + 0.5 * scale;
+        yOffset = before_y - (flippedy / gl.canvas.height) * scale + 0.5 * scale;
+        gl.uniform2fv(locs.offset, [xOffset, yOffset]);
+        render(gl);
     };
     const handleTouchMove = (event: React.TouchEvent<HTMLCanvasElement>) => {
         if (!isDragging || !startDrag) return;

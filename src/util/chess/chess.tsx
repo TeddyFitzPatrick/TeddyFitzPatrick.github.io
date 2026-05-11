@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, type PageLinkDescriptor } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { WaitFor, GET, UPDATE, REMOVE } from "./networking.js";
 import { pieceImages, pieceMovements, Piece, Color } from "./consts.js";
 import { Move } from "./move.js";
@@ -173,6 +173,12 @@ function MultiplayerConfiguration({setSelected}: {setSelected: Setter<PageKey>})
             alert("Invalid room code length (must be four letters)")
             return;
         }
+        // Check the room exists
+        const exists = await GET(`${joinRoomCode}/hostColor`);
+        if (exists === null){
+            alert(`Room ${joinRoomCode} does not exist`);
+            return;
+        }
         // Update the joined field to signal to the host the game has started
         await UPDATE(joinRoomCode, {"joined": 1});
         // Host chooses their color first
@@ -336,10 +342,6 @@ function Board({setVersion}: {setVersion: Setter<number>}){
                     UPDATE(chessContext.roomCode, {
                         [myColorLabel]: Date.now()
                     })
-                    // const opponentColorLabel: string = `${(chessContext.color === Color.WHITE) ? "black" : "white"}Timestamp`;
-                    // const ts = await GET(`${chessContext.roomCode}/${opponentColorLabel}`);
-                    // const timeSinceResponse = Math.floor((Date.now() - ts) / 100) / 10;
-                    // setOpponentTimestamp(timeSinceResponse);
                 }, 1_000);
             };
             // debug
@@ -657,11 +659,7 @@ function pickupPiece(rank: number, file: number, showPromotion: boolean, showRes
     }
 }
 
-async function releasePiece(
-    rank: number,
-    file: number,
-    UIContext: UIContext,
-){
+async function releasePiece(rank: number, file: number, UIContext: UIContext){
     const move = new Move(heldPiece.rank, heldPiece.file, rank, file);
     if (!isLegalMove(move)) return;
     // store a premove
@@ -682,10 +680,7 @@ async function releasePiece(
     }
 }
 
-async function playMove(
-    move: Move,
-    UIContext: UIContext
-) {
+async function playMove(move: Move, UIContext: UIContext) {
     move.play(setCastlingRights, setEnPassant);
     turnToMove *= -1;
     // Store the move highlight
@@ -710,8 +705,6 @@ async function playMove(
         const promoPiece = Math.sign(move.piece) * promotionSelection;
         board[move.toRank][move.toFile] = promoPiece;
         move.piece = promoPiece;
-        // Remove the cached promotion 
-        promotionSelection = null;
     }
     heldPiece.isHolding = false;
     // Record the move
@@ -997,7 +990,7 @@ type MoveData = {
     [color: string]: {
         from: [number, number];
         to: [number, number];
-        promote: number;
+        promote: number | null;
     };
 };
 /* Database Communication */
@@ -1009,7 +1002,7 @@ async function sendMove(move: Move){
         [playerColorStr]: {
             from: [move.fromRank, move.fromFile],
             to: [move.toRank, move.toFile],
-            promote: (promotionSelection === null) ? 42 : promotionSelection
+            promote: promotionSelection
         }
     }
     // Update the move to the DB
@@ -1019,19 +1012,19 @@ async function sendMove(move: Move){
 }
 
 async function receiveMove(UIContext: UIContext,) {
+    promotionSelection = null;
     // Wait to receive the opponent's response
     const opponentMovePath = `${chessContext.roomCode}/${
         chessContext.color === Color.WHITE ? "black" : "white"
     }Move`;
     const moveData = await WaitFor(opponentMovePath) as {
         from: [number, number];
-        promote: number;
+        promote: number | null;
         to: [number, number];
     };
     const from: [number, number] = moveData.from;
     const to: [number, number]  = moveData.to;
     promotionSelection = moveData.promote;
-    if (promotionSelection === 42) promotionSelection = null;
     const receivedMove = new Move(from[0], from[1], to[0], to[1]);
     // Clear the opponent's move from the database after reading it
     REMOVE(opponentMovePath);
@@ -1170,11 +1163,11 @@ function loadFEN(fen: string, UIContext: UIContext){
 function resetBoard(UIContext: UIContext) {
     board = Array.from({ length: 8 }, () => Array(8).fill(0));
     // default initial
-    // const fen = `rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1`;
+    const fen = `rnbqkbnr/pPpppppp/8/8/8/8/PPPPPPpP/RNBQKBNR w KQkq - 0 1`;
     // kiwipete
     // const fen = `r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -`
     // one-move checkmate
-    const fen = `rnrrkbnr/pPpp1ppp/8/4p2Q/2B1P3/8/PPPP1PPP/RRRRKBNR w KQkq - 3 3`;
+    // const fen = `rnrrkbnr/pPpp1ppp/8/4p2Q/2B1P3/8/PPPP1PPP/RRRRKBNR w KQkq - 3 3`;
     loadFEN(fen, UIContext);
 }
 
@@ -1262,8 +1255,12 @@ function render() {
         );
         // piece image
         const piece = board[premove.fromRank][premove.fromFile];
+        if (piece === Piece.EMPTY){
+            console.log(`Premove piece is Piece.EMPTY`);
+            return;
+        }
         const pieceImage = pieceImages.get(piece);
-        if (!pieceImage) throw new Error(`Could not get chess piece image for piece=${piece}`);
+        if (!pieceImage) throw new Error(`Could not get chess piece image for premove of piece=${piece}`);
         ctx.drawImage(
             pieceImage, premove.toFile * TILE_SIZE, getFlippedRank(premove.toRank) * TILE_SIZE, TILE_SIZE, TILE_SIZE
         );
