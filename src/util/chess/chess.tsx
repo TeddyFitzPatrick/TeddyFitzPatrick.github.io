@@ -1,7 +1,7 @@
-import { ref, set, onDisconnect, get, remove, update } from "firebase/database";
+import { ref, set, onDisconnect } from "firebase/database";
 import { WaitFor, GET, UPDATE, REMOVE, database } from "./networking.js";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { pieceImages, pieceMovements, Piece, Color } from "./consts.js";
 import { Move } from "./move.js";
@@ -364,8 +364,8 @@ function Board({setVersion}: {setVersion: Setter<number>}){
             };
             // debug
             // timestampInterval = setInterval(() => {
-            //     console.log(`ttm: ${turnToMove}`);
-            // }, 500);
+            //     setMoveHistory(h => [...h, algebraicNotationToMove("e2e4")]);
+            // }, 250);
             if (chessContext.isMultiplayer && chessContext.color === Color.BLACK){
                 await receiveMove(UIContext);
             }
@@ -494,11 +494,11 @@ function Board({setVersion}: {setVersion: Setter<number>}){
 
 function MoveList({UIContext}: {UIContext: UIContext}){
     return <>
-    <div className="bg-slate-600 w-60 h-full rounded-lg p-4 hidden md:flex flex-col max-h-[90vh]">
-        <h1 className="font-extrabold text-2xl pb-4">Move History</h1>
-        <ul className="space-y-2 font-bold text-xl overflow-y-auto scroll-smooth h-fit max-h-[90vh]">
+    <div className="bg-slate-600 w-60 h-full rounded-lg p-4 hidden md:flex flex-col max-h-[90vh] space-y-2">
+        <h1 className="font-extrabold text-xl">Move History</h1>
+        <ul className="space-y-2 font-bold text-xl overflow-y-auto scroll-smooth h-fit py-2 border shadow-x rounded-xl">
             {UIContext.moveHistory.map((move, index) => (
-                <MoveRecord key={index} index={index} move={move}/>
+                <MoveRecord key={index} index={index} move={move} UIContext={UIContext}/>
             ))}
         </ul>
         <div className="w-full flex flex-row space-x-2 items-center bg-slate-800 rounded-xl py-2 shadow-xl justify-center">
@@ -510,8 +510,9 @@ function MoveList({UIContext}: {UIContext: UIContext}){
     </>
 }
 
-function MoveRecord({index, move}: {index: number, move: Move}){
+function MoveRecord({index, move, UIContext}: {index: number, move: Move, UIContext: UIContext}){
     const imageContainerRef = useRef<HTMLDivElement | null>(null);
+    const lastMoveRef = useRef<HTMLLIElement | null>(null);
     // label the move
     let moveLabel = "placeholder";
     if (Math.abs(move.piece) === Piece.WHITE_KING && move.toFile === move.fromFile + 2){
@@ -523,7 +524,6 @@ function MoveRecord({index, move}: {index: number, move: Move}){
         const toLabel = getAlgebraicNotation(move.toRank, move.toFile);
         moveLabel = `${fromLabel} ↣ ${toLabel}`;
     }
-
     useEffect(()=>{
         if (!imageContainerRef) return;
         const imageContainer = imageContainerRef.current;
@@ -532,8 +532,13 @@ function MoveRecord({index, move}: {index: number, move: Move}){
         if (!pieceImage) throw new Error(`Could not get chess piece image for piece=${move.piece}`);
         imageContainer.appendChild(pieceImage.cloneNode());
     },[]);
+    useEffect(()=>{
+        const lastMove = lastMoveRef.current;
+        if (!lastMove) throw new Error(`Couldn't get last move in rendering move history`);
+        lastMove.scrollIntoView();
+    }, [UIContext.moveHistory]);
 
-    return <li className={`w-full flex flex-row text-md tracking-tighter space-x-1 ${(Math.sign(move.piece) === Color.WHITE) ? "text-white" : "text-black"}`}>
+    return <li ref={lastMoveRef} className={`w-full flex flex-row text-md tracking-tighter space-x-1 ${(Math.sign(move.piece) === Color.WHITE) ? "text-white" : "text-black"}`}>
         {/* <div className={`w-7 h-7 shrink-0 shadow-2xl text-red-500 ${Math.sign(move.piece) === 1 ? "bg-white" : "bg-black"}`}/> */}
         <div className="w-10 h-10 shrink-0" ref={imageContainerRef}/>
         <div className="w-full flex justify-start flex-row items-center"> 
@@ -1033,6 +1038,7 @@ async function receiveMove(UIContext: UIContext) {
     promotionSelection = received.promotionSelection;
     // Play the move on the board
     await playMove(receivedMove, UIContext);
+    promotionSelection = null;
     moveNumber += 1;
     // Automatically respond with the premove, if one exists
     if (premove){
@@ -1167,7 +1173,7 @@ function loadFEN(fen: string, UIContext: UIContext){
 function resetBoard(UIContext: UIContext) {
     board = Array.from({ length: 8 }, () => Array(8).fill(0));
     // default initial
-    const fen = `rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1`;
+    const fen = `rnbqkbnr/pPpppppp/8/8/8/8/PPPPPPpP/RNBQKBNR w KQkq - 0 1`;
     // kiwipete
     // const fen = `r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -`
     // one-move checkmate
