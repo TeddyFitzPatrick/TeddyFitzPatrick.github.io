@@ -1,6 +1,8 @@
+import { ref, set, onDisconnect, get, remove, update } from "firebase/database";
+import { WaitFor, GET, UPDATE, REMOVE, database } from "./networking.js";
+
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { WaitFor, GET, UPDATE, REMOVE } from "./networking.js";
 import { pieceImages, pieceMovements, Piece, Color } from "./consts.js";
 import { Move } from "./move.js";
 
@@ -35,6 +37,7 @@ let chessContext: ChessContext = {
 
 /* Game state */
 export let board: number[][];
+let moveNumber: number = 0;
 let moveIndicators: Move[],
     moveHighlights: Move[],
     premove: Move | null = null;
@@ -145,11 +148,20 @@ function MultiplayerConfiguration({setSelected}: {setSelected: Setter<PageKey>})
         // copy the room code to clipboard
         navigator.clipboard.writeText(hostRoomCode);
         console.log("Publishing new room to database");
-        // Put the room on firebase
-        await UPDATE(hostRoomCode, {"joined": 0, "hostColor": hostColor})
-        console.log("Published room, waiting for other player")
+        // Initialize a new room on firebase
+        await UPDATE (`chess/rooms/${hostRoomCode}`, {
+            playerInfo: {
+                "hostConnected": true,
+                "clientConnected": false,
+                "hostColor": (hostColor === 1) ? "white" : "black"
+            }
+        });
+        // Update connected status on disconnect
+        const hostRef = ref(database, `chess/rooms/${hostRoomCode}/playerInfo/hostConnected`);
+        await set(hostRef, true);
+        await onDisconnect(hostRef).set(false);
         // Wait for the opponent to update the joined status to start the game
-        await WaitFor(`${hostRoomCode}/joined`, 1);
+        await WaitFor(`chess/rooms/${hostRoomCode}/playerInfo/clientConnected`, true);
         // Player has joined, start the game
         setSelected("Board");
         chessContext = {
@@ -174,22 +186,28 @@ function MultiplayerConfiguration({setSelected}: {setSelected: Setter<PageKey>})
             return;
         }
         // Check the room exists
-        const exists = await GET(`${joinRoomCode}/hostColor`);
+        const exists = await GET(`chess/rooms/${joinRoomCode}`);
         if (exists === null){
             alert(`Room ${joinRoomCode} does not exist`);
             return;
         }
-        // Update the joined field to signal to the host the game has started
-        await UPDATE(joinRoomCode, {"joined": 1});
+        // Signal to the db that you've connected to the room
+        await UPDATE(`chess/rooms/${joinRoomCode}/playerInfo`, {
+            clientConnected: true
+        });
+        // Update connected status on disconnect
+        const clientRef = ref(database, `chess/rooms/${joinRoomCode}/playerInfo/clientConnected`);
+        await set(clientRef, true);
+        await onDisconnect(clientRef).set(false);
         // Host chooses their color first
-        const hostColor: Color = await GET(`${joinRoomCode}/hostColor`)
+        const hostColor: string = await GET(`chess/rooms/${joinRoomCode}/playerInfo/hostColor`)
         // Start the game
         setSelected("Board");
         chessContext = {
             isMultiplayer: true,
             isHosting: false,
             roomCode: joinRoomCode,
-            color: (hostColor === Color.BLACK) ? Color.WHITE : Color.BLACK
+            color: (hostColor === "black") ? Color.WHITE : Color.BLACK
         }
     }
     return <>
@@ -337,9 +355,9 @@ function Board({setVersion}: {setVersion: Setter<number>}){
             // set an interval in multiplayer games to update the latest timestamp connected to the db
             if (chessContext.isMultiplayer){
                 timestampInterval = setInterval(async () => {
-                    const myColorLabel: string = `${(chessContext.color === Color.WHITE) ? "white" : "black"}Timestamp`;
+                    const myColorLabel: string = `${(chessContext.isHosting) ? "host" : "client"}Timestamp`;
                     if (!chessContext.roomCode) throw new Error(`Error sending move in multiplayer game because room code is undefined`);
-                    UPDATE(chessContext.roomCode, {
+                    UPDATE(`chess/rooms/${chessContext.roomCode}/playerInfo`, {
                         [myColorLabel]: Date.now()
                     })
                 }, 1_000);
@@ -452,7 +470,7 @@ function Board({setVersion}: {setVersion: Setter<number>}){
     return <>
     <div className="flex w-full h-full justify-center items-center">
         {/* Board and move list */}
-        <div className="flex space-y-4 sm:space-y-0 space-x-0 sm:space-x-8 flex-col md:flex-row max-w-screen max-h-screen">
+        <div className="flex space-y-4 sm:space-y-0 space-x-0 sm:space-x-8 flex-col md:flex-row max-w-screen max-h-screen items-center">
             <canvas ref={canvasRef} 
                 width="42" 
                 height="42"
@@ -476,7 +494,7 @@ function Board({setVersion}: {setVersion: Setter<number>}){
 
 function MoveList({UIContext}: {UIContext: UIContext}){
     return <>
-    <div className="bg-slate-600 w-60 h-full rounded-lg p-4 hidden md:flex flex-col">
+    <div className="bg-slate-600 w-60 h-full rounded-lg p-4 hidden md:flex flex-col max-h-[90vh]">
         <h1 className="font-extrabold text-2xl pb-4">Move History</h1>
         <ul className="space-y-2 font-bold text-xl overflow-y-auto scroll-smooth h-fit max-h-[90vh]">
             {UIContext.moveHistory.map((move, index) => (
@@ -709,7 +727,6 @@ async function playMove(move: Move, UIContext: UIContext) {
     heldPiece.isHolding = false;
     // Record the move
     UIContext.setMoveHistory(hist => [...hist, move]);
-    // moveHistoryIndex++;
     /* The move played ended the game */
     if (isGameOver(UIContext)){
         UIContext.setShowRestart(true);
@@ -986,50 +1003,37 @@ function setEnPassant(newEnPassant: number){
     enPassant = newEnPassant;
 }
 
-type MoveData = {
-    [color: string]: {
-        from: [number, number];
-        to: [number, number];
-        promote: number | null;
-    };
-};
 /* Database Communication */
 async function sendMove(move: Move){
     if (!chessContext.roomCode) throw new Error('Error sending move, room code is null');
-    // Send the move to the opponent
-    const playerColorStr = (chessContext.color === Color.WHITE) ? "whiteMove" : "blackMove";
-    const moveData: MoveData = {
-        [playerColorStr]: {
-            from: [move.fromRank, move.fromFile],
-            to: [move.toRank, move.toFile],
-            promote: promotionSelection
-        }
-    }
     // Update the move to the DB
-    await UPDATE(chessContext.roomCode, moveData);
+    const moveLabel = moveToAlgebraicNotation(move);
+    await UPDATE(`chess/rooms/${chessContext.roomCode}/moves`, {
+        [moveNumber]: {
+            playedBy: (chessContext.color === 1) ? "white" : "black",
+            move: `${moveLabel}`,
+            promotionSelection: promotionSelection ?? null,
+        }
+    });
+    moveNumber += 1;
     // clear promotion cache after sending
     promotionSelection = null;
 }
 
-async function receiveMove(UIContext: UIContext,) {
+async function receiveMove(UIContext: UIContext) {
     promotionSelection = null;
     // Wait to receive the opponent's response
-    const opponentMovePath = `${chessContext.roomCode}/${
-        chessContext.color === Color.WHITE ? "black" : "white"
-    }Move`;
-    const moveData = await WaitFor(opponentMovePath) as {
-        from: [number, number];
-        promote: number | null;
-        to: [number, number];
+    const opponentMovePath = `/chess/rooms/${chessContext.roomCode}/moves/${moveNumber}`;
+    const received = await WaitFor(opponentMovePath) as {
+        playedBy: string,
+        move: string,
+        promotionSelection: number | null,
     };
-    const from: [number, number] = moveData.from;
-    const to: [number, number]  = moveData.to;
-    promotionSelection = moveData.promote;
-    const receivedMove = new Move(from[0], from[1], to[0], to[1]);
-    // Clear the opponent's move from the database after reading it
-    REMOVE(opponentMovePath);
+    const receivedMove: Move = algebraicNotationToMove(received.move);
+    promotionSelection = received.promotionSelection;
     // Play the move on the board
     await playMove(receivedMove, UIContext);
+    moveNumber += 1;
     // Automatically respond with the premove, if one exists
     if (premove){
         // make sure the premove is still legal
@@ -1038,7 +1042,7 @@ async function receiveMove(UIContext: UIContext,) {
             await sendMove(premove);
             premove = null;
             await receiveMove(UIContext);
-        } else{
+        } else {
             premove = null;
         }
     }
@@ -1163,7 +1167,7 @@ function loadFEN(fen: string, UIContext: UIContext){
 function resetBoard(UIContext: UIContext) {
     board = Array.from({ length: 8 }, () => Array(8).fill(0));
     // default initial
-    const fen = `rnbqkbnr/pPpppppp/8/8/8/8/PPPPPPpP/RNBQKBNR w KQkq - 0 1`;
+    const fen = `rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1`;
     // kiwipete
     // const fen = `r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -`
     // one-move checkmate
@@ -1181,6 +1185,21 @@ function getFlippedRank(rank: number) {
 
 function getAlgebraicNotation(rank: number, file: number): string{
     return `${String.fromCharCode('a'.charCodeAt(0) + file)}${8 - rank}`;
+}
+
+function moveToAlgebraicNotation(move: Move): string {
+    const fromAlgNotation = getAlgebraicNotation(move.fromRank, move.fromFile);
+    const toAlgNotation = getAlgebraicNotation(move.toRank, move.toFile)
+    return `${fromAlgNotation}${toAlgNotation}`;
+}
+
+function algebraicNotationToMove(algNotation: string): Move {
+    if (algNotation.length !== 4) throw new Error(`Error decoding an illegal algebraic notation move, ${algNotation}, into a move object`);
+    const fromRank = 8 - +algNotation[1];
+    const fromFile = algNotation.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = 8 - +algNotation[3];
+    const toFile = algNotation.charCodeAt(2) - 'a'.charCodeAt(0);
+    return new Move(fromRank, fromFile, toRank, toFile);
 }
 
 /* Rendering */
