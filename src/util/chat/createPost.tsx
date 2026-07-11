@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { supabase } from "./supabase"
+import { supabase } from "./chat.tsx"
 // types
 import { type AuthContext, type Thread } from "./chat";
 // pre-made components

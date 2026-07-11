@@ -12,6 +12,7 @@ import ParticleLife from './util/particleLife/particleLife.tsx';
 
 import Game from './pages/Game.tsx';
 import Chat from './util/chat/chat.tsx';
+import Sheep from './util/sheep/sheep.tsx';
 
 function App(){
     const location = useLocation();
@@ -21,7 +22,8 @@ function App(){
         ["/chat", "font-montserrat flex flex-col items-center justify-center w-full min-h-screen"],
         ["/plife", "max-w-screen max-h-screen bg-black"],
         ["/puzzle", "max-w-screen max-h-screen bg-black"],
-        ["/mandelbrot", "max-w-screen max-h-screen bg-black"]
+        ["/mandelbrot", "max-w-screen max-h-screen bg-black"],
+        ["/sheep", ""]
     ]);
 
     return <div className={`${layouts.has(currentPath) ? layouts.get(currentPath) : layouts.get("default")}`}>
@@ -32,13 +34,12 @@ function App(){
             <Route path="/chat" element={<Chat/>}/>
             <Route path="/game" element={<Game/>}/>
             <Route path="/mandelbrot" element={<Mandelbrot/>}/>
+            <Route path="/sheep" element={<Sheep/>}/>
             {/* 404 Page */}
             <Route path="*" element={<PageNotFound/>}/>
         </Routes>
     </div>
 }
-
-
 
 createRoot(document.getElementById('root')!).render(
     <BrowserRouter>

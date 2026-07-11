@@ -1,5 +1,5 @@
+import {createClient, SupabaseClient} from '@supabase/supabase-js';
 import { useEffect, useState, useRef } from "react";
-import { supabase } from "./supabase"
 import { type User} from "@supabase/supabase-js";
 import CreatePost from "./createPost";
 // animation
@@ -87,7 +87,14 @@ const sortBySettings: SortBySetting[] = [
 ];
 const MAX_VISUAL_DEPTH = 3;
 
+export let supabase: SupabaseClient<any, "public", "public", any, any>;
 export default function Chat(){
+    console.log(`opened chat app`)
+    // init supabase
+    const projectURL = "https://vtxnhauvmmbwrztpmsuq.supabase.co";
+    const publishableAPIKey = "sb_publishable_fH2b-bBB5OIuJ8jFNtK8Cg_onFY3P5L";
+    supabase = createClient(projectURL, publishableAPIKey);
+
     const [user, setUser] = useState<User | null>(null)
     const [profile, setProfile] = useState<Profile | null>(null)
     const [loading, setLoading] = useState(true)
