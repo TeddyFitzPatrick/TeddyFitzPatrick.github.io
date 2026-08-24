@@ -35,10 +35,18 @@ function App(){
             <Route path="/game" element={<Game/>}/>
             <Route path="/mandelbrot" element={<Mandelbrot/>}/>
             <Route path="/sheep" element={<Sheep/>}/>
+
+            <Route path="/mips" element={<MipsRedirect/>}/>
             {/* 404 Page */}
             <Route path="*" element={<PageNotFound/>}/>
         </Routes>
     </div>
+}
+
+function MipsRedirect(){
+    const MIPS_INTERPRETER_URL = 'http://mips-interpreter-web-tan.vercel.app/';
+    window.location.replace(MIPS_INTERPRETER_URL);  
+    return <div></div>  
 }
 
 createRoot(document.getElementById('root')!).render(

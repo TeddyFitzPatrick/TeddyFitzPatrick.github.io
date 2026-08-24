@@ -68,7 +68,7 @@ export default function Experience(){
         }
     ];
 
-    return <div className="w-full flex flex-col items-center px-6">
+    return <div className="w-full flex flex-col items-center px-6" id="experience">
         <p className="text-4xl text-white w-full font-extrabold text-start flex items-center">
             Experience
         </p>
