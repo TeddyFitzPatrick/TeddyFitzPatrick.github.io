@@ -2,16 +2,15 @@ import '../main.css'
 
 function Classes() {
     const classes: Record<string, string[]> = {
-        "Fall 2026 (Upcoming)": [
-            "CSCI-662 (Foundations of Cryptography)",
+        "Fall 2026 (Now)": [
+            "CSCI-652 (Distributed Systems)",
             "CSCI-631 (Foundations of Computer Vision)",
             "SWEN-261 (Introduction to Software Engineering)",
             "CSCI-472 (Historical & Current Computer Science)",
-            "MATH-231 (Differential Equations)",
-            "PHYS-315 (Experiments in Modern Physics)",
+            "COMM-253 (Communication)"
         ],
         "Spring/Summer 2026": [
-            "*Studying at the Universität Osnabrück in Germany",
+            "*Studied abroad at the Universität Osnabrück in Germany",
             "Introduction to Computational Linguistics",
             "Foundations of Machine Learning",
             "Introduction to Artificial Intelligence",

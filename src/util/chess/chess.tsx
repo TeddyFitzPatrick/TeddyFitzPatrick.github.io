@@ -1,7 +1,7 @@
 import { ref, set, onDisconnect } from "firebase/database";
 import { WaitFor, GET, UPDATE, REMOVE, database } from "./networking.js";
 
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { pieceImages, pieceMovements, Piece, Color } from "./consts.js";
 import { Move } from "./move.js";

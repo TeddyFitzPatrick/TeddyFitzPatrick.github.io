@@ -20,6 +20,7 @@ function Nav(){
     return <nav className="bg-white w-screen h-[5vh] sm:px-4 sm:py-4 flex flex-row justify-evenly z-100 fixed">
         <NavButton name={"home"}/>
         <NavButton name={"projects"}/>
+        <NavButton name={"experience"}/>
         <NavButton name={"classes"}/>
     </nav>
 }

@@ -8,29 +8,17 @@ type ProjectForm = {
 }
 export default function Projects(){
     const projects: ProjectForm[] = [
-        {   
-            location: "/mandelbrot",
-            url: "/mandelbrot/mandelbrotZoom.png",
-            desc: "MANDELBROT",
-            icons: ["ts", "react", "webgl"]
-        },
-        {   
-            location: "/plife",
-            url: "/psim/pblob.png",
-            desc: "PARTICLE LIFE",
-            icons: ["ts", "react"]
+        {
+            location: "https://mips-interpreter-web-tan.vercel.app/",
+            url: "/mips/mips_interpreter.png",
+            desc: "MIPS INTERPRETER",
+            icons: ["ts", "react", "tw"]
         },
         {
             location: "/chess",
             url: "/chess/chess.png",
             desc: "CHESS",
             icons: ["ts", "react", "tw", "firebase"]
-        },
-        {
-            location: "https://teddyfitzpatrick.github.io/mips-interpreter-web/",
-            url: "/mips/mips_interpreter.png",
-            desc: "MIPS INTERPRETER",
-            icons: ["ts", "react", "tw"]
         },
         {   
             location: "/chat",
@@ -43,6 +31,18 @@ export default function Projects(){
             url: "/puzzle/puzzle_game.png",
             desc: "PUZZLE GAME",
             icons: ["ts", "react", "clingo"]
+        },
+        {   
+            location: "/mandelbrot",
+            url: "/mandelbrot/mandelbrotZoom.png",
+            desc: "MANDELBROT",
+            icons: ["ts", "react", "webgl"]
+        },
+        {   
+            location: "/plife",
+            url: "/psim/pblob.png",
+            desc: "PARTICLE LIFE",
+            icons: ["ts", "react"]
         },
     ];
 
