@@ -40,6 +40,7 @@ type Profile = {
     pfpUrl?: string
 };
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>
+
 export type AuthContext = {
     user: User | null,
     profile: Profile | null,
@@ -167,7 +168,6 @@ function Login(){
             console.error(error.message)
         }
     };
-    // vtxnhauvmmbwrztpmsuq.supabase.co
     return <>
     <ParticlesBack/>
     <div className="flex flex-col space-y-4 p-8 rounded-xl shadow-2xl text-white bg-transparent">
@@ -273,7 +273,7 @@ function SignUp({auth}: {auth: AuthContext}){
     </div>
 }
 
-function ImageUpload({setAttachment}: {setAttachment: React.Dispatch<React.SetStateAction<File | null>>}) {
+function ImageUpload({setAttachment}: {setAttachment: Setter<File | null>}) {
   const [isUploading, setIsUploading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const onUpload: NonNullable<FileUploadProps["onUpload"]> = React.useCallback(
@@ -357,7 +357,7 @@ const useClickOutside = <T extends HTMLDivElement | null>(ref:React.RefObject<T>
 
 function SelectSortBy({sortBy, setSortBy}:
                       {sortBy: SortBySetting,
-                       setSortBy: React.Dispatch<React.SetStateAction<SortBySetting>>}){
+                       setSortBy: Setter<SortBySetting>}){
     const [isOpen, setIsOpen] = React.useState<boolean>(false);
 
     const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -402,7 +402,7 @@ function SelectSortBy({sortBy, setSortBy}:
 }
 
 function SelectThread({setCurrentThread, currentThread}:
-                      {setCurrentThread: React.Dispatch<React.SetStateAction<Thread | null>>,
+                      {setCurrentThread: Setter<Thread | null>,
                        currentThread: Thread | null}){
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [threads, setThreads] = useState<Thread[]>([]);
@@ -779,7 +779,7 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
                  {auth: AuthContext,
                   parent_post: Post,
                   posts: Post[],
-                  setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
+                  setPosts: Setter<Post[]>,
                   currentThread: Thread | null,
                   depth: number}){
     // post/reply organization
@@ -923,7 +923,7 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
 function MessageOptions({post, posts, setPosts}:
                         {post: Post,
                          posts: Post[],
-                         setPosts: React.Dispatch<React.SetStateAction<Post[]>>}){
+                         setPosts: Setter<Post[]>}){
     const [isOpen, setIsOpen] = useState<boolean>(false);
     
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -1007,7 +1007,7 @@ function PostButtons({auth, post, posts, setPosts}:
                         {auth: AuthContext,
                          post: Post,
                          posts: Post[],
-                         setPosts: React.Dispatch<React.SetStateAction<Post[]>>}){
+                         setPosts: Setter<Post[]>}){
     return <div className="w-full space-x-2 flex flex-row text-lg pt-1">
         {/* likes  */}
         <motion.button 
@@ -1063,7 +1063,7 @@ function Upvote({styles}: {styles: string}){
 
 const reactToPost = async (auth: AuthContext,
                            posts: Post[],
-                           setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
+                           setPosts: Setter<Post[]>,
                            post_id: string, 
                            oldReaction: string, 
                            newReaction: string) => {
@@ -1136,21 +1136,21 @@ const formatDate = (timestamp: string) =>{
     return `${deltaDays.toFixed(0)} days ago`;
 }
 
-const toggleCreateReply = async (posts: Post[], setPosts: React.Dispatch<React.SetStateAction<Post[]>>, post_id: string) => {
+const toggleCreateReply = async (posts: Post[], setPosts: Setter<Post[]>, post_id: string) => {
     setPosts(posts.map(post => {
         if (post.id !== post_id) return {...post, add_reply: false};
         return {...post, add_reply: !post.add_reply}
     }));
 }
 
-const toggleHideReplies = async (posts: Post[], setPosts: React.Dispatch<React.SetStateAction<Post[]>>, post_id: string) => {
+const toggleHideReplies = async (posts: Post[], setPosts: Setter<Post[]>, post_id: string) => {
     setPosts(posts.map(post => {
         if (post.id !== post_id) return post;
         return {...post, hide_replies: !post.hide_replies}
     }));
 }
 
-const toggleEditing = async (posts: Post[], setPosts: React.Dispatch<React.SetStateAction<Post[]>>, post_id: string) => {
+const toggleEditing = async (posts: Post[], setPosts: Setter<Post[]>, post_id: string) => {
     setPosts(posts.map(post => {
         if (post.id !== post_id) return {...post, editing: false};
         return {...post, editing: !post.editing};
