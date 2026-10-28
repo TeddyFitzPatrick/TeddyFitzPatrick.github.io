@@ -4,7 +4,6 @@ let initialized = false;
 
 async function getClingo(): Promise<void> {
   if (!initialized) {
-    // @ts-ignore
     await init(new URL('/clingo.wasm', import.meta.url).href);
     initialized = true;
   }
@@ -120,24 +119,32 @@ export function countEnclosedTiles(input: string[][]): { count: number; board: s
   const outside = Array.from({ length: R }, () => new Array(C).fill(false));
   const queue: [number, number][] = [];
 
-  for (let r = 0; r < R; r++)
-    for (let c = 0; c < C; c++)
-      if ((r === 0 || r === R-1 || c === 0 || c === C-1) && !isWall(r, c))
-        outside[r][c] = true, queue.push([r, c]);
+  for (let r = 0; r < R; r++) {
+    for (let c = 0; c < C; c++) {
+      if ((r === 0 || r === R-1 || c === 0 || c === C-1) && !isWall(r, c)) {
+        outside[r][c] = true;
+        queue.push([r, c]);
+      }
+    }
+  }
 
   for (let i = 0; i < queue.length; i++) {
     const [r, c] = queue[i];
     for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]] as [number,number][]) {
       const nr = r+dr, nc = c+dc;
-      if (nr >= 0 && nr < R && nc >= 0 && nc < C && !outside[nr][nc] && !isWall(nr, nc))
-        outside[nr][nc] = true, queue.push([nr, nc]);
+      if (nr >= 0 && nr < R && nc >= 0 && nc < C && !outside[nr][nc] && !isWall(nr, nc)) {
+        outside[nr][nc] = true;
+        queue.push([nr, nc]);
+      }
     }
   }
 
   let count = 0;
-  for (let r = 0; r < R; r++)
-    for (let c = 0; c < C; c++)
+  for (let r = 0; r < R; r++) {
+    for (let c = 0; c < C; c++) {
       if (!isWall(r, c) && !outside[r][c]) count++;
+    }
+  }
 
   if (count === 0) return { count: 0, board: null };
 

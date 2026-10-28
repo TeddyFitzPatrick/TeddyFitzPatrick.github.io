@@ -87,7 +87,8 @@ const sortBySettings: SortBySetting[] = [
 ];
 const MAX_VISUAL_DEPTH = 3;
 
-export let supabase: SupabaseClient<any, "public", "public", any, any>;
+export let supabase: SupabaseClient;
+
 export default function Chat(){
     console.log(`opened chat app`)
     // init supabase
@@ -309,14 +310,14 @@ function ImageUpload({setAttachment}: {setAttachment: React.Dispatch<React.SetSt
   const [isUploading, setIsUploading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const onUpload: NonNullable<FileUploadProps["onUpload"]> = React.useCallback(
-    async (files, {  }) => {
+    async (files) => {
         setIsUploading(true);
         if (files && files[0]){
             setAttachment(files[0]);
         }
         setIsUploading(false);
     },
-    [],
+    [setAttachment],
   );
   const onFileReject = React.useCallback((file: File, message: string) => {
     console.log(message, {
@@ -520,7 +521,7 @@ export function EditProfile({auth}: {auth: AuthContext}) {
             return;
         }
         // update the pfp path in the user profile
-        const { data: _updatePFPPathData, error: updatePFPPathError } = await supabase
+        const { error: updatePFPPathError } = await supabase
             .from('profiles')
             .update({
                 pfp_path: profilePic.name
@@ -816,7 +817,7 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
                   depth: number}){
     // post/reply organization
     const idToPost = new Map<string, Post>(posts.map(post => [post.id, post]));
-    let replies = parent_post.reply_ids.map(reply_id => idToPost.get(reply_id)!).filter(reply => reply !== undefined && reply !== null);
+    const replies = parent_post.reply_ids.map(reply_id => idToPost.get(reply_id)!).filter(reply => reply !== undefined && reply !== null);
     // supabase
     const user = auth.user!;
     const profile = auth.profile!;
@@ -1132,7 +1133,7 @@ const reactToPost = async (auth: AuthContext,
         if (oldReaction === "dislike") newDislikeCount -= 1;
         return {...post, like_count: newLikeCount.toString(), dislike_count: newDislikeCount.toString(), reaction: newReaction}
     }));
-    const { data: _data, error } = await supabase
+    const { error } = await supabase
         .from("reactions")
         .upsert({
             post_id: post_id,

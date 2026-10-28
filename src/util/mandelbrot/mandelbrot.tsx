@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 
 export default function Mandelbrot() {
-    const [loading, _setLoading] = useState<boolean>(false);
+    const [loading] = useState<boolean>(false);
     return <>
         <div className="w-screen h-screen overflow-x-hidden grid grid-cols-1 2xl:grid-cols-[auto_auto]">
             <div className="w-full h-full flex items-center justify-center">
@@ -97,19 +97,20 @@ void main(){
 
 function Canvas() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    let maxIter = 1000;
+    const maxIter = 1000;
 
     let scale = 4.0;
     let xOffset = 0;
     let yOffset = 0;
 
-    let gl: WebGL2RenderingContext | null = null;
+    const glRef = useRef<WebGL2RenderingContext | null>(null);
     const locs: Record<string, WebGLUniformLocation | number | null> = {};
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) throw new Error(`Could not find canvas`);
-        gl = canvas.getContext("webgl2");
+        const gl = canvas.getContext("webgl2");
         if (!gl) throw new Error(`Could not get webgl canvas context`);
+        glRef.current = gl;
         // compile the vertex and fragment shaders
         const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
         const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -161,7 +162,7 @@ function Canvas() {
             gl.STATIC_DRAW
         );
         render(gl);
-    }, []);
+    }, [locs, scale]);
     const render = (gl: WebGL2RenderingContext) => {
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -169,6 +170,7 @@ function Canvas() {
     let startDrag: { x: number, y: number } | undefined;
     let isDragging = false;
     const zoom = (event: React.WheelEvent<HTMLCanvasElement>) => {
+        const gl = glRef.current;
         if (!gl) throw new Error(`No WebGL on zoom`);
         // mouse coordinates to zoom into
         const { x, y } = getMouseCords(event);
@@ -214,6 +216,7 @@ function Canvas() {
         // ignore non-left-click moves
         if (event.button !== 0) return;
         if (!isDragging || !startDrag) return;
+        const gl = glRef.current;
         if (!gl) throw new Error(`No WebGL on applying offset`);
         const { x, y } = getMouseCords(event);
         const dx_uv = (x - startDrag.x) / gl.canvas.width;
@@ -254,6 +257,7 @@ function Canvas() {
         } 
         // prevent zooming twice with a triple click
         lastMobileTouch -= MAX_DOUBLE_CLICK_DELAY;
+        const gl = glRef.current;
         if (!gl) throw new Error(`No WebGL on zoom`);
         // mouse coordinates to zoom into
         const { x, y } = getTouchCoords(event);
@@ -272,6 +276,7 @@ function Canvas() {
     };
     const handleTouchMove = (event: React.TouchEvent<HTMLCanvasElement>) => {
         if (!isDragging || !startDrag) return;
+        const gl = glRef.current;
         if (!gl) throw new Error(`No WebGL on applying offset`);
         const { x, y } = getTouchCords(event);
         const dx_uv = (x - startDrag.x) / gl.canvas.width;
@@ -283,7 +288,7 @@ function Canvas() {
         gl.uniform2fv(locs.offset, [xOffset, yOffset]);
         render(gl);
     };
-    const handleTouchRelease = (_event: React.TouchEvent<HTMLCanvasElement>) => {
+    const handleTouchRelease = () => {
         isDragging = false;
         startDrag = undefined;
     };
@@ -296,8 +301,8 @@ function Canvas() {
             onMouseLeave={(e) => handleMouseRelease(e)}
             onTouchStart={(e) => handleTouchStart(e)}
             onTouchMove={(e) => handleTouchMove(e)}
-            onTouchEnd={(e) => handleTouchRelease(e)}
-            onTouchCancel={(e) => handleTouchRelease(e)}
+            onTouchEnd={() => handleTouchRelease()}
+            onTouchCancel={() => handleTouchRelease()}
             className="bg-black w-full h-full max-w-screen max-h-screen" ref={canvasRef} />
     </>
 }

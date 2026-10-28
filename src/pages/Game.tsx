@@ -2,11 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { solveWithClingo, countEnclosedTiles } from '../util/game/gamelogic.ts';
 
 /* Rendering params */
-let dogImg = new Image();
-let waterImg = new Image();
-let grassImg = new Image();
-let wallImg = new Image();
-let starImg = new Image();
+const dogImg = new Image();
+const waterImg = new Image();
+const grassImg = new Image();
+const wallImg = new Image();
+const starImg = new Image();
 const GRASS = "_";
 const WATER = 'x';
 const DOG = "d";
@@ -112,7 +112,7 @@ export default function Game() {
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
       // get the optimal solution walls
-      const {walls, region, area, isEnclosed: _enclosed} = await solveWithClingo(currentLevel, initialWalls);
+      const {walls, region, area} = await solveWithClingo(currentLevel, initialWalls);
       // draw the original board
       resetBoard();
       renderBoard(ctx, currentLevel);
@@ -176,7 +176,7 @@ export default function Game() {
 }
 
 function Board(
-  {canvasRef, walls, setWalls, score: _score, setScore}:
+  {canvasRef, walls, setWalls, setScore}:
   {canvasRef: React.RefObject<HTMLCanvasElement | null>,
   walls: number,
   setWalls: React.Dispatch<React.SetStateAction<number>>,
@@ -223,7 +223,7 @@ function Board(
   useEffect(() => {
     // load the images and the board
     loadAndRender(canvasRef);
-  }, []);
+  }, [canvasRef]);
 
   return <canvas 
     className="bg-green-600 aspect-square w-[min(95vw,95vh)] h-[min(95vw,95vh)] sm:w-[min(85vw,85vh)] sm:h-[min(85vw,85vh)]"
@@ -324,7 +324,7 @@ function renderSquare(ctx: CanvasRenderingContext2D, level: string[][], row: num
   ctx.filter = "none";
 }
 
-function loadImage(img: any, src: string) {
+function loadImage(img: HTMLImageElement, src: string) {
   return new Promise((resolve, reject) => {
     img.src = src;
     img.onload = () => resolve(img);

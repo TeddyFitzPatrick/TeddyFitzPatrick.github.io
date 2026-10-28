@@ -28,7 +28,7 @@ function NavButton({name}: {name: string}){
     const scroll = () => {
         const navigableSection = document.getElementById(name);
         if (!navigableSection) throw new Error(`Could not find div with id ${name}`);
-        let offsetTop  = navigableSection.offsetTop;
+        const offsetTop  = navigableSection.offsetTop;
 
         window.scrollTo({
             top: offsetTop-100, 

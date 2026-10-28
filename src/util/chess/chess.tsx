@@ -390,7 +390,7 @@ function Board({setVersion}: {setVersion: Setter<number>}){
             clearInterval(renderInterval);
             clearInterval(timestampInterval);
         };
-    }, []);
+    }, [UIContext, showRestart]);
 
     const clearVisuals = () => {
         heldPiece.isHolding = false;
@@ -531,7 +531,7 @@ function MoveRecord({index, move, UIContext}: {index: number, move: Move, UICont
         const pieceImage = pieceImages.get(move.piece)
         if (!pieceImage) throw new Error(`Could not get chess piece image for piece=${move.piece}`);
         imageContainer.appendChild(pieceImage.cloneNode());
-    },[]);
+    }, [move.piece]);
     useEffect(()=>{
         const lastMove = lastMoveRef.current;
         if (!lastMove) throw new Error(`Couldn't get last move in rendering move history`);
@@ -596,8 +596,7 @@ function RestartWindow({setVersion, UIContext}: {setVersion: Setter<number>, UIC
         <h1 className="text-center text-bold italic text-white text-3xl">
             {UIContext.gameOverText}
         </h1>
-        { (true) 
-        ? <div className="flex flex-col space-y-2">
+        <div className="flex flex-col space-y-2">
             <div className="w-full flex flex-row items-center">
                 <h1 className="w-42">Host {(chessContext.isHosting ? "(you)" : "")} ({hostColor})</h1>
                 <div className={`w-10 h-10
@@ -610,9 +609,6 @@ function RestartWindow({setVersion, UIContext}: {setVersion: Setter<number>, UIC
                     ></div>
             </div>
         </div>
-        : <></>
-        }
-
         {/* <!-- Restart --> */}
         { (rematch || !chessContext.isMultiplayer)
         ? <button 
@@ -746,7 +742,7 @@ function isGameOver(UIContext: UIContext) {
     // TODO: 3-move repetition
     // TODO: Insufficient Material 
     // Stalemate & Checkmate
-    for (let color of [Color.BLACK, Color.WHITE]){
+    for (const color of [Color.BLACK, Color.WHITE]){
         let hasLegalMoves = false;
         for (let rank = 0; rank <= 7; rank++) {
             for (let file = 0; file <= 7; file++) {
@@ -845,7 +841,7 @@ function getPseudoLegalMoves(fromRank: number, fromFile: number) {
     // Get the set of all moves of a piece at a given rank and file
     const piece = board[fromRank][fromFile];
     const color = Math.sign(piece);
-    let allMoves: Move[] = [];
+    const allMoves: Move[] = [];
     if (piece === Piece.EMPTY) return allMoves;
     /* Bishops, Rooks, and Queens have the same sliding-move behavior */
     if (Math.abs(piece) === Piece.WHITE_BISHOP ||
@@ -918,7 +914,7 @@ function getPseudoLegalMoves(fromRank: number, fromFile: number) {
 }
 
 function getSlidingMoves(fromRank: number, fromFile: number) {
-    let slidingMoves = [];
+    const slidingMoves = [];
     const piece = board[fromRank][fromFile];
     for (const [dr, df] of pieceMovements[Math.abs(piece)] as Array<[number, number]>) {
         let newRank = fromRank + dr;
@@ -940,12 +936,12 @@ function getSlidingMoves(fromRank: number, fromFile: number) {
 }
 
 function getAdjacentMoves(fromRank: number, fromFile: number) {
-    let adjacentMoves = [];
+    const adjacentMoves = [];
     const piece = board[fromRank][fromFile];
     // Adjacent king moves
     for (const [dr, df] of pieceMovements[Math.abs(piece)] as Array<[number, number]>){
-        let newRank = fromRank + dr;
-        let newFile = fromFile + df;
+        const newRank = fromRank + dr;
+        const newFile = fromFile + df;
         if (
             isInBounds(newRank, newFile) &&
             Math.sign(board[newRank][newFile]) != Math.sign(piece)
@@ -972,7 +968,7 @@ function isChecked(color: number){
 }
 
 function isAttacked(rank: number, file: number, color: number, castleCheck = false) {
-    let attackedSquares = Array.from({ length: 8 }, () => Array(8).fill(false));
+    const attackedSquares = Array.from({ length: 8 }, () => Array(8).fill(false));
     for (let rank=0; rank <= 7; rank++){
         for (let file=0; file <= 7; file++){
             const piece = board[rank][file];

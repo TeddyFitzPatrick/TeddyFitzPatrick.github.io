@@ -1,4 +1,5 @@
-import { simulationVariables, canvas, ctx, particles, type colorMatrix } from './particleLife.tsx';
+import { type colorMatrix } from './particleLife.tsx';
+import { simulationVariables } from './simulationParams.ts';
 
 // performance
 const PRUNING_DISTANCE = 100;
@@ -7,14 +8,18 @@ export class Particle{
     position: number[];
     velocity: number[];
     color: string;
+    canvasWidth: number;
+    canvasHeight: number;
  
-    constructor(initialPosition: number[], initialVelocity: number[], color: string){
+    constructor(initialPosition: number[], initialVelocity: number[], color: string, canvasWidth: number, canvasHeight: number){
         this.position = initialPosition;
         this.velocity = initialVelocity;
         this.color = color;
+        this.canvasWidth = canvasWidth;
+        this.canvasHeight = canvasHeight;
     }
 
-    applyForces(forceMatrix: colorMatrix){
+    applyForces(forceMatrix: colorMatrix, particles: Particle[]){
         const minRadius = simulationVariables.minRadius;
         const maxRadius = simulationVariables.maxRadius;
         const middleRadius = (minRadius + maxRadius) / 2;
@@ -71,7 +76,7 @@ export class Particle{
         this.position[0] += this.velocity[0];
         this.position[1] += this.velocity[1];
         // Bound check
-        if (this.position[0] > canvas.width){
+        if (this.position[0] > this.canvasWidth){
             this.velocity[0] = -Math.abs(this.velocity[0])-5;
             // this.position[0] -= canvas.width;
         } else if(this.position[0] < 0){
@@ -79,7 +84,7 @@ export class Particle{
             // this.position[0] += canvas.width;
         }
 
-        if (this.position[1] > canvas.height){
+        if (this.position[1] > this.canvasHeight){
             this.velocity[1] = -Math.abs(this.velocity[1])-5;
             // this.position[1] -= canvas.height;
         } else if(this.position[1] < 0){
@@ -88,23 +93,25 @@ export class Particle{
         }
 
     }
+
     // Reduce velocity according to a coefficient of friction
     applyFriction(){
         this.velocity[0] *= (1 - simulationVariables.frictionCoefficient);
         this.velocity[1] *= (1 - simulationVariables.frictionCoefficient);
     }
+
     // Update the state of the particle (position/velocity)
-    update(forceMatrix: colorMatrix){
-        this.applyForces(forceMatrix);
+    update(forceMatrix: colorMatrix, particles: Particle[]){
+        this.applyForces(forceMatrix, particles);
         this.applyVelocity();
         this.applyFriction();
     }
-    // Draw the particle on the screen
-    render(){
 
+    // Draw the particle on the screen
+    render(ctx: CanvasRenderingContext2D){
         ctx.fillStyle = "black";
         ctx.beginPath();
-        ctx.arc(this.position[0], this.position[1], simulationVariables.particleSize+0.5, 0, 2 * Math.PI);
+        ctx.arc(this.position[0], this.position[1], simulationVariables.particleSize + 0.5, 0, 2 * Math.PI);
         ctx.fill();
         ctx.fillStyle = this.color;
 

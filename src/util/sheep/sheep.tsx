@@ -1,10 +1,10 @@
 import { useRef, useEffect, useState } from "react";
 
 // game defaults
-let fieldWidth = 1600;
-let fieldHeight = 1600;
-let backgroundColor = "darkgreen";
-let fieldColor = "#9ECB91";
+const fieldWidth = 1600;
+const fieldHeight = 1600;
+const backgroundColor = "darkgreen";
+const fieldColor = "#9ECB91";
 
 const enemySeparationMult = 2.5;
 const separationStrength = 50;
@@ -49,7 +49,7 @@ let luck = 0.10;
 
 export default function Sheep() {
   const scoreRef = useRef<HTMLParagraphElement | null>(null);
-  const [startGame, setStartGame] = useState<Boolean>(false);
+  const [startGame, setStartGame] = useState<boolean>(false);
   useEffect(()=>{
     const scoreElement = scoreRef.current;
     if (!scoreElement) return;
@@ -80,7 +80,7 @@ const outOfBounds = (pos: number[], bounds: number[]): boolean => {
 }
 
 type Setter<T> = React.Dispatch<T>;
-function Game({setStartGame, startGame}: {setStartGame: Setter<Boolean>, startGame: Boolean}){
+function Game({setStartGame, startGame}: {setStartGame: Setter<boolean>, startGame: boolean}){
   console.log(`Game() invoc`);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [showUpgrades, setShowUpgrades] = useState<boolean>(false);
@@ -114,8 +114,8 @@ function Game({setStartGame, startGame}: {setStartGame: Setter<Boolean>, startGa
     canvas.height = window.innerHeight;
     const gapX = (canvas.width - fieldWidth) / 2; 
     const gapY = (canvas.height - fieldHeight) / 2;
-    let cameraBounds = [-fieldWidth / 2, -fieldHeight / 2, fieldWidth / 2, fieldHeight / 2];
-    let bounds = [gapX, gapY, canvas.width - gapX, canvas.height - gapY];
+    const cameraBounds = [-fieldWidth / 2, -fieldHeight / 2, fieldWidth / 2, fieldHeight / 2];
+    const bounds = [gapX, gapY, canvas.width - gapX, canvas.height - gapY];
     // mnemonics
     const player = playerRef.current
     if (!player) throw new Error(`Player object is unexpectedly null`);
@@ -131,7 +131,7 @@ function Game({setStartGame, startGame}: {setStartGame: Setter<Boolean>, startGa
     let bossSpawnCooldown = 60;
     let enemySpawnCooldown = 4;
     let enemySpawnTimer = 0;
-    let camera = [0, 0];
+    const camera = [0, 0];
 
     // listeners
     const keys = new Set<string>();
@@ -245,7 +245,7 @@ function Game({setStartGame, startGame}: {setStartGame: Setter<Boolean>, startGa
       // spawning enemies
       enemySpawnTimer -= dt;
       if (enemySpawnTimer <= 0){
-        // spawnEnemy();
+        spawnEnemy();
         enemySpawnTimer = enemySpawnCooldown;
         enemySpawnCooldown = Math.max(enemySpawnCooldown * 0.95, 1.5);
       }
@@ -258,7 +258,7 @@ function Game({setStartGame, startGame}: {setStartGame: Setter<Boolean>, startGa
     }
 
     const spawnMushroom = (pos: number[]) => {
-      const mushroom = new Mushroom(pos, bounds);
+      const mushroom = new Mushroom(pos);
       mushrooms.push(mushroom);
     }
 
@@ -315,7 +315,7 @@ function Game({setStartGame, startGame}: {setStartGame: Setter<Boolean>, startGa
     return () => {
       cancelAnimationFrame(animId);
     }
-  }, [startGame]);
+  }, [startGame, setStartGame]);
 
   return <>
     <canvas ref={canvasRef} style={{
@@ -324,12 +324,12 @@ function Game({setStartGame, startGame}: {setStartGame: Setter<Boolean>, startGa
       height: '100vh',
       margin: 0,
     }}/>
-    <Abilities player={playerRef.current!}/>
+    <Abilities/>
     {showUpgrades ? <PickUpgrade upgrades={upgrades} setShowUpgrades={setShowUpgrades}/> : <></>}
   </>
 }
 
-function Abilities({player}: {player: Player}){
+function Abilities(){
   const [, update] = useState(0);
   useEffect(()=>{
     const id = setInterval(() => {
@@ -382,7 +382,8 @@ function UpgradePanel({upgrade, setShowUpgrades}: {upgrade: Upgrade, setShowUpgr
     if (!container) throw new Error(`Could not get upgrade image container`);
     container.innerHTML = '';
     container.appendChild(upgrade.img);
-  }, []);
+  });
+
   return <div onClick={selectUpgrade} style={{backgroundColor: `${(upgrade.rarity) ? `yellow` : `white`}`}} className="w-1/3 h-1/2 rounded-xl shadow-xl flex flex-col items-center justify-center hover:scale-105">
     <div ref={imgContainer}/>
     <div className="text-2xl">{upgrade.desc}</div>    
@@ -596,8 +597,8 @@ abstract class Enemy{
   }
 
   render(ctx: CanvasRenderingContext2D, camera: number[]){
-    let borderColor = (this.state === "telegraph") ? "red" : "black";
-    let borderWidth = (this.state === "telegraph") ? 4 : 0;
+    const borderColor = (this.state === "telegraph") ? "red" : "black";
+    const borderWidth = (this.state === "telegraph") ? 4 : 0;
     const img = (this.state == "spawning") ? warningImg : this.img;
     const offsetPos = [this.pos[0] + camera[0], this.pos[1] + camera[1]]
     const radius = this.radius - ((this.shrinkTimer > 0) ? this.shrinkAmount : 0);
@@ -628,7 +629,7 @@ class Wolf extends Enemy{
     super(bounds, wolfRadius);
   }
 
-  override update(player: Player, dt: number, enemies: Enemy[], bounds: number[], _projectiles: Projectile[]){
+  override update(player: Player, dt: number, enemies: Enemy[], bounds: number[]){
     switch(this.state){
       case "idle":
         this.idle(dt, bounds);
@@ -768,13 +769,14 @@ class Hog extends Enemy{
     super(bounds, hogRadius);
   }
 
-  override update(player: Player, dt: number, _enemies: Enemy[], bounds: number[], _projectiles: Projectile[]){
+  override update(player: Player, dt: number, _enemies: Enemy[], bounds: number[]){
     switch (this.state){
-      case "spawning":
+      case "spawning": {
         this.spawningTimer = Math.max(this.spawningTimer - dt, 0);
         if (this.spawningTimer === 0) this.state = "default";
         break;
-      case "default":
+      }
+      case "default": {
         // approximate future player distance using current player distance
         const currDist = Math.hypot(this.pos[0] - player.pos[0], this.pos[1] - player.pos[1]);
         const timeToCollision = this.telegraphDuration + (currDist / (this.speed * this.chargeSpeedMult));
@@ -785,7 +787,8 @@ class Hog extends Enemy{
         const angle = Math.atan2(projected[1] - this.pos[1], projected[0] - this.pos[0]);
         this.vel[0] = Math.cos(angle) * this.speed * this.chargeSpeedMult;
         this.vel[1] = Math.sin(angle) * this.speed * this.chargeSpeedMult;
-        const dx = this.vel[0]; const dy = this.vel[1];
+        const dx = this.vel[0]; 
+        const dy = this.vel[1];
         let t = Infinity;
         if (dx > 0) t = Math.min(t, (bounds[2] - this.pos[0]) / dx);
         if (dx < 0) t = Math.min(t, (bounds[0] - this.pos[0]) / dx);
@@ -794,15 +797,18 @@ class Hog extends Enemy{
         this.endPos = [this.pos[0] + dx * t, this.pos[1] + dy * t];
         this.telegraph();
         break;
-      case "telegraph":
+      }
+      case "telegraph": {
         this.telegraphTimer = Math.max(this.telegraphTimer - dt, 0);
         if (this.telegraphTimer === 0) this.state = "charging";
         break;
-      case "charging":
+      }
+      case "charging": {
         applyVelocity(this.pos, [this.vel[0] * dt, this.vel[1] * dt], bounds, this.radius);
         const dist = Math.hypot(this.pos[0] - this.endPos[0], this.pos[1] - this.endPos[1]);
         if (dist - this.radius * Math.sqrt(2) <= 0) this.state = "default";
         break;
+      }
     }
     this.shrinkTimer = Math.max(this.shrinkTimer - dt, 0);
   }
@@ -817,8 +823,8 @@ class Hog extends Enemy{
   }
 
   override render(ctx: CanvasRenderingContext2D, camera: number[]){
-    let borderColor = (this.state === "telegraph") ? "red" : "black";
-    let borderWidth = (this.state === "telegraph") ? 0 : 0;
+    const borderColor = (this.state === "telegraph") ? "red" : "black";
+    const borderWidth = (this.state === "telegraph") ? 0 : 0;
     const img = (this.state == "spawning") ? warningImg : this.img;
     const offsetPos = [this.pos[0] + camera[0], this.pos[1] + camera[1]]
     const radius = this.radius - ((this.shrinkTimer > 0) ? this.shrinkAmount : 0);
@@ -1005,10 +1011,8 @@ class Mushroom{
   pos: number[];
   radius = 25;
 
-  constructor(initPos: number[], bounds: number[]){
+  constructor(initPos: number[]){
     this.pos = initPos;
-    bounds;
-    // this.pos = this.getRandomPos(bounds);
   }
 
   getRandomPos(bounds: number[]){

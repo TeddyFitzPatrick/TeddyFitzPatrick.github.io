@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, onValue, get, remove, update } from "firebase/database";
+import { getDatabase, ref, onValue, get, remove, update, DataSnapshot } from "firebase/database";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -31,14 +31,14 @@ export async function REMOVE(path: string) {
 }
 
 /* UPDATE Data at Path */
-export async function UPDATE(path: string, data: any) {
+export async function UPDATE(path: string, data: object) {
     return update(ref(database, path), data);
 }
 
 /* Wait on a value to be updated to a specified value in the database */
 export async function WaitFor<T>(path: string, resolutionValue: T | undefined = undefined): Promise<T>{
     return await new Promise((resolve) => {
-        const unsubscribe = onValue(ref(database, path), (snapshot: any) => {
+        const unsubscribe = onValue(ref(database, path), (snapshot: DataSnapshot) => {
             const data = snapshot.val();
             // Resolve when data takes any value
             if (resolutionValue === undefined && data !== null){

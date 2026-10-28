@@ -20,7 +20,7 @@ function TextAnim({text, cooldown, className}: {text: string, cooldown: number, 
             }
             textIndex += 1;
         }, cooldown);
-    }, []);
+    }, [cooldown, text]);
 
     return (
         <div ref={textRef} className={className}/>

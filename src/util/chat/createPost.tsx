@@ -30,7 +30,7 @@ export default function CreatePost({auth, getPosts, isPosting, setIsPosting, cur
   const titleRef = useRef<HTMLTextAreaElement | null>(null);
   const contentRef = useRef<HTMLTextAreaElement | null>(null);
   const [files, setFiles] = React.useState<File[]>([]);
-  const [isUploading, _setIsUploading] = React.useState(false);
+  const [isUploading] = React.useState(false);
   // sending a post or reply
   const sendPost = async () => {
     if (!titleRef.current || !contentRef.current ) return;
@@ -60,7 +60,7 @@ export default function CreatePost({auth, getPosts, isPosting, setIsPosting, cur
     // Push attachments to database if there are any
     if (attachmentFile){
         // add extension log
-        const { data: _logData, error: logError } = await supabase
+        const { error: logError } = await supabase
             .from("attachments")
             .insert({
                 post_id: post_id,
@@ -92,7 +92,7 @@ export default function CreatePost({auth, getPosts, isPosting, setIsPosting, cur
     getPosts();
     setIsPosting(false);
   }
-  const onFileReject = React.useCallback((file: File, _message: string) => {
+  const onFileReject = React.useCallback((file: File) => {
     console.log(`"${file.name.length > 20 ? `${file.name.slice(0, 20)}...` : file.name}" has been rejected`);
   }, []);
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

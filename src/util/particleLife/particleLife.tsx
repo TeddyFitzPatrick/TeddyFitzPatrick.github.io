@@ -1,34 +1,21 @@
-
 import { Particle } from './particle.ts';
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { simulationVariables } from './simulationParams.ts';
 
 // Canvas variables
-export let canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D;
+let canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D;
 const FRAME_RATE = 50;
 
 // Particle life variables
-export const COLORS: string[] = ["red", "orange", "yellow", "green", "blue", "purple"];
-export let particles: Particle[] = [];
+let particles: Particle[] = [];
+const COLORS: string[] = ["red", "orange", "yellow", "green", "blue", "purple"];
 const forceConstants = [-1.6, -1.2, -0.8, -0.4, 0, 0.4, 0.8, 1.2, 1.6];
 const FORCE_STEP = 0.4;
 
 export type colorMatrix = Map<string, Map<string, number>>;
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
 type Ref<T> = React.RefObject<T>;
-type SimulationVariables = {
-    frictionCoefficient: number,
-    minRadius: number,
-    maxRadius: number,
-    particleSize: number,
-    opacity: number
-}
-export let simulationVariables: SimulationVariables = {
-    frictionCoefficient: 0.10,
-    minRadius: 50,
-    maxRadius: 200,
-    particleSize: 6,
-    opacity: 0.08
-}
+
 
 // Start the simulation 
 function loadSimulation(particleCount: number, forceMatrixRef: Ref<colorMatrix>, setForceMatrix: Setter<colorMatrix>){
@@ -71,7 +58,9 @@ function generateParticles(particlesToGenerate: number){
         particles.push(new Particle(
             getRandomPosition(),
             [0, 0],
-            COLORS[Math.floor(Math.random() * COLORS.length)]
+            COLORS[Math.floor(Math.random() * COLORS.length)],
+            canvas.width,
+            canvas.height
         ));
     }
 }
@@ -97,8 +86,8 @@ function gameLoop(forceMatrix: colorMatrix){
 
     // const t0 = performance.now();
     // Apply particle forces, updating positions and velocities
-    for (let particle of particles){
-        particle.update(forceMatrix);
+    for (const particle of particles){
+        particle.update(forceMatrix, particles);
     }
     // const updateTime = performance.now() - t0;
 
@@ -106,8 +95,8 @@ function gameLoop(forceMatrix: colorMatrix){
     // Render particle(s)
     ctx.fillStyle = `rgba(0, 0, 0, ${simulationVariables.opacity})`;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    for (let particle of particles){
-        particle.render();
+    for (const particle of particles){
+        particle.render(ctx);
     }
     // const renderTime = performance.now() - t1;
     // return {
@@ -211,8 +200,8 @@ export default function ParticleLife({canvasClasses}: {canvasClasses?: string}){
         // Apply a force on click
         canvas.addEventListener("click", function(event){
             let deltaX, deltaY, angle, xDir, yDir
-            let forceMagnitude = 10;
-            for (let particle of particles){
+            const forceMagnitude = 10;
+            for (const particle of particles){
                 deltaX = event.clientX - particle.position[0];
                 deltaY = event.clientY - particle.position[1] + window.scrollY;
                 angle = Math.atan2(deltaY, deltaX);
