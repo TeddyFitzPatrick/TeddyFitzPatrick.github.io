@@ -14,9 +14,15 @@ import Game from './pages/Game.tsx';
 import Chat from './util/chat/chat.tsx';
 import Sheep from './util/sheep/sheep.tsx';
 
+const MIPS_VERCEL_URL = `https://mips-interpreter-web-tan.vercel.app/`;
+
 function App(){
     const location = useLocation();
     const currentPath = location.pathname;
+    if (currentPath === "/mips") {
+        window.location.href = MIPS_VERCEL_URL;
+        return null;
+    }
     const layouts = new Map([
         ["default", "font-roboto min-h-screen bg-linear-to-br from-orange-500 to-fuchsia-400 text-white flex flex-col items-center"],
         ["/chat", "font-montserrat flex flex-col items-center justify-center w-full min-h-screen"],

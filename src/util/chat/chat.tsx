@@ -155,40 +155,6 @@ const retrieveProfile = async (user_id: string) => {
     return profileWithPFP;
 }
 
-/** 
-// function Marquee(){
-//     const srcs = ["react", "tailwind", "typescript", "vite"];
-
-//     return <>
-//     <style>{`
-//         .marquee-inner {
-//             animation: marqueeScroll linear infinite;
-//         }
-
-//         @keyframes marqueeScroll {
-//             0% {
-//                 transform: translateX(0%);
-//             }
-
-//             100% {
-//                 transform: translateX(-50%);
-//             }
-//         }
-//     `}</style>
-//     <div className="overflow-hidden w-full relative max-w-[90vw] sm:max-w-1/2 xl:max-w-1/4 mx-auto select-none">
-//         <div className="absolute left-0 top-0 h-full w-20 z-10 pointer-events-none bg-gradient-to-r from-black to-transparent" />
-//         <div className="marquee-inner flex will-change-transform min-w-[200%]" style={{ animationDuration: "15s" }}>
-//             <div className="flex">
-//                 {[...srcs, ...srcs].map((src, index) => (
-//                     <img key={index} src={`/chat/${src}` + ".svg"} alt={src} className="w-20 h-20 shrink-0 object-cover mx-6" draggable={false} />
-//                 ))}
-//             </div>
-//         </div>
-//         <div className="absolute right-0 top-0 h-full w-20 md:w-40 z-10 pointer-events-none bg-gradient-to-l from-black to-transparent" />
-//     </div>
-//     </>
-// };
-*/
 function Login(){
     const signInWithGoogle = async () => {
         const { error } = await supabase.auth.signInWithOAuth({ 

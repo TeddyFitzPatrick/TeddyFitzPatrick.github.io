@@ -27,7 +27,7 @@ export default function Projects(){
             icons: ["ts", "react", "tw", "firebase"]
         },
         {
-            location: "https://teddyfitzpatrick.github.io/mips-interpreter-web/",
+            location: "https://mips-interpreter-web-tan.vercel.app/",
             url: "/mips/mips_interpreter.png",
             desc: "MIPS INTERPRETER",
             icons: ["ts", "react", "tw"]
