@@ -11,7 +11,7 @@ import Linkify from 'linkify-react';
 // modular components I made (more or less windows that do things)
 import ImageUpload from './imageUpload';
 import CreatePost from "./createPost";
-import EditProfile from './editProfile';
+// import EditProfile from './editProfile';
 
 // Type Definitions
 export type Profile = { 
@@ -871,20 +871,20 @@ function PostButtons({auth, post, posts, setPosts}:
     return <div className="w-full space-x-2 flex flex-row text-lg pt-1">
         {/* likes  */}
         <motion.button 
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                className={`flex flex-row items-center cursor-pointer ${(post.reaction === "like") ? "text-cyan-400" : ""}`}
+                whileTap={{ y: -4, scale: 1.1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                className={`flex flex-row items-center cursor-pointer  ${(post.reaction === "like") ? "text-cyan-400" : ""}`}
                 onClick={() => reactToPost(auth, posts, setPosts, post.id, post.reaction, "like")}>
-            <Upvote styles={`hover:animate-bounce ${(post.reaction === "like") ? "fill-cyan-400" : "fill-white"}`}/>
+            <Upvote styles={`${(post.reaction === "like") ? "fill-cyan-400" : "fill-white"}`}/>
             <p className="w-2">{post.like_count}</p>
         </motion.button>
         {/* dislikes  */}
         <motion.button 
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+                whileTap={{ y: 4, scale: 1.1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 15 }}
                 onClick={() => reactToPost(auth, posts, setPosts, post.id, post.reaction, "dislike")}
                 className={`flex flex-row items-center cursor-pointer ${(post.reaction === "dislike") ? "text-cyan-400" : ""}`} >
-            <Upvote styles={`hover:animate-bounce scale-y-[-1] ${(post.reaction === "dislike") ? "fill-cyan-400" : "fill-white"}`}/>
+            <Upvote styles={`scale-y-[-1] ${(post.reaction === "dislike") ? "fill-cyan-400" : "fill-white"}`}/>
             <p className="w-2">{post.dislike_count}</p>
         </motion.button>
         {/* replies */}
@@ -998,12 +998,6 @@ const formatDate = (timestamp: string) =>{
     if (deltaDaysTruncated === "1") return "1 day ago";
     return `${deltaDays.toFixed(0)} days ago`;
 }
-
-// const lockUI = async (posts: Post[], setPosts: Setter<Post[]>) => {
-//     setPosts(posts.map(post => {
-//         return {...post, creating_reply: false, show_replies: true, editing: false}
-//     }));
-// }
 
 const toggleCreateReply = async (posts: Post[], setPosts: Setter<Post[]>, post_id: string) => {
     setPosts(posts.map(post => {
