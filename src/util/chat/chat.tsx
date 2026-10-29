@@ -42,11 +42,11 @@ type Post = {
     pfp_path: string,
     reaction: string,
     img_path: string,
-    // fields not from the DB table
+    // fields not from the database
     imageUrl: string,
     pfpUrl: string,
-    add_reply: boolean,
-    hide_replies: boolean,
+    creating_reply: boolean,
+    show_replies: boolean,
     reply_ids: string[],
     editing: boolean
 }
@@ -374,8 +374,6 @@ function SelectThread({setCurrentThread, currentThread}:
     </div>
 }
 
-
-
 function ChatApp({auth}: {auth: AuthContext}){
     const profile = auth.profile!;
     const user = auth.user!;
@@ -463,18 +461,18 @@ function ChatApp({auth}: {auth: AuthContext}){
             if (parentPost) parentPost.reply_ids.push(post.id);
         }
         // hide replies below a certain comment recursion depth
-        const hide_replies_dfs = (post: Post, depth: number) => {
+        const hideRepliesDfs = (post: Post, depth: number) => {
             if (depth >= 3){
-                post.hide_replies = true;
+                post.show_replies = false;
             }
             for (const reply_id of post.reply_ids){
                 const reply = data.filter((post: Post) => post.id === reply_id)[0];
-                if (reply) hide_replies_dfs(reply, depth+1);
+                if (reply) hideRepliesDfs(reply, depth+1);
             }
         }
         data.filter((post: Post) => {
             if (!post.parent_id){
-                hide_replies_dfs(post, 0);
+                hideRepliesDfs(post, 0);
             }
         });
         // Update the UI state with the posts
@@ -595,7 +593,7 @@ function ChatApp({auth}: {auth: AuthContext}){
                         <PostButtons auth={auth} post={post} posts={posts} setPosts={setPosts}/>
                     </div>
                     {/* replies */}
-                    {!post.hide_replies && <Replies auth={auth} parent_post={post} posts={posts} setPosts={setPosts} currentThread={currentThread} depth={1}/>}
+                    {post.show_replies && <Replies auth={auth} parent_post={post} posts={posts} setPosts={setPosts} currentThread={currentThread} depth={1}/>}
                 </div>
                 )) :
                 (<div className="w-[99%] shadow-2xl rounded-lg p-4 bg-slate-800 text-2xl mt-2">Loading...</div>)
@@ -670,7 +668,7 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
                     if (!postA || !postB) return 1;
                     return new Date(postB.created_on).getTime() - new Date(postA.created_on).getTime();
                 });
-                return {...parent_post, reply_ids: parent_reply_ids, hide_replies: false, add_reply: false}
+                return {...parent_post, reply_ids: parent_reply_ids, show_replies: true, creating_reply: false}
             }));
         }
     };
@@ -706,18 +704,30 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
     const isReset = depth > 1 && (depth % MAX_VISUAL_DEPTH) === 1; 
     return <>   
     <div className={`w-full flex items-end flex-col`}>
-        {/* window to add a reply to the parent post */}
-        {parent_post.add_reply && 
-        <div className={`w-full bg-slate-800 px-2 py-1 rounded-lg mt-1 flex flex-col space-y-2`}
+        {/* window to add a reply to the parent post -- reply to post window -- :) */}
+        {parent_post.creating_reply && 
+        <div className={`w-full bg-slate-800 p-2 rounded-lg mt-1 flex flex-col space-y-2`}
              style={{ width: `calc(100% - ${parentVisualDepth*20}px)` }}>
             <textarea ref={replyRef} className="bg-transparent text-white border border-gray-200 rounded-xl py-2 px-2 sm:px-3 w-full mt-1" placeholder="Your reply"/>
-            <button onClick={() => sendReply()}
-                    className="bg-cyan-600 rounded-2xl w-fit h-fit py-2 px-5 font-bold hover:scale-102">
-                Post
-            </button>
+            <div className="flex flex-row w-full space-x-2">
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() => toggleCreateReply(posts, setPosts, parent_post.id)}
+                    className="mr-2 bg-red-700 rounded-lg px-3 py-1">
+                    Cancel
+                </motion.button>
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() => sendReply()}
+                    className="bg-cyan-700 rounded-lg px-3 py-1">
+                    Post
+                </motion.button>
+            </div>
         </div>}
         {/* existing replies */}
-        {!parent_post.hide_replies
+        {parent_post.show_replies
          && parent_post.reply_ids.length > 0
          && replies.map((reply: Post) => (
         <div key={reply.id} className="relative w-full flex items-end flex-col">
@@ -742,14 +752,20 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
                 { reply.editing ? 
                 (<>
                     <textarea ref={editContentRef} defaultValue={reply.content} className="mt-1 border border-white rounded-xl p-2 w-full overflow-clip wrap-break-word text-wrap overflow-y-auto text-base"/>
-                    <button className="mr-2 bg-red-700 rounded-lg px-3 py-1 hover:scale-102"
-                            onClick={() => toggleEditing(posts, setPosts, reply.id)}>
+                    <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.92 }}
+                        className="mr-2 bg-red-700 rounded-lg px-3 py-1"
+                        onClick={() => toggleEditing(posts, setPosts, reply.id)}>
                         Cancel
-                    </button>
-                    <button className="bg-cyan-700 rounded-lg px-3 py-1 hover:scale-102"
-                            onClick={() => {toggleEditing(posts, setPosts, reply.id); editReply(reply.id)}}>
+                    </motion.button>
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.92 }}
+                        className="bg-cyan-700 rounded-lg px-3 py-1"
+                        onClick={() => {toggleEditing(posts, setPosts, reply.id); editReply(reply.id)}}>
                         Save
-                    </button>  
+                    </motion.button>  
                 </>) : (<>
                     <p className="wrap-break-word text-wrap max-h-48 overflow-y-auto text-base sm:text-lg">{reply.content}</p>
                 </>)}
@@ -872,16 +888,19 @@ function PostButtons({auth, post, posts, setPosts}:
             <p className="w-2">{post.dislike_count}</p>
         </motion.button>
         {/* replies */}
-        <button className="flex flex-row justify-center items-center hover:scale-108 cursor-pointer" onClick={() => toggleCreateReply(posts, setPosts, post.id)}>
+        <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.90 }}
+            className="flex flex-row justify-center items-center hover:scale-108 cursor-pointer" onClick={() => toggleCreateReply(posts, setPosts, post.id)}>
             <img src="/chat/comment.svg" className="ml-1.5 w-6 h-6 shrink-0 invert" alt="comment"/>
-        </button>
+        </motion.button>
         {/* show/hide replies */}
         {(post.reply_ids && post.reply_ids.length > 0) && 
             <motion.button 
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex flex-row items-center cursor-pointer" onClick={() => toggleHideReplies(posts, setPosts, post.id)}>
-                { post.hide_replies ?
+                className="flex flex-row items-center cursor-pointer" onClick={() => toggleShowReplies(posts, setPosts, post.id)}>
+                { !post.show_replies ?
                     (<div className="space-x-1 flex flex-row">  
                         <p className="text-xs">Show Replies</p>
                         <img src="/chat/plus.svg" alt="+" className="w-4 h-4 rounded-full bg-white"/>
@@ -980,17 +999,23 @@ const formatDate = (timestamp: string) =>{
     return `${deltaDays.toFixed(0)} days ago`;
 }
 
+// const lockUI = async (posts: Post[], setPosts: Setter<Post[]>) => {
+//     setPosts(posts.map(post => {
+//         return {...post, creating_reply: false, show_replies: true, editing: false}
+//     }));
+// }
+
 const toggleCreateReply = async (posts: Post[], setPosts: Setter<Post[]>, post_id: string) => {
     setPosts(posts.map(post => {
-        if (post.id !== post_id) return {...post, add_reply: false};
-        return {...post, add_reply: !post.add_reply}
+        if (post.id !== post_id) return {...post, creating_reply: false};
+        return {...post, creating_reply: !post.creating_reply}
     }));
 }
 
-const toggleHideReplies = async (posts: Post[], setPosts: Setter<Post[]>, post_id: string) => {
+const toggleShowReplies = async (posts: Post[], setPosts: Setter<Post[]>, post_id: string) => {
     setPosts(posts.map(post => {
         if (post.id !== post_id) return post;
-        return {...post, hide_replies: !post.hide_replies}
+        return {...post, show_replies: !post.show_replies}
     }));
 }
 
