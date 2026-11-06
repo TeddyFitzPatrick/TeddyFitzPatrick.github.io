@@ -67,6 +67,7 @@ const sortBySettings: SortBySetting[] = [
     {name: "hot", sql_clause: "like_count created_on", image: "/chat/fire.svg"},
 ];
 const MAX_VISUAL_DEPTH = 3;
+const DEFAULT_PFP_URL = '/chat/default_user.svg';
 
 export let supabase: SupabaseClient;
 
@@ -452,6 +453,7 @@ function ChatApp({auth}: {auth: AuthContext}){
         }
         for (const post of data){
             post.reply_ids = [];
+            post.show_replies = true;
         }
         const idToPost = new Map<string, Post>(data.map((post: Post) => [post.id, post]));
         for (const post of data){
@@ -555,7 +557,9 @@ function ChatApp({auth}: {auth: AuthContext}){
                         {/* user + date */}
                         <div className="flex flex-row justify-between">
                             <div className="flex flex-row space-x-1 items-center">
-                                {post.pfpUrl && <img src={post.pfpUrl} className="mr-2 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-transparent shadow-2xl"/>}
+                                {post.pfpUrl 
+                                    ? (<img src={post.pfpUrl} className="mr-2 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-transparent shadow-2xl"/>)
+                                    : (<img src={DEFAULT_PFP_URL} className="mr-2 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-transparent shadow-2xl"/>)}
                                 <p>{post.username}</p>
                                 <p className="opacity-60 text-sm">∘ {formatDate(post.created_on)}</p>
                             </div>
@@ -1002,7 +1006,7 @@ const formatDate = (timestamp: string) =>{
 const toggleCreateReply = async (posts: Post[], setPosts: Setter<Post[]>, post_id: string) => {
     setPosts(posts.map(post => {
         if (post.id !== post_id) return {...post, creating_reply: false};
-        return {...post, creating_reply: !post.creating_reply}
+        return {...post, creating_reply: !post.creating_reply, show_replies: true}
     }));
 }
 
