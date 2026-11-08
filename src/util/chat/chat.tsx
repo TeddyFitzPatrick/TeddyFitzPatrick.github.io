@@ -18,6 +18,7 @@ export type Profile = {
     username: string,
     pfp_path?: string
     pfpUrl?: string
+    karma?: string
 };
 export type Setter<T> = React.Dispatch<React.SetStateAction<T>>
 
@@ -60,6 +61,7 @@ export type Thread = {
     name: string,
     num_posts: string
 }
+
 // constants
 const DEFAULT_POST_QUANTITY = 500;
 const sortBySettings: SortBySetting[] = [
@@ -72,7 +74,6 @@ const DEFAULT_PFP_URL = '/chat/default_user.svg';
 export let supabase: SupabaseClient;
 
 export default function Chat(){
-    console.log(`opened chat app`)
     // init supabase
     const projectURL = "https://vtxnhauvmmbwrztpmsuq.supabase.co";
     const publishableAPIKey = "sb_publishable_fH2b-bBB5OIuJ8jFNtK8Cg_onFY3P5L";
@@ -217,6 +218,7 @@ function SignUp({auth}: {auth: AuthContext}){
         } else{
             alert("Error creating user profile. Usernames must be unique and between 4-32 characters.");
             console.log("Error creating user profile: ", error);
+            return;
         }
         // Upload the profile pic if one was provided
         if (!profilePic) return;
@@ -375,8 +377,73 @@ function SelectThread({setCurrentThread, currentThread}:
     </div>
 }
 
-function ChatApp({auth}: {auth: AuthContext}){
+type Page = React.ReactNode;
+function ChatApp({auth}: {auth: AuthContext}) {
+    const pages: Record<string, React.ReactNode> = {
+        "chat": <MessageBoard auth={auth}/>,
+        "leaderboard": <Leaderboard/>
+    }
+    const [activePage, setActivePage] = useState<Page>(pages["chat"]);
+    // const pages = [];
     const profile = auth.profile!;
+    const signOut = async() => {
+        await supabase.auth.signOut()
+    };
+    return <>
+    <div className="w-full min-h-screen flex flex-col items-center bg-slate-400 text-white space-y-1">
+        {/* app header  */}
+        <section className="w-full p-4 bg-slate-800 shadow-2xl text-xl flex flex-row justify-between items-center">
+            {/* sign in name  */}
+            <div className="flex flex-col sm:flex-row space-x-2 space-y-2 sm:space-y-0">
+                {/* <EditProfile auth={auth}/> */}
+                {/* pfp & username */}
+                <div className="flex flex-row items-center w-full space-x-2">
+                    {profile.pfpUrl 
+                        ? (<img src={profile.pfpUrl} className="w-10 shrink-0 rounded-full shadow-2xl"/>)
+                        : (<img src={DEFAULT_PFP_URL} className="w-10 shrink-0 rounded-full shadow-2xl"/>)}
+                    <p className="text-base sm:text-lg">{profile!.username}</p>
+                </div>
+            </div>
+            
+            {/* select page */}
+            <div className="w-fit flex flex-col md:flex-row md:gap-6 items-center justify-center h-full">
+                {/* leaderboard */}
+                <motion.button
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={ () => setActivePage(pages["chat"]) } 
+                    className="text-lg cursor-pointer">
+                    Posts
+                </motion.button>    
+
+                {/* leaderboard */}
+                <motion.button
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={ () => setActivePage(pages["leaderboard"]) } 
+                    className="text-lg cursor-pointer">
+                    Leaderboard
+                </motion.button>  
+            </div>    
+
+            {/* log out */}
+            <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={signOut} 
+                className="text-lg cursor-pointer">
+                Log Out
+            </motion.button>
+        </section>
+        
+        {activePage}
+
+    </div>
+    </>
+}
+
+function MessageBoard({auth}: {auth: AuthContext}) {
+    console.log(`opened message board`)
     const user = auth.user!;
 
     const editTitleRef = useRef<HTMLInputElement | null>(null);
@@ -386,15 +453,13 @@ function ChatApp({auth}: {auth: AuthContext}){
     const [posts, setPosts] = useState<Post[]>([]);
     // post ordering/filtering
     const [sortBy, setSortBy] = useState<SortBySetting>(sortBySettings[0]);
-    const defaultThread = "general";
+    const DEFAULT_THREAD = "general";
     const [currentThread, setCurrentThread] = useState<Thread | null>(null);
-    const signOut = async() => {
-        await supabase.auth.signOut()
-    };
+
     // new post - input fields
     const toggleCreatePost = async() => {
         setIsPosting(!isPosting);
-        window.scrollTo({top:0, left:0, behavior: 'smooth'});
+        window.scrollTo({ top:0, left:0, behavior: 'smooth' });
     };
     // editing a post
     const editPost = async (post_id: string) => {
@@ -486,7 +551,7 @@ function ChatApp({auth}: {auth: AuthContext}){
             const { data, error: threadRetrievalError } = await supabase
                 .from("threads")
                 .select("*")
-                .eq("name", defaultThread);
+                .eq("name", DEFAULT_THREAD);
             if (threadRetrievalError){
                 console.log("Error retrieving general thread id");
             } else {
@@ -499,125 +564,149 @@ function ChatApp({auth}: {auth: AuthContext}){
     useEffect(() => {
         getPosts();
     }, [currentThread, sortBy]);
+
     return <>
-    <div className="w-full min-h-screen flex flex-col items-center bg-slate-400 text-white space-y-1">
-        {/* app header  */}
-        <section className="w-full p-4 bg-slate-800 shadow-2xl text-xl flex flex-row justify-between items-start">
-            {/* sign in name  */}
-            <div className="flex flex-col sm:flex-row space-x-2 space-y-2 sm:space-y-0">
-                {/* <EditProfile auth={auth}/> */}
-                {/* pfp & username */}
-                <div className="flex flex-row items-center w-full space-x-2">
-                    {profile.pfpUrl && <img src={profile.pfpUrl} className="w-10 shrink-0 rounded-full shadow-2xl"/>}
-                    <p className="text-base sm:text-lg">{profile!.username}</p>
-                </div>
-            </div>
-            {/* log out */}
-            <motion.button
-                whileHover={{ scale: 0.95 }}
-                onClick={signOut} 
-                className="hover:scale-103 font-bold text-lg cursor-pointer">
-                Log Out
-            </motion.button>
-        </section>
-        {/* dropdowns */}
-        <section className="flex flex-row w-[99%] max-w-3xl items-start justify-start pt-2 font-bold text-white space-x-2 sm:space-x-4">
-            {/* thread select */}
-            {currentThread && 
-                <SelectThread setCurrentThread={setCurrentThread} currentThread={currentThread}/>}
-            {/* posts sort by  */}
-            <SelectSortBy sortBy={sortBy!} setSortBy={setSortBy}/>
-        </section>
-        {/* main content */}
-        <section className="w-full h-full flex justify-center items-start">
-            {/* all posts */}
-            <section className="h-full flex flex-col items-center pt-2 pb-6 max-w-3xl w-[99%]">
-                {/* create post window  */}
-                <AnimatePresence>
-                    {isPosting &&
-                    <motion.div 
-                        initial={{opacity: 0, scale: 0.6}} 
-                        animate={{opacity: 1, scale: 1}}
-                        exit={{
-                            opacity: 0,
-                            scale: 0,
-                            transition: {
-                                duration: 0.3
-                            }
-                        }}
-                        className="w-full h-full flex items-center justify-center max-w-[99vw]">
-                        <CreatePost auth={auth} getPosts={getPosts} isPosting={isPosting} setIsPosting={setIsPosting} currentThread={currentThread}/>
-                    </motion.div>}
-                </AnimatePresence>
-                {/* render posts their replies*/}
-                { posts.length > 0 ? posts.filter((post: Post) => (post.parent_id === null)).map(post => (
-                <div key={post.id} className="items-end flex flex-col w-full rounded-lg ">
-                    {/* individual post */}
-                    <div key={post.id} className="w-full h-max-124 p-2 mt-1 space-y-1 rounded-lg bg-slate-800">
-                        {/* user + date */}
-                        <div className="flex flex-row justify-between">
-                            <div className="flex flex-row space-x-1 items-center">
-                                {post.pfpUrl 
-                                    ? (<img src={post.pfpUrl} className="mr-2 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-transparent shadow-2xl"/>)
-                                    : (<img src={DEFAULT_PFP_URL} className="mr-2 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-transparent shadow-2xl"/>)}
-                                <p>{post.username}</p>
-                                <p className="opacity-60 text-sm">∘ {formatDate(post.created_on)}</p>
-                            </div>
-                            {(post.user_id === user.id) && 
-                                <MessageOptions post={post} posts={posts} setPosts={setPosts}/>
-                            }
+    {/* dropdowns */}
+    <section className="flex flex-row w-[99%] max-w-3xl items-start justify-start pt-2 font-bold text-white space-x-2 sm:space-x-4">
+        {/* thread select */}
+        {currentThread && 
+            <SelectThread setCurrentThread={setCurrentThread} currentThread={currentThread}/>}
+        {/* posts sort by  */}
+        <SelectSortBy sortBy={sortBy!} setSortBy={setSortBy}/>
+    </section>
+    {/* main content */}
+    <section className="w-full h-full flex justify-center items-start">
+        {/* all posts */}
+        <section className="h-full flex flex-col items-center pt-2 pb-6 max-w-3xl w-[99%]">
+            {/* create post window  */}
+            <AnimatePresence>
+                {isPosting &&
+                <motion.div 
+                    initial={{opacity: 0, scale: 0.6}} 
+                    animate={{opacity: 1, scale: 1}}
+                    exit={{
+                        opacity: 0,
+                        scale: 0,
+                        transition: {
+                            duration: 0.2
+                        }
+                    }}
+                    className="w-full h-full flex items-center justify-center max-w-[99vw]">
+                    <CreatePost auth={auth} getPosts={getPosts} isPosting={isPosting} setIsPosting={setIsPosting} currentThread={currentThread}/>
+                </motion.div>}
+            </AnimatePresence>
+            {/* render posts their replies*/}
+            { posts.length > 0 ? posts.filter((post: Post) => (post.parent_id === null)).map(post => (
+            <div key={post.id} className="items-end flex flex-col w-full rounded-lg ">
+                {/* individual post */}
+                <div key={post.id} className="w-full h-max-124 p-2 mt-1 space-y-1 rounded-lg bg-slate-800">
+                    {/* user + date */}
+                    <div className="flex flex-row justify-between">
+                        <div className="flex flex-row space-x-1 items-center">
+                            {post.pfpUrl 
+                                ? (<img src={post.pfpUrl} className="mr-2 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-transparent shadow-2xl"/>)
+                                : (<img src={DEFAULT_PFP_URL} className="mr-2 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-transparent shadow-2xl"/>)}
+                            <p>{post.username}</p>
+                            <p className="opacity-60 text-sm">∘ {formatDate(post.created_on)}</p>
                         </div>
-                        {/* text */}
-                        { post.editing ?
-                        (<>
-                            <input ref={editTitleRef} type="text" defaultValue={post.title} className="font-bold w-full text-xl sm:text-2xl overflow-clip border rounded-xl border-white p-2"/>
-                            <textarea ref={editContentRef} defaultValue={post.content} className="mt-1 border border-white rounded-xl p-2 w-full overflow-clip wrap-break-word text-wrap overflow-y-auto text-base"/>
-                            <button className="mr-2 bg-red-700 rounded-lg px-3 py-1 hover:scale-102"
-                                    onClick={() => toggleEditing(posts, setPosts, post.id)}>
-                                Cancel
-                            </button>
-                            <button className="bg-cyan-700 rounded-lg px-3 py-1 hover:scale-102"
-                                    onClick={() => {toggleEditing(posts, setPosts, post.id); editPost(post.id)}}>
-                                Save
-                            </button>   
-                        </>) : (<>
-                            <h1 className="font-bold text-xl sm:text-2xl overflow-clip">{post.title}</h1>
-                            <Linkify as='p'
-                                options= {{ target: '_blank', className:"text-cyan-600 underline"}}
-                                className="wrap-break-word text-wrap max-h-48 overflow-y-auto text-base sm:text-lg overflow-clip">
-                                {post.content}
-                            </Linkify>
-                        </>)}
-                        {/* attachment */}
-                        {post.imageUrl && 
-                        <div className="my-1 rounded-xl bg-black">
-                            <img src={post.imageUrl} className="w-full object-contain max-h-124 rounded-xl"/>
-                        </div>}
-                        {/* buttons  */}
-                        <PostButtons auth={auth} post={post} posts={posts} setPosts={setPosts}/>
+                        {(post.user_id === user.id) && 
+                            <MessageOptions post={post} posts={posts} setPosts={setPosts}/>
+                        }
                     </div>
-                    {/* replies */}
-                    {post.show_replies && <Replies auth={auth} parent_post={post} posts={posts} setPosts={setPosts} currentThread={currentThread} depth={1}/>}
+                    {/* text */}
+                    { post.editing ?
+                    (<>
+                        <input ref={editTitleRef} type="text" defaultValue={post.title} className="font-bold w-full text-xl sm:text-2xl overflow-clip border rounded-xl border-white p-2"/>
+                        <textarea ref={editContentRef} defaultValue={post.content} className="mt-1 border border-white rounded-xl p-2 w-full overflow-clip wrap-break-word text-wrap overflow-y-auto text-base"/>
+                        <button className="mr-2 bg-red-700 rounded-lg px-3 py-1 hover:scale-102"
+                                onClick={() => toggleEditing(posts, setPosts, post.id)}>
+                            Cancel
+                        </button>
+                        <button className="bg-cyan-700 rounded-lg px-3 py-1 hover:scale-102"
+                                onClick={() => {toggleEditing(posts, setPosts, post.id); editPost(post.id)}}>
+                            Save
+                        </button>   
+                    </>) : (<>
+                        <h1 className="font-bold text-xl sm:text-2xl overflow-clip">{post.title}</h1>
+                        <Linkify as='p'
+                            options= {{ target: '_blank', className:"text-cyan-600 underline"}}
+                            className="wrap-break-word text-wrap max-h-48 overflow-y-auto text-base sm:text-lg overflow-clip">
+                            {post.content}
+                        </Linkify>
+                    </>)}
+                    {/* attachment */}
+                    {post.imageUrl && 
+                    <div className="my-1 rounded-xl bg-black">
+                        <img src={post.imageUrl} className="w-full object-contain max-h-124 rounded-xl"/>
+                    </div>}
+                    {/* buttons  */}
+                    <PostButtons auth={auth} post={post} posts={posts} setPosts={setPosts}/>
                 </div>
-                )) :
-                (<div className="w-[99%] shadow-2xl rounded-lg p-4 bg-slate-800 text-2xl mt-2">Loading...</div>)
-                }
-            </section>
-            {/* leaderboard */}
-            {/* <section className="w-0 h-0 lg:w-[calc(99%-896px)] invisible lg:visible bg-orange-200 ">
-                leaderboard:
-            </section> */}
+                {/* replies */}
+                {post.show_replies && <Replies auth={auth} parent_post={post} posts={posts} setPosts={setPosts} currentThread={currentThread} depth={1}/>}
+            </div>
+            )) :
+            (<div className="w-[99%] shadow-2xl rounded-lg p-4 bg-slate-800 text-2xl mt-2">Loading...</div>)
+            }
         </section>
-        {/* create post button  */}
-        <motion.button
-            whileHover={{ scale: 1.10 }}
-            whileTap={{ scale: 0.92 }}
-            onClick={() => toggleCreatePost()}
-            className="fixed bottom-2 right-2 p-4 rounded-2xl shadow-lg bg-slate-800 text-white flex flex-row space-x-2 justify-center items-center cursor-pointer">
-            <img src="/chat/plus.svg" alt="+" className="w-8 invert"/>
-            <p className="font-bold text-xl">Create Post</p>
-        </motion.button>
-    </div>
+    </section>
+    {/* create post button  */}
+    <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.92 }}
+        onClick={() => toggleCreatePost()}
+        className="fixed bottom-2 right-2 p-4 rounded-2xl shadow-lg bg-slate-600 text-white flex flex-row space-x-2 justify-center items-center cursor-pointer">
+        <img src="/chat/plus.svg" alt="+" className="w-8 invert"/>
+        <p className="font-bold text-xl">Create Post</p>
+    </motion.button>
+    </>
+}
+
+function Leaderboard() {
+    const [profiles, setProfiles] = useState<Profile[]>([]);
+
+    const getProfiles = async () => {
+        const { data, error } = await supabase
+            .rpc("get_karmas");
+        if (error){
+            alert("Error: could not retrieve leaderboard");
+            console.log("Error retrieving profiles for karma leaderboard", error);
+            return;
+        }
+        // get the urls of each profile picture
+        for (const profile of data){
+            if (profile.pfp_path){
+                const { data: pfpData } = supabase
+                    .storage
+                    .from("profile_pics")
+                    .getPublicUrl(profile.pfp_path);
+                profile.pfpUrl = pfpData.publicUrl;
+            }
+        }
+        setProfiles(data);
+    };
+
+    useEffect(() => {
+        getProfiles();
+    }, []);
+
+    return <>
+        <div className="w-full h-full flex flex-col items-center justify-start">
+            <h1 className="text-3xl py-5">Leaderboard</h1>
+            
+            <ul className="w-[99%] space-y-2 pb-6">
+                {profiles.map((profile, index) => (
+                    <li className="flex gap-2 text-2xl flex-row items-center bg-slate-800 p-2 rounded-lg" key={index}>
+                        <h1 className="font-bold">#{(index + 1)}:</h1>
+                        <p>({profile.karma})</p>
+                        {profile.pfpUrl 
+                            ? (<img src={profile.pfpUrl} className="w-8 h-8 sm:w-14 sm:h-14 rounded-full bg-transparent shadow-2xl"/>)
+                            : (<img src={DEFAULT_PFP_URL} className="w-8 h-8 sm:w-14 sm:h-14 rounded-full bg-transparent shadow-2xl"/>)}
+                        <p className="">{profile.username}</p>
+                    </li>
+                ))}
+            </ul>
+        </div>
     </>
 }
 
@@ -746,7 +835,9 @@ function Replies({auth, parent_post, posts, setPosts, currentThread, depth}:
                 {/* username, date, delete button */}
                 <div className="w-full flex flex-row justify-between">
                     <div className="flex flex-row space-x-1 items-center">
-                        {reply.pfpUrl && <img src={reply.pfpUrl} className="mr-2 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-transparent shadow-2xl"/>}
+                        {reply.pfpUrl 
+                            ? (<img src={reply.pfpUrl} className="mr-2 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-transparent shadow-2xl"/>)
+                            : (<img src={DEFAULT_PFP_URL} className="mr-2 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-transparent shadow-2xl"/>)}
                         <p className="">{reply.username}</p>
                         <p className="opacity-60 text-sm">∘ {formatDate(reply.created_on)}</p>
                     </div>
@@ -939,12 +1030,11 @@ const reactToPost = async (auth: AuthContext,
         // Update the UI
         setPosts(posts.map(post => {
             if (post.id !== post_id) return post;
-            post.reaction = "";
             let newLikeCount: number = +post.like_count!;
             let newDislikeCount: number = +post.dislike_count!;
             if (newReaction === "like") newLikeCount--;
             else if (newReaction === "dislike") newDislikeCount--; 
-            return {...post, like_count: newLikeCount.toString(), dislike_count: newDislikeCount.toString()};
+            return {...post, reaction: "", like_count: newLikeCount.toString(), dislike_count: newDislikeCount.toString()};
         }));
         const { error: deleteReactionError } = await supabase
             .from("reactions")

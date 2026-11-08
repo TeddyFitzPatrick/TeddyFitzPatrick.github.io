@@ -103,8 +103,8 @@ export default function CreatePost({auth, getPosts, isPosting, setIsPosting, cur
     if (contentRef && contentRef.current) contentRef.current.value = "";
   }
   return (
-    <section className="w-[99%] h-max-124 rounded-lg pt-4 pb-8 px-2 sm:px-6 flex flex-col space-y-3 my-2 bg-slate-950">
-    <h1 className="w-full text-3xl tracking-wider">Create Post</h1>
+    <section className="w-[99%] h-max-124 rounded-lg p-2 flex flex-col space-y-3 my-2 bg-slate-800">
+    <h1 className="w-full text-3xl tracking-wider px-2">Create Post</h1>
     <FileUpload
       value={files}
       onValueChange={setFiles}
